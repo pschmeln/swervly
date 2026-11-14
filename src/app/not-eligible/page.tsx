@@ -1,0 +1,24 @@
+import { SignOutButton } from "@clerk/nextjs";
+import { Suspense } from "react";
+import { PageShell } from "@/components/ui";
+
+export default function NotEligiblePage() {
+  return (
+    <PageShell>
+      <h1 className="text-2xl font-semibold tracking-tight">Not eligible</h1>
+      <p className="text-lg leading-7">
+        Swervly is for University of Cincinnati students. Sign in with your UC email.
+      </p>
+      <Suspense>
+        <SignOutButton>
+          <button
+            type="button"
+            className="inline-flex min-h-12 items-center justify-center rounded-lg bg-neutral-900 px-4 text-base font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+          >
+            Sign out
+          </button>
+        </SignOutButton>
+      </Suspense>
+    </PageShell>
+  );
+}
