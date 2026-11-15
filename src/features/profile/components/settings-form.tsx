@@ -1,5 +1,6 @@
 "use client";
 
+import { useClerk } from "@clerk/nextjs";
 import { useRef, useState } from "react";
 import { Button, Card, ErrorNote, Field, TextInput } from "@/components/ui";
 import { ROUTES } from "@/lib/constants";
@@ -8,6 +9,7 @@ import { readApiResponse } from "./api";
 const CONFIRM = "DELETE";
 
 export function SettingsForm() {
+  const { signOut } = useClerk();
   const downloadRef = useRef(false);
   const deleteRef = useRef(false);
   const [downloading, setDownloading] = useState(false);
@@ -81,7 +83,7 @@ export function SettingsForm() {
         setDeleting(false);
         return;
       }
-      window.location.assign(ROUTES.landing);
+      await signOut({ redirectUrl: ROUTES.landing });
     } catch {
       setDeleteError("Something went wrong.");
       deleteRef.current = false;

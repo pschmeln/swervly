@@ -1,3 +1,4 @@
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
@@ -22,7 +23,15 @@ function isAllowedEmail(email: string): boolean {
 }
 
 async function resolveUser(): Promise<GateResult> {
-  const clerkUser = await currentUser();
+  let clerkUser: Awaited<ReturnType<typeof currentUser>>;
+  try {
+    clerkUser = await currentUser();
+  } catch (error) {
+    if (isClerkAPIResponseError(error) && error.status === 404) {
+      return { status: "signed_out" };
+    }
+    throw error;
+  }
   if (!clerkUser) return { status: "signed_out" };
 
   const email = clerkUser.primaryEmailAddress?.emailAddress.toLowerCase() ?? "";
