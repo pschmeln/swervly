@@ -478,6 +478,16 @@ export function OnboardingFlow({
               })}
             </div>
             <p className="text-xs leading-relaxed text-neutral-600">{ATTRIBUTION}</p>
+            <p className="text-xs leading-relaxed">
+              <a
+                href="https://creativecommons.org/licenses/by-nd/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-neutral-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              >
+                CC BY-ND 4.0 license
+              </a>
+            </p>
             {fieldErrors.answers ? <ErrorNote>{fieldErrors.answers}</ErrorNote> : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button
