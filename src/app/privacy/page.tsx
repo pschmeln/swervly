@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { PageShell } from "@/components/ui";
+import { ROUTES } from "@/lib/constants";
 
 export default function PrivacyPage() {
   return (
@@ -21,8 +23,8 @@ export default function PrivacyPage() {
         </header>
 
         <p>
-          Swervly is an early-stage career exploration and co-op reflection
-          service for University of Cincinnati (UC) students. Swervly is{" "}
+          Swervly is a career exploration and co-op reflection service for
+          University of Cincinnati (UC) students. Swervly is{" "}
           <strong className="font-semibold text-neutral-900">
             not affiliated with or endorsed by the University of Cincinnati
           </strong>
@@ -34,15 +36,15 @@ export default function PrivacyPage() {
             Information we collect
           </h2>
           <p>
-            When you sign in and use Swervly, we collect your UC email address;
-            major, year, and optional co-op track; career goals and location
-            preferences or constraints; your answers to the 30-item career
-            interest questionnaire and its calculated scores; and the co-op
-            experiences you choose to enter. Co-op records can include employer,
-            role, term, rotation number, whether you received a return offer,
-            four experience ratings, skills used, optional hourly pay, and
-            optional written comments. Our sign-in provider also processes
-            information needed to authenticate you.
+            When you sign in and use Swervly, we collect your UC email, major,
+            and year; your goals; your interest answers; and the employers,
+            ratings, optional pay, and optional free text you enter for co-ops.
+            A co-op record can also include role, term, rotation number, whether
+            you received a return offer, and skills used. Your profile can
+            include an optional co-op track, location preferences or
+            constraints, and notes. We store the scores calculated from your
+            interest answers. Our sign-in provider processes the information
+            needed to authenticate you.
           </p>
         </section>
 
@@ -51,14 +53,13 @@ export default function PrivacyPage() {
             Why we use it
           </h2>
           <p>
-            We use this information to create your personal profile, let you
-            save and review your co-op experiences, operate and secure the
-            service, and, if you agree to data use, help develop future
-            aggregated insights and career recommendations for UC students.{" "}
-            <strong className="font-semibold text-neutral-900">
-              The current early version does not show your reviews to other
-              students or use AI to process your free-text reviews.
-            </strong>
+            We use this information to create your profile, let you save and
+            review your co-op experiences, and operate and secure the service.
+            During onboarding you agree that your answers and co-op reviews are
+            stored and used, without your name, to produce ratings and
+            recommendations for UC students. That sharing is not part of the
+            app today. Swervly does not show your reviews to other students,
+            and it does not use AI to process your free text.
           </p>
         </section>
 
@@ -67,13 +68,11 @@ export default function PrivacyPage() {
             Who can see it
           </h2>
           <p>
-            Today, your profile and co-op reviews are visible in the app only to
-            you. The two Swervly founders can access records through
-            administrative database access to operate, troubleshoot, and secure
-            the service. Service providers used for authentication, hosting, and
-            database storage process information as needed to deliver Swervly.
-            We do not currently publish individual co-op records to other
-            students.
+            Today, only you can see your profile and co-op reviews in the app.
+            The two Swervly founders can also see those records because they
+            have database access to operate the service. The sign-in, hosting,
+            and database services that run Swervly process this information to
+            provide the service. We do not show your reviews to other students.
           </p>
           <p>
             In a future version, we plan to show UC students de-identified
@@ -86,15 +85,14 @@ export default function PrivacyPage() {
               range based on three or more records
             </strong>
             , never as an individual&apos;s pay. Written comments will be shared
-            only if you separately turn on the optional sharing checkbox for
-            that comment; it is off by default. We will not release small groups
-            or combinations of details that could reasonably identify a student.
-            These future sharing features are{" "}
+            only if you turn on the optional sharing checkbox for that comment;
+            it is off by default. We will not release small groups or
+            combinations of details that could reasonably identify a student.
+            These sharing features are{" "}
             <strong className="font-semibold text-neutral-900">
-              not active today
+              not available today
             </strong>
-            , and we will update this policy and review consent before
-            activating them.
+            .
           </p>
         </section>
 
@@ -103,17 +101,20 @@ export default function PrivacyPage() {
             Your choices and controls
           </h2>
           <p>
-            You choose whether to provide pay and written comments. You can
-            leave the written-comment sharing checkbox off. You can download a
-            copy of your account data or request account deletion using the{" "}
-            <strong className="font-semibold text-neutral-900">Settings</strong>{" "}
-            page once these features have been verified as operational. Deleting
-            an account is intended to remove its profile, assessments, co-op
-            entries, and reviews from the application database, and to delete
-            the linked sign-in account. Provider backups or legally required
-            records may have separate retention periods; these must be confirmed
-            before publication. If the Settings controls are unavailable,
-            contact us at the address above.
+            You choose whether to provide pay and free text. You can leave the
+            free-text sharing checkbox off. On the{" "}
+            <Link
+              className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              href={ROUTES.settings}
+            >
+              Settings
+            </Link>{" "}
+            page you can download a JSON file of your account, profile, interest
+            answers, and co-ops, including employers, ratings, optional pay, and
+            optional free text. On that page you can delete your account by
+            typing DELETE. Deletion removes your profile, interest answers,
+            co-op rotations, and reviews from the application database, and
+            deletes your sign-in account.
           </p>
         </section>
 
@@ -124,9 +125,9 @@ export default function PrivacyPage() {
           <p>
             We limit application access to eligible UC email accounts and use
             authentication and access checks to protect records. No internet
-            service can promise perfect security. We keep account data while
-            your account exists, subject to the final deletion and
-            backup-retention practices we will confirm before launch.
+            service can promise perfect security. We keep your account data
+            while your account exists. When you delete your account, that data
+            is removed from the application database as described above.
           </p>
         </section>
 
@@ -135,16 +136,15 @@ export default function PrivacyPage() {
             Changes and questions
           </h2>
           <p>
-            We may update this policy as Swervly develops. Material changes to
-            how student records are shared will be disclosed before the relevant
-            feature is enabled. Contact{" "}
+            We may update this policy as Swervly changes. Questions and privacy
+            requests go to{" "}
             <a
               className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
               href="mailto:support@swervly.com"
             >
               support@swervly.com
-            </a>{" "}
-            with questions or privacy requests.
+            </a>
+            .
           </p>
         </section>
       </article>

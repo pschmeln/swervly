@@ -49,10 +49,29 @@ function escapeLikePattern(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
-function isUniqueViolation(error: unknown, constraint: string): boolean {
-  if (!error || typeof error !== "object") return false;
-  const candidate = error as { code?: string; constraint?: string };
-  return candidate.code === "23505" && candidate.constraint === constraint;
+type UniqueViolationCarrier = {
+  code?: unknown;
+  constraint?: unknown;
+  cause?: unknown;
+};
+
+/**
+ * Postgres unique_violation (23505) on one constraint.
+ * neon-http single queries throw DrizzleQueryError with the Neon error on
+ * `.cause`. db.batch throws that Neon error directly, so both shapes count.
+ */
+export function isUniqueViolation(error: unknown, constraint: string): boolean {
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current);
+    const candidate = current as UniqueViolationCarrier;
+    if (candidate.code === "23505" && candidate.constraint === constraint) {
+      return true;
+    }
+    current = candidate.cause;
+  }
+  return false;
 }
 
 function employerVisibleToUser(userId: string) {
