@@ -2,6 +2,7 @@ import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { db } from "@/db";
 import { users, type User } from "@/db/schema";
 import { ApiError } from "@/lib/api";
@@ -22,7 +23,46 @@ function isAllowedEmail(email: string): boolean {
   return ALLOWED_EMAIL_DOMAINS.includes(emailDomain(email));
 }
 
-async function resolveUser(): Promise<GateResult> {
+// Postgres puts the email in the unique-violation detail. Recognize the
+// error by SQLSTATE only, and never log the driver error.
+function isUniqueViolation(error: unknown): boolean {
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (typeof current === "object" && current !== null && !seen.has(current)) {
+    seen.add(current);
+    if ("code" in current && current.code === "23505") return true;
+    current = "cause" in current ? current.cause : undefined;
+  }
+  return false;
+}
+
+async function ensureUser(clerkId: string, email: string): Promise<User> {
+  // No conflict target: ON CONFLICT (clerk_id) still raises 23505 when the
+  // email unique index loses a race. The layout and the page both insert on
+  // the first request. A different clerk id must not take over that email;
+  // the read below is only by clerk id.
+  try {
+    await db.insert(users).values({ clerkId, email }).onConflictDoNothing();
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+  }
+
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error("User row missing after insert.");
+  }
+
+  return user;
+}
+
+// One in-flight resolution per request. Two requests can still overlap, so
+// ensureUser is race-safe on its own.
+const resolveUser = cache(async (): Promise<GateResult> => {
   let clerkUser: Awaited<ReturnType<typeof currentUser>>;
   try {
     clerkUser = await currentUser();
@@ -37,23 +77,8 @@ async function resolveUser(): Promise<GateResult> {
   const email = clerkUser.primaryEmailAddress?.emailAddress.toLowerCase() ?? "";
   if (!email || !isAllowedEmail(email)) return { status: "not_eligible" };
 
-  await db
-    .insert(users)
-    .values({ clerkId: clerkUser.id, email })
-    .onConflictDoNothing({ target: users.clerkId });
-
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkUser.id))
-    .limit(1);
-
-  if (!user) {
-    throw new Error("User row missing after insert.");
-  }
-
-  return { status: "ok", user };
-}
+  return { status: "ok", user: await ensureUser(clerkUser.id, email) };
+});
 
 export async function requireUser(): Promise<User> {
   const result = await resolveUser();
