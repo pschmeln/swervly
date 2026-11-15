@@ -6,8 +6,9 @@
 // A null city means unverified, not "no location". Co-op work location belongs to the rotation, not necessarily employer HQ.
 export const EMPLOYERS_SEED: { name: string; aliases: string[]; industry: string | null; city: string | null }[] = [
   {
-    "name": "Siemens PLM Software",
+    "name": "Siemens Digital Industries Software",
     "aliases": [
+      "Siemens PLM Software",
       "Siemens PLM"
     ],
     "industry": "Engineering software",
