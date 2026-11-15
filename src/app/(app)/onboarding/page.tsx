@@ -4,6 +4,7 @@ import { PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { OnboardingFlow } from "@/features/profile/components/onboarding-flow";
+import { onboardingResumeStep } from "@/features/profile/server";
 import { requireUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
@@ -36,7 +37,11 @@ export default async function OnboardingPage({
   return (
     <PageShell title="Onboarding">
       <OnboardingFlow
-        initialStep={profile ? 3 : 1}
+        initialStep={onboardingResumeStep(
+          profile != null,
+          user.consentPrivacyAt,
+          user.consentDataUseAt,
+        )}
         defaults={{
           consentPrivacy: user.consentPrivacyAt != null,
           consentDataUse: user.consentDataUseAt != null,

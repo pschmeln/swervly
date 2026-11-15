@@ -86,13 +86,29 @@ export async function saveProfile(
   return { user, profile };
 }
 
+export function onboardingResumeStep(
+  hasProfile: boolean,
+  consentPrivacyAt: Date | null,
+  consentDataUseAt: Date | null,
+): 1 | 3 {
+  if (hasProfile && consentPrivacyAt != null && consentDataUseAt != null) {
+    return 3;
+  }
+  return 1;
+}
+
 export async function saveAssessment(
   userId: string,
   input: AssessmentInput,
-): Promise<{ scored: ReturnType<typeof scoreRiasec>; onboarded: true }> {
+): Promise<{ scored: ReturnType<typeof scoreRiasec>; onboarded: boolean }> {
   const [existing] = await db
-    .select({ userId: profiles.userId })
+    .select({
+      userId: profiles.userId,
+      consentPrivacyAt: users.consentPrivacyAt,
+      consentDataUseAt: users.consentDataUseAt,
+    })
     .from(profiles)
+    .innerJoin(users, and(eq(users.id, profiles.userId), eq(users.id, userId)))
     .where(eq(profiles.userId, userId))
     .limit(1);
 
@@ -101,6 +117,14 @@ export async function saveAssessment(
       409,
       "profile_required",
       "Save your profile before the interest questions.",
+    );
+  }
+
+  if (existing.consentPrivacyAt == null || existing.consentDataUseAt == null) {
+    throw new ApiError(
+      409,
+      "consent_required",
+      "Accept both consents before the interest questions.",
     );
   }
 
@@ -139,7 +163,14 @@ export async function saveAssessment(
       ),
   ]);
 
-  return { scored, onboarded: true };
+  const [saved] = await db
+    .select({ onboardedAt: users.onboardedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const onboardedAt = saved?.onboardedAt ?? null;
+
+  return { scored, onboarded: onboardedAt != null };
 }
 
 export type AccountExportRotation = Rotation & {
