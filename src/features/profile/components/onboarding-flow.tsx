@@ -25,10 +25,13 @@ import { GOAL_OPTIONS, LOCATION_OPTIONS, MAJOR_OPTIONS, YEAR_OPTIONS } from "./o
 const PAGE_SIZE = 6;
 const PAGE_COUNT = Math.ceil(INTEREST_ITEMS.length / PAGE_SIZE);
 
+export const DATA_USE_CONSENT_LABEL =
+  "I agree that my answers and co-op reviews are stored for my own profile, and may in the future be used without my name to produce aggregated ratings and recommendations for UC students. I will be asked again before that starts.";
+
 const FIELD_COPY: Record<string, string> = {
   consentPrivacy: "Confirm that you have read the Privacy Policy.",
   consentDataUse:
-    "Confirm that your answers and co-op reviews may be stored and used as described.",
+    "Confirm that your answers and co-op reviews are stored for your profile as described.",
   major: "Select your major.",
   year: "Select your year.",
   coopTrack: "Use 40 characters or fewer.",
@@ -48,6 +51,41 @@ const STEP_ONE_KEYS = new Set([
 
 const textLinkClass =
   "inline-flex min-h-12 items-center font-medium underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
+
+const creditLinkClass =
+  "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
+
+const ONET_TOOLS_LABEL = "O*NET Career Exploration Tools";
+const ONET_TOOLS_URL = "https://www.onetcenter.org/tools.html";
+const CC_LICENSE_LABEL = "CC BY-ND 4.0";
+const CC_LICENSE_URL = "https://creativecommons.org/licenses/by-nd/4.0/";
+
+function CreditLink({ href, children }: { href: string; children: string }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={creditLinkClass}>
+      {children}
+      <span className="sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
+
+export function AttributionCredit() {
+  const toolsAt = ATTRIBUTION.indexOf(ONET_TOOLS_LABEL);
+  const licenseAt = ATTRIBUTION.indexOf(CC_LICENSE_LABEL);
+  if (toolsAt < 0 || licenseAt < 0 || toolsAt > licenseAt) {
+    return <>{ATTRIBUTION}</>;
+  }
+
+  return (
+    <>
+      {ATTRIBUTION.slice(0, toolsAt)}
+      <CreditLink href={ONET_TOOLS_URL}>{ONET_TOOLS_LABEL}</CreditLink>
+      {ATTRIBUTION.slice(toolsAt + ONET_TOOLS_LABEL.length, licenseAt)}
+      <CreditLink href={CC_LICENSE_URL}>{CC_LICENSE_LABEL}</CreditLink>
+      {ATTRIBUTION.slice(licenseAt + CC_LICENSE_LABEL.length)}
+    </>
+  );
+}
 
 export type OnboardingDefaults = {
   consentPrivacy: boolean;
@@ -319,13 +357,13 @@ export function OnboardingFlow({
               </Link>
               {fieldErrors.consentPrivacy ? <ErrorNote>{fieldErrors.consentPrivacy}</ErrorNote> : null}
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-1.5 [&_label]:items-start [&_input]:mt-0.5">
               <Checkbox
                 id="consentDataUse"
                 name="consentDataUse"
                 checked={form.consentDataUse}
                 onChange={(event) => update("consentDataUse", event.target.checked)}
-                label="I agree that my answers and co-op reviews are stored and used, without my name, to produce ratings and recommendations for UC students"
+                label={DATA_USE_CONSENT_LABEL}
                 aria-invalid={fieldErrors.consentDataUse ? true : undefined}
               />
               {fieldErrors.consentDataUse ? <ErrorNote>{fieldErrors.consentDataUse}</ErrorNote> : null}
@@ -477,16 +515,8 @@ export function OnboardingFlow({
                 );
               })}
             </div>
-            <p className="text-xs leading-relaxed text-neutral-600">{ATTRIBUTION}</p>
-            <p className="text-xs leading-relaxed">
-              <a
-                href="https://creativecommons.org/licenses/by-nd/4.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-neutral-600 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-              >
-                CC BY-ND 4.0 license
-              </a>
+            <p className="text-xs leading-relaxed text-neutral-600">
+              <AttributionCredit />
             </p>
             {fieldErrors.answers ? <ErrorNote>{fieldErrors.answers}</ErrorNote> : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
