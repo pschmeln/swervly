@@ -1,0 +1,34 @@
+import { notFound } from "next/navigation";
+import { PageShell } from "@/components/ui";
+import { requireOnboardedUser } from "@/lib/auth";
+import { ReviewForm } from "@/features/review/components/review-form";
+import { listRotations } from "@/features/review/server";
+
+export default async function EditReviewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const user = await requireOnboardedUser();
+  const { id } = await params;
+  const rotations = await listRotations(user.id);
+  const rotation = rotations.find((item) => item.id === id);
+
+  if (!rotation) {
+    notFound();
+  }
+
+  const usedRotationNumbers = rotations
+    .filter((item) => item.id !== rotation.id)
+    .map((item) => item.rotationNumber);
+
+  return (
+    <PageShell title="Edit co-op">
+      <ReviewForm
+        mode="edit"
+        rotation={rotation}
+        usedRotationNumbers={usedRotationNumbers}
+      />
+    </PageShell>
+  );
+}
