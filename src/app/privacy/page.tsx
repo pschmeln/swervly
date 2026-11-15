@@ -55,10 +55,11 @@ export default function PrivacyPage() {
           <p>
             We use this information to create your profile, let you save and
             review your co-op experiences, and operate and secure the service.
-            During onboarding you agree that your answers and co-op reviews are
-            stored and used, without your name, to produce ratings and
-            recommendations for UC students. That sharing is not part of the
-            app today. Swervly does not show your reviews to other students,
+            During onboarding you agree that your answers and co-op reviews may
+            in future be used, without your name, for aggregated ratings and
+            recommendations for UC students. That is not active today. We will
+            update this policy and ask you again before turning it on. Swervly
+            does not show your reviews to other students,
             and it does not use AI to process your free text.
           </p>
         </section>
