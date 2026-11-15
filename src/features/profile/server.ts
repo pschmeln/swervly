@@ -1,4 +1,4 @@
-import { isClerkAPIResponseError } from "@clerk/backend/errors";
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { clerkClient } from "@clerk/nextjs/server";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
