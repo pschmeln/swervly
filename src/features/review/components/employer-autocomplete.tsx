@@ -94,12 +94,12 @@ export function EmployerAutocomplete({
         setLocalError(result.error.fields?.name ?? result.error.message);
         return;
       }
+      requestIdRef.current += 1;
       onSelect({
         id: result.data.id,
         name: result.data.name,
         city: result.data.city ?? null,
       });
-      onQueryChange(result.data.name);
       setSuggestions([]);
     } catch {
       setLocalError("Could not add employer.");
@@ -153,8 +153,8 @@ export function EmployerAutocomplete({
                 aria-selected={value?.id === item.id}
                 className="flex min-h-12 w-full items-center px-3 text-left text-base text-neutral-900 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-inset"
                 onClick={() => {
+                  requestIdRef.current += 1;
                   onSelect(item);
-                  onQueryChange(item.name);
                   setSuggestions([]);
                   setLocalError(undefined);
                 }}

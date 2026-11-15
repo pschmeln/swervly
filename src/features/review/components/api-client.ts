@@ -8,6 +8,14 @@ export type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: ApiErrorBody };
 
+/** Bottom-of-form banner text. Omit when the API already sent field-level errors. */
+export function apiFormBannerMessage(error: ApiErrorBody): string | undefined {
+  if (error.fields && Object.keys(error.fields).length > 0) {
+    return undefined;
+  }
+  return error.message;
+}
+
 export async function readApiJson<T>(response: Response): Promise<ApiResult<T>> {
   let json: unknown;
   try {

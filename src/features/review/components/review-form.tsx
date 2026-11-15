@@ -14,7 +14,10 @@ import {
 } from "@/components/ui";
 import { SKILLS, type Skill } from "@/content/skills";
 import { ROUTES } from "@/lib/constants";
-import { readApiJson } from "@/features/review/components/api-client";
+import {
+  apiFormBannerMessage,
+  readApiJson,
+} from "@/features/review/components/api-client";
 import {
   EmployerAutocomplete,
   type EmployerOption,
@@ -289,7 +292,7 @@ export function ReviewForm({
         if (result.error.fields) {
           setFieldErrors(result.error.fields);
         }
-        setFormError(result.error.message);
+        setFormError(apiFormBannerMessage(result.error));
         return;
       }
       router.push(ROUTES.reviews);
