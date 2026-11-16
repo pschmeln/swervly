@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   Button,
   Checkbox,
@@ -16,6 +16,7 @@ import { SKILLS, type Skill } from "@/content/skills";
 import { ROUTES } from "@/lib/constants";
 import {
   apiFormBannerMessage,
+  firstFieldControlId,
   readApiJson,
 } from "@/features/review/components/api-client";
 import {
@@ -185,6 +186,28 @@ export function ReviewForm({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+  const saveErrorRef = useRef<HTMLDivElement>(null);
+
+  function presentSaveFailure(fields: FieldErrors, banner: string | undefined) {
+    const message =
+      banner ??
+      Object.values(fields).find((value) => value.trim().length > 0) ??
+      "Could not save this co-op.";
+    setFieldErrors(fields);
+    setFormError(message);
+    const controlId = firstFieldControlId(fields);
+    window.setTimeout(() => {
+      const field = controlId ? document.getElementById(controlId) : null;
+      const alert = saveErrorRef.current;
+      const target = field ?? alert;
+      target?.scrollIntoView({ block: "center" });
+      if (field instanceof HTMLElement) {
+        field.focus({ preventScroll: true });
+      } else {
+        alert?.focus({ preventScroll: true });
+      }
+    }, 0);
+  }
 
   const selectedEmployer: EmployerOption | null = form.employerId
     ? {
@@ -243,7 +266,10 @@ export function ReviewForm({
     if (payTrimmed !== "") {
       const parsed = Number(payTrimmed);
       if (!Number.isFinite(parsed)) {
-        setFieldErrors({ payHourly: "Enter a valid hourly pay." });
+        presentSaveFailure(
+          { payHourly: "Enter a valid hourly pay." },
+          "Enter a valid hourly pay.",
+        );
         setSaving(false);
         return;
       }
@@ -251,7 +277,10 @@ export function ReviewForm({
     }
 
     if (!form.employerId) {
-      setFieldErrors({ employerId: "Select or add an employer." });
+      presentSaveFailure(
+        { employerId: "Select or add an employer." },
+        "Select or add an employer.",
+      );
       setSaving(false);
       return;
     }
@@ -289,16 +318,16 @@ export function ReviewForm({
       });
       const result = await readApiJson<unknown>(response);
       if (!result.ok) {
-        if (result.error.fields) {
-          setFieldErrors(result.error.fields);
-        }
-        setFormError(apiFormBannerMessage(result.error));
+        presentSaveFailure(
+          result.error.fields ?? {},
+          apiFormBannerMessage(result.error),
+        );
         return;
       }
       router.push(ROUTES.reviews);
       router.refresh();
     } catch {
-      setFormError("Could not save this co-op.");
+      presentSaveFailure({}, "Could not save this co-op.");
     } finally {
       setSaving(false);
     }
@@ -488,7 +517,12 @@ export function ReviewForm({
         />
       </Field>
 
-      <div className="flex flex-col gap-1.5">
+      <div
+        id="skills-used"
+        tabIndex={-1}
+        aria-label="Skills used"
+        className="flex flex-col gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+      >
         <p className="text-sm font-medium text-neutral-900">Skills used</p>
         <p className="text-sm text-neutral-600">Pick up to 10.</p>
         <div className="flex flex-wrap gap-2">
@@ -550,7 +584,15 @@ export function ReviewForm({
         ) : null}
       </div>
 
-      {formError ? <ErrorNote>{formError}</ErrorNote> : null}
+      {formError ? (
+        <div
+          ref={saveErrorRef}
+          tabIndex={-1}
+          className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+        >
+          <ErrorNote>{formError}</ErrorNote>
+        </div>
+      ) : null}
 
       <Button type="submit" disabled={saving} className="w-full sm:w-auto">
         {saving ? "Saving…" : mode === "edit" ? "Save changes" : "Save co-op"}
