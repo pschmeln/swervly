@@ -180,7 +180,7 @@ echo "Lane check passed ($lane)."
 
 ### F6. Vercel
 
-1. Import the repo. Add the environment variables for **Production**: production `DATABASE_URL`, Clerk keys, the two sign-in URL variables. For **Preview** (branch deployments): the Clerk development keys and the `dev-peter` `DATABASE_URL`, so branch builds do not fail for missing variables and never touch production data.
+1. Import the repo. Add the environment variables for **Production**: production `DATABASE_URL`, Clerk keys, the two sign-in URL variables, and the Sentry variables from C8 once the Sentry project exists. For **Preview** (branch deployments): the Clerk development keys and the `dev-peter` `DATABASE_URL`, so branch builds do not fail for missing variables and never touch production data. Preview can use the same Sentry DSN. A missing DSN does not fail the build.
 2. Add the domain `app.swervly.com` and create the DNS record Vercel shows, in GoDaddy.
 3. Confirm the first deployment is green and sign-in works on the `.vercel.app` URL.
 
@@ -382,12 +382,14 @@ A user counts as onboarded when all of these are true: both consent timestamps a
 | Paste-your-UC-reflection prefill | Needs an LLM key, the per-user cap and `usage_events`. It is the only LLM feature in Phase 2. | First follow-up for Lane B |
 | Follow-through matching on save | There is no `recommendations` table until Phase 3, so there is nothing to match. | With Direction |
 | Employer pages, any display of other students' reviews | Phase 3. Today each student sees only their own data, so the anonymization rules are not yet in play. | Phase 3 |
-| PostHog, Sentry | Phase 5 | After early access opens |
+| PostHog | Phase 5 | After early access opens |
+| Sentry error reporting | Sends nothing until `NEXT_PUBLIC_SENTRY_DSN` is set. See C8 | In the app now |
 | Clerk allowlist | It is a paid Clerk feature in production. The UC check is done in our own code instead. | If you upgrade Clerk |
 
 ### C6. Secrets and data hygiene
 
 - Keys live in `.env.local` (git-ignored) and in Vercel's environment variables. Never in the repo, never pasted into Grok, Cursor or any chat.
+- Sentry variables are listed in C8 and the README. `SENTRY_AUTH_TOKEN` is a secret. The DSN is public and can only submit events.
 - Peter sends Li the dev keys once, through a password manager share or another end-to-end encrypted channel. Li never holds production keys.
 - No real student data in either working folder, in prompts, or in test fixtures. Use made-up names like "Test Employer A".
 - Each person uses their own Neon branch (`dev-peter`, `dev-li`), so test rows never collide and never reach production.
@@ -398,6 +400,25 @@ A user counts as onboarded when all of these are true: both consent timestamps a
 2. `scripts/check-lane.sh <lane>` passes.
 3. The lane's manual test script in its runbook passes on localhost, on a phone-width window.
 4. Branch is rebased on `origin/main` and pushed, and a pull request to `main` is open.
+
+### C8. Error reporting (Sentry)
+
+The app reports server errors, browser errors, sign-in and Clerk auth failures, API route 5xx responses, and the failure codes `clerk_auth_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, and `account_rows_delete_failed`. Nothing is sent until a DSN is set, and `next build` succeeds with these variables unset.
+
+Set the variables in Vercel for Production and Preview. The same list is in the README under "Error reporting".
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SENTRY_DSN` | To turn reporting on | DSN for the browser. Server and edge use it when `SENTRY_DSN` is unset |
+| `SENTRY_DSN` | No | Server and edge DSN, if it should differ from the public one |
+| `SENTRY_ENVIRONMENT` | No | Server environment name. Defaults to `VERCEL_ENV`, then `NODE_ENV` |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | No | Browser environment name. Defaults to the build's `VERCEL_ENV`, then `NODE_ENV` |
+| `SENTRY_AUTH_TOKEN` | No | Uploads source maps during `next build`. The build does not fail when this is unset |
+| `SENTRY_ORG` | With the auth token | Sentry organization slug |
+| `SENTRY_PROJECT` | With the auth token | Sentry project slug |
+
+Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all set. Session replay and tracing are off. Events include the internal `users.id` and no email, cookies, request bodies, or IP address. In Sentry, create an alert on new issues and on `failure_code` `clerk_auth_failed` or `sign_in_failed`. The SDK does not email anyone by itself.
+
 ## 4. Lane A: Profile (Peter, branch `feat/profile`)
 
 ```bash

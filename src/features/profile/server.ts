@@ -16,6 +16,7 @@ import {
   type User,
 } from "@/db/schema";
 import { ApiError } from "@/lib/api";
+import { reportFailure } from "@/lib/sentry";
 import { type AssessmentInput, type ProfileInput } from "./schemas";
 import { scoreRiasec, toProfileVector, VECTOR_VERSION } from "./scoring";
 
@@ -230,12 +231,13 @@ export async function deleteAccount(user: User): Promise<void> {
   }
 
   if (user.clerkId.length === 0) {
-    console.error("clerk_delete_failed", "missing_clerk_id");
-    throw new ApiError(
+    const failure = new ApiError(
       500,
       "delete_failed",
       "We could not delete your account. Nothing was removed. Email support@swervly.com and we will do it for you.",
     );
+    reportFailure("clerk_delete_failed", "missing_clerk_id", { error: failure, status: failure.status });
+    throw failure;
   }
 
   // Clerk first. If this fails nothing is deleted, so the student can retry and
@@ -248,12 +250,16 @@ export async function deleteAccount(user: User): Promise<void> {
     // Already absent in Clerk is the end state we want, so carry on to the rows.
     const alreadyGone = isClerkAPIResponseError(error) && error.status === 404;
     if (!alreadyGone) {
-      console.error("clerk_delete_failed", clerkErrorCode(error));
-      throw new ApiError(
+      const failure = new ApiError(
         502,
         "delete_failed",
         "We could not delete your sign-in account, so nothing was removed. Please try again, or email support@swervly.com.",
       );
+      reportFailure("clerk_delete_failed", clerkErrorCode(error), {
+        error: failure,
+        status: failure.status,
+      });
+      throw failure;
     }
   }
 
@@ -263,11 +269,12 @@ export async function deleteAccount(user: User): Promise<void> {
   try {
     await db.delete(users).where(eq(users.id, user.id));
   } catch {
-    console.error("account_rows_delete_failed", user.id);
-    throw new ApiError(
+    const failure = new ApiError(
       500,
       "delete_incomplete",
       "Your sign-in account was deleted, but some of your data may remain. Email support@swervly.com and we will remove the rest.",
     );
+    reportFailure("account_rows_delete_failed", user.id, { error: failure, status: failure.status });
+    throw failure;
   }
 }

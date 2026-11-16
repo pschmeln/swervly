@@ -1,6 +1,7 @@
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Suspense } from "react";
+import { SentryUser } from "@/components/sentry-user";
 import { requireUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
@@ -20,10 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 async function AppShell({ children }: { children: React.ReactNode }) {
-  await requireUser();
+  const user = await requireUser();
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
+      <SentryUser userId={user.id} />
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2">
           <nav className="flex flex-wrap items-center gap-1" aria-label="Main">
