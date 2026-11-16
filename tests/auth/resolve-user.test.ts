@@ -190,7 +190,25 @@ describe("apiUser first sign-in", () => {
     expect(mocks.selectLimit).not.toHaveBeenCalled();
   });
 
-  it("does not insert a row for a signed-out or non-UC session", async () => {
+  it("creates a user for a .edu address outside the extra allowlist", async () => {
+    const purdue = "student@purdue.edu";
+    const row = userRow({ clerkId, email: purdue });
+    signIn(clerkId, "Student@Purdue.EDU");
+    mocks.insert.mockImplementation(async (values: { clerkId: string; email: string }) => {
+      expect(values.email).toBe(purdue);
+      rows.set(values.clerkId, row);
+    });
+
+    await expect(apiUser()).resolves.toEqual(row);
+  });
+
+  it("does not insert a row when .edu is not the domain suffix", async () => {
+    signIn(clerkId, "person@x.edu.evil.com");
+    await expect(apiUser()).rejects.toMatchObject({ status: 403, code: "not_eligible" });
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("does not insert a row for a signed-out or non-university session", async () => {
     mocks.currentUser.mockResolvedValue(null);
     await expect(apiUser()).rejects.toMatchObject({ status: 401, code: "unauthorized" });
 

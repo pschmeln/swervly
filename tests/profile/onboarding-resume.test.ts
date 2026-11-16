@@ -27,4 +27,8 @@ describe("onboardingResumeStep", () => {
   it("starts at step 1 when no profile exists and neither consent is set", () => {
     expect(onboardingResumeStep(false, null, null)).toBe(1);
   });
+
+  it("starts at step 1 when a profile has no school yet", () => {
+    expect(onboardingResumeStep(true, consentedAt, consentedAt, false)).toBe(1);
+  });
 });

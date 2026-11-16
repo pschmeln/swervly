@@ -418,8 +418,9 @@ export function ReviewForm({
       </div>
 
       <Field
-        label="Rotation number"
+        label="Co-op or internship number"
         htmlFor="rotationNumber"
+        hint="If your school numbers co-op rotations, use that number. For summer internships, number them in the order you did them. You can save up to five, and each number is used once."
         error={fieldError(fieldErrors, "rotationNumber")}
       >
         <Select
@@ -572,7 +573,7 @@ export function ReviewForm({
         <Checkbox
           id="shareFreeText"
           name="shareFreeText"
-          label="It's OK to show this text to other UC students without my name."
+          label="It's OK to show this text to other students without my name."
           checked={form.shareFreeText}
           disabled={saving}
           onChange={(event) => update("shareFreeText", event.target.checked)}

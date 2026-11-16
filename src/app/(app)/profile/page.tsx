@@ -25,6 +25,7 @@ export default async function ProfilePage() {
   const [profileRows, assessmentRows] = await Promise.all([
     db
       .select({
+        school: profiles.school,
         goal: profiles.goal,
         goalNotes: profiles.goalNotes,
         locationConstraint: profiles.locationConstraint,
@@ -50,6 +51,10 @@ export default async function ProfilePage() {
         <Card>
           <h2 className="text-lg font-semibold">Basics</h2>
           <dl className="mt-4 grid gap-3">
+            <div>
+              <dt className="text-sm text-neutral-600">School</dt>
+              <dd className="text-base break-words text-neutral-900">{textOrDash(profile?.school)}</dd>
+            </div>
             <div>
               <dt className="text-sm text-neutral-600">Major</dt>
               <dd className="text-base text-neutral-900">{textOrDash(user.major)}</dd>

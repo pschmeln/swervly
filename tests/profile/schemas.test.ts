@@ -9,6 +9,7 @@ function answers(value: number): Record<string, number> {
 
 function profile(overrides: Record<string, unknown> = {}) {
   return {
+    school: "University of Cincinnati",
     major: MAJORS[0],
     year: 3,
     goal: "industry",
@@ -54,6 +55,20 @@ describe("AssessmentInput", () => {
 });
 
 describe("ProfileInput", () => {
+  it("requires a school and stores the trimmed name", () => {
+    const missing = ProfileInput.safeParse(profile({ school: undefined }));
+    const blank = ProfileInput.safeParse(profile({ school: "  " }));
+    const short = ProfileInput.safeParse(profile({ school: "A" }));
+    const parsed = ProfileInput.safeParse(
+      profile({ school: "  University of Cincinnati  " }),
+    );
+    expect(missing.success).toBe(false);
+    expect(blank.success).toBe(false);
+    expect(short.success).toBe(false);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.school).toBe("University of Cincinnati");
+  });
+
   it("rejects consent false", () => {
     const privacy = ProfileInput.safeParse(profile({ consentPrivacy: false }));
     const dataUse = ProfileInput.safeParse(profile({ consentDataUse: false }));

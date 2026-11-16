@@ -9,6 +9,8 @@ import type {
   RotationInput,
 } from "@/features/review/schemas";
 
+const NUMBER_TAKEN_MESSAGE = "That number is already used.";
+
 export type EmployerSuggestion = {
   id: string;
   name: string;
@@ -359,8 +361,8 @@ export async function createRotation(
       throw new ApiError(
         409,
         "rotation_number_taken",
-        "That rotation number is already used.",
-        { rotationNumber: "That rotation number is already used." },
+        NUMBER_TAKEN_MESSAGE,
+        { rotationNumber: NUMBER_TAKEN_MESSAGE },
       );
     }
     throw error;
@@ -413,8 +415,8 @@ export async function updateRotation(
       throw new ApiError(
         409,
         "rotation_number_taken",
-        "That rotation number is already used.",
-        { rotationNumber: "That rotation number is already used." },
+        NUMBER_TAKEN_MESSAGE,
+        { rotationNumber: NUMBER_TAKEN_MESSAGE },
       );
     }
     throw error;

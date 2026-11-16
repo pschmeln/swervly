@@ -8,6 +8,7 @@ const interestItemIds = INTEREST_ITEMS.map((item) => item.id) as [
 ];
 
 export const ProfileInput = z.object({
+  school: z.string().trim().min(2).max(120),
   major: z.enum(MAJORS),
   year: z.int().min(1).max(5),
   coopTrack: z.string().max(40).optional(),

@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <header className="flex flex-col gap-1 text-sm text-neutral-600">
           <p>
             <span className="font-medium text-neutral-900">Last updated:</span>{" "}
-            November 15, 2026
+            November 16, 2026
           </p>
           <p>
             <span className="font-medium text-neutral-900">Contact:</span>{" "}
@@ -23,8 +23,9 @@ export default function PrivacyPage() {
         </header>
 
         <p>
-          Swervly is a career exploration and co-op reflection service for
-          University of Cincinnati (UC) students. Swervly is{" "}
+          Swervly is a career exploration and co-op reflection service built for
+          University of Cincinnati (UC) students and open to anyone with a
+          university email. Swervly is{" "}
           <strong className="font-semibold text-neutral-900">
             not affiliated with or endorsed by the University of Cincinnati
           </strong>
@@ -36,15 +37,16 @@ export default function PrivacyPage() {
             Information we collect
           </h2>
           <p>
-            When you sign in and use Swervly, we collect your UC email, major,
-            and year; your goals; your interest answers; and the employers,
-            ratings, optional pay, and optional free text you enter for co-ops.
-            A co-op record can also include role, term, rotation number, whether
-            you received a return offer, and skills used. Your profile can
-            include an optional co-op track, location preferences or
-            constraints, and notes. We store the scores calculated from your
-            interest answers. Our sign-in provider processes the information
-            needed to authenticate you.
+            When you sign in and use Swervly, we collect your university email,
+            the school you report, your major, and your year; your goals; your
+            interest answers; and the employers, ratings, optional pay, and
+            optional free text you enter for co-ops and internships. A record
+            can also include role, term, a number from 1 to 5 for that co-op or
+            internship, whether you received a return offer, and skills used.
+            Your profile can include an optional co-op track, location
+            preferences or constraints, and notes. We store the scores
+            calculated from your interest answers. Our sign-in provider processes
+            the information needed to authenticate you.
           </p>
         </section>
 
@@ -57,7 +59,7 @@ export default function PrivacyPage() {
             review your co-op experiences, and operate and secure the service.
             During onboarding you agree that your answers and co-op reviews may
             in future be used, without your name, for aggregated ratings and
-            recommendations for UC students. That is not active today. We will
+            recommendations for students. That is not active today. We will
             update this policy and ask you again before turning it on. Swervly
             does not show your reviews to other students,
             and it does not use AI to process your free text.
@@ -76,7 +78,7 @@ export default function PrivacyPage() {
             provide the service. We do not show your reviews to other students.
           </p>
           <p>
-            In a future version, we plan to show UC students de-identified
+            In a future version, we plan to show other students de-identified
             review information{" "}
             <strong className="font-semibold text-neutral-900">
               without student names
@@ -114,7 +116,7 @@ export default function PrivacyPage() {
             answers, and co-ops, including employers, ratings, optional pay, and
             optional free text. On that page you can delete your account by
             typing DELETE. Deletion removes your profile, interest answers,
-            co-op rotations, and reviews from the application database, and
+            co-ops and internships, and reviews from the application database, and
             deletes your sign-in account.
           </p>
         </section>
@@ -124,9 +126,9 @@ export default function PrivacyPage() {
             Security and retention
           </h2>
           <p>
-            We limit application access to eligible UC email accounts and use
-            authentication and access checks to protect records. No internet
-            service can promise perfect security. We keep your account data
+            We limit application access to university email accounts that end in
+            .edu, and we use authentication and access checks to protect records.
+            No internet service can promise perfect security. We keep your account data
             while your account exists. When you delete your account, that data
             is removed from the application database as described above.
           </p>

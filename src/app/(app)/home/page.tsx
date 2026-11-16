@@ -13,7 +13,10 @@ export default async function HomePage() {
     .where(eq(rotations.userId, user.id));
   const rotationCount = Number(row?.value ?? 0);
   const onboarded = user.onboardedAt != null;
-  const countLabel = rotationCount === 1 ? "1 co-op logged." : `${rotationCount} co-ops logged.`;
+  const countLabel =
+    rotationCount === 1
+      ? "1 co-op or internship logged."
+      : `${rotationCount} co-ops and internships logged.`;
 
   return (
     <PageShell title="Home">
@@ -26,13 +29,13 @@ export default async function HomePage() {
           </div>
         </Card>
         <Card>
-          <h2 className="text-lg font-semibold">2. Log your co-ops</h2>
+          <h2 className="text-lg font-semibold">2. Log your co-ops and internships</h2>
           <p className="mt-1 text-neutral-700">{countLabel}</p>
           <div className="mt-4">
             {onboarded ? (
-              <Button href={ROUTES.reviews}>Log your co-ops</Button>
+              <Button href={ROUTES.reviews}>Log your co-ops and internships</Button>
             ) : (
-              <Button disabled>Log your co-ops</Button>
+              <Button disabled>Log your co-ops and internships</Button>
             )}
           </div>
         </Card>
