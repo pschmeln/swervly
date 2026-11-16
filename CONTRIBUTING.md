@@ -9,3 +9,5 @@ Anyone can change any path. CI and review are the gates.
 5. Squash merge into `main`.
 
 Run `npm run check` on the branch before you ask for review.
+
+Setup, migrations, deploy, and error reporting are in [docs/RUNBOOK.md](docs/RUNBOOK.md).

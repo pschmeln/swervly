@@ -4,7 +4,7 @@ Co-op records for University of Cincinnati students.
 
 ## Contributing
 
-Branch off `main`, open a pull request, wait for the **Check / check** workflow to pass, get a review, and squash merge. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Branch off `main`, open a pull request, wait for the **Check / check** workflow to pass, get a review, and squash merge. See [CONTRIBUTING.md](CONTRIBUTING.md). Setup, migrations, deploy, and error reporting are in [docs/RUNBOOK.md](docs/RUNBOOK.md).
 
 ## Error reporting
 

@@ -1,6 +1,6 @@
 # Rules for any coding agent in this repo
 
-1. Follow CONTRIBUTING.md. Work on a branch and open a pull request. Any path may change in that pull request. `npm run check` must pass. The **Check / check** workflow is the CI gate. After review, squash-merge.
+1. Follow CONTRIBUTING.md. Work on a branch and open a pull request. Any path may change in that pull request. Operational notes (schema, auth, migrations, deploy, error reporting) are in docs/RUNBOOK.md. `npm run check` must pass. The **Check / check** workflow is the CI gate. After review, squash-merge.
 2. Never run git commit, git push, npm install, drizzle-kit generate or drizzle-kit migrate.
 3. TypeScript only. Validate every request body with zod. Take the user id from apiUser(), never from the request. Every query on user-owned rows filters by the current user's id.
 4. Secrets come from process.env. Never print, log or write a secret, an email, pay or free text.
