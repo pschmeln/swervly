@@ -1,4 +1,7 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import type { NextMiddleware } from "next/server";
+import { clerkFailureDetail } from "@/lib/clerk-failure";
+import { reportFailure } from "@/lib/sentry";
 
 const publicPaths: RegExp[] = [
   /^\/$/,
@@ -9,12 +12,26 @@ const publicPaths: RegExp[] = [
   /^\/\.well-known\/(.*)/,
 ];
 
-export default clerkMiddleware(async (auth, request) => {
+const clerkProxy: NextMiddleware = clerkMiddleware(async (auth, request) => {
   const isPublic = publicPaths.some((pattern) => pattern.test(request.nextUrl.pathname));
   if (!isPublic) {
     await auth.protect();
   }
 });
+
+const proxy: NextMiddleware = async (request, event) => {
+  try {
+    return await clerkProxy(request, event);
+  } catch (error) {
+    const detail = clerkFailureDetail(error);
+    if (detail !== "unknown") {
+      reportFailure("clerk_auth_failed", detail, { error });
+    }
+    throw error;
+  }
+};
+
+export default proxy;
 
 export const config = {
   matcher: [

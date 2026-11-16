@@ -1,12 +1,14 @@
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { users, type User } from "@/db/schema";
 import { ApiError } from "@/lib/api";
+import { clerkFailureDetail } from "@/lib/clerk-failure";
 import { ALLOWED_EMAIL_DOMAINS, ROUTES } from "@/lib/constants";
+import { reportFailure, setInternalUser } from "@/lib/sentry";
 
 type GateResult =
   | { status: "ok"; user: User }
@@ -67,9 +69,12 @@ const resolveUser = cache(async (): Promise<GateResult> => {
   try {
     clerkUser = await currentUser();
   } catch (error) {
+    // Static prerender hits Clerk without a request. Those bailouts are not outages.
+    unstable_rethrow(error);
     if (isClerkAPIResponseError(error) && error.status === 404) {
       return { status: "signed_out" };
     }
+    reportFailure("clerk_auth_failed", clerkFailureDetail(error), { error });
     throw error;
   }
   if (!clerkUser) return { status: "signed_out" };
@@ -77,7 +82,9 @@ const resolveUser = cache(async (): Promise<GateResult> => {
   const email = clerkUser.primaryEmailAddress?.emailAddress.toLowerCase() ?? "";
   if (!email || !isAllowedEmail(email)) return { status: "not_eligible" };
 
-  return { status: "ok", user: await ensureUser(clerkUser.id, email) };
+  const user = await ensureUser(clerkUser.id, email);
+  setInternalUser(user.id);
+  return { status: "ok", user };
 });
 
 export async function requireUser(): Promise<User> {

@@ -182,6 +182,17 @@ describe("apiUser first sign-in", () => {
     expect(rows.has(clerkId)).toBe(false);
   });
 
+  it("reports a Clerk auth failure and still throws", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failure = new Error("Clerk: Missing secretKey.");
+    mocks.currentUser.mockRejectedValue(failure);
+
+    await expect(apiUser()).rejects.toBe(failure);
+    expect(errorSpy).toHaveBeenCalledWith("clerk_auth_failed", "missing_secret_key");
+    expect(mocks.insert).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
   it("rethrows errors that are not unique violations", async () => {
     const failure = new Error("connection refused");
     mocks.insert.mockRejectedValue(failure);

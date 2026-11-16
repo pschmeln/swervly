@@ -1,5 +1,6 @@
 import { unstable_rethrow } from "next/navigation";
 import type { ZodType } from "zod";
+import { captureFailure } from "@/lib/sentry";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -37,6 +38,9 @@ export function handle(
     } catch (error) {
       unstable_rethrow(error);
       if (error instanceof ApiError) {
+        if (error.status >= 500) {
+          captureFailure(error.code, String(error.status), { error, status: error.status });
+        }
         return Response.json(
           {
             ok: false,
@@ -51,6 +55,7 @@ export function handle(
       }
       const thrown = error instanceof Error ? error.name : typeof error;
       console.error("api_error", thrown);
+      captureFailure("api_error", thrown, { error, status: 500 });
       return Response.json(
         {
           ok: false,
