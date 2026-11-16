@@ -229,19 +229,45 @@ export async function deleteAccount(user: User): Promise<void> {
     throw new Error("missing_user_id");
   }
 
-  // user.id comes from apiUser(). This cascades to that user's profile, assessments, rotations, and reviews.
-  await db.delete(users).where(eq(users.id, user.id));
-
   if (user.clerkId.length === 0) {
     console.error("clerk_delete_failed", "missing_clerk_id");
-    return;
+    throw new ApiError(
+      500,
+      "delete_failed",
+      "We could not delete your account. Nothing was removed. Email support@swervly.com and we will do it for you.",
+    );
   }
 
+  // Clerk first. If this fails nothing is deleted, so the student can retry and
+  // /privacy stays true. Deleting the rows first would leave a working login
+  // behind a page that says the sign-in account is gone.
   try {
     const client = await clerkClient();
     await client.users.deleteUser(user.clerkId);
   } catch (error) {
-    // The database row is already gone. Report success and keep the log to the error code.
-    console.error("clerk_delete_failed", clerkErrorCode(error));
+    // Already absent in Clerk is the end state we want, so carry on to the rows.
+    const alreadyGone = isClerkAPIResponseError(error) && error.status === 404;
+    if (!alreadyGone) {
+      console.error("clerk_delete_failed", clerkErrorCode(error));
+      throw new ApiError(
+        502,
+        "delete_failed",
+        "We could not delete your sign-in account, so nothing was removed. Please try again, or email support@swervly.com.",
+      );
+    }
+  }
+
+  // The sign-in account is gone. This cascades to profile, assessments,
+  // rotations and reviews for this user id. Driver errors can include the SQL
+  // text, so a failure is logged as the user id only.
+  try {
+    await db.delete(users).where(eq(users.id, user.id));
+  } catch {
+    console.error("account_rows_delete_failed", user.id);
+    throw new ApiError(
+      500,
+      "delete_incomplete",
+      "Your sign-in account was deleted, but some of your data may remain. Email support@swervly.com and we will remove the rest.",
+    );
   }
 }
