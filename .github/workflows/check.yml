@@ -1,0 +1,24 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # tsc runs before next build, and LayoutProps comes from generated route types.
+      - run: npx next typegen
+      - run: npm run check
