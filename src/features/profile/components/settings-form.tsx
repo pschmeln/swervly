@@ -117,7 +117,7 @@ export function SettingsForm() {
       <Card>
         <h2 className="text-lg font-semibold">Delete my account</h2>
         <p id="delete-account-explanation" className="mt-1 text-neutral-700">
-          Deleting your account removes your profile, interest answers, co-op rotations, and reviews.
+          Deleting your account removes your profile, interest answers, co-ops and internships, and reviews.
           Your sign-in is removed as well. This cannot be undone.
         </p>
         <form

@@ -2,12 +2,15 @@ import { SignOutButton } from "@clerk/nextjs";
 import { Suspense } from "react";
 import { PageShell } from "@/components/ui";
 
+export const NOT_ELIGIBLE_COPY =
+  "Swervly is built for University of Cincinnati students and open to any university email. Sign in with an address that ends in .edu.";
+
 export default function NotEligiblePage() {
   return (
     <PageShell>
       <h1 className="text-2xl font-semibold tracking-tight">Not eligible</h1>
       <p className="text-lg leading-7">
-        Swervly is for University of Cincinnati students. Sign in with your UC email.
+        {NOT_ELIGIBLE_COPY}
       </p>
       <Suspense>
         <SignOutButton>

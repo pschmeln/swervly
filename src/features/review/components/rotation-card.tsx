@@ -60,7 +60,7 @@ export function RotationCard({ rotation }: { rotation: RotationListItem }) {
           </h2>
           <p className="mt-1 text-neutral-700">{rotation.roleTitle}</p>
           <p className="mt-1 text-sm text-neutral-600">
-            {termLabel(rotation.termSeason, rotation.termYear)} · Rotation{" "}
+            {termLabel(rotation.termSeason, rotation.termYear)} · Co-op or internship{" "}
             {rotation.rotationNumber}
           </p>
         </div>

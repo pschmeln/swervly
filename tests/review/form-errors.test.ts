@@ -10,12 +10,12 @@ describe("apiFormBannerMessage", () => {
     expect(
       apiFormBannerMessage({
         code: "rotation_number_taken",
-        message: "That rotation number is already used.",
+        message: "That number is already used.",
         fields: {
-          rotationNumber: "That rotation number is already used.",
+          rotationNumber: "That number is already used.",
         },
       }),
-    ).toBe("That rotation number is already used.");
+    ).toBe("That number is already used.");
   });
 
   it("keeps the API message for any non-empty fields map", () => {
@@ -33,9 +33,9 @@ describe("apiFormBannerMessage", () => {
       apiFormBannerMessage({
         code: "rotation_number_taken",
         message: " ",
-        fields: { rotationNumber: "That rotation number is already used." },
+        fields: { rotationNumber: "That number is already used." },
       }),
-    ).toBe("That rotation number is already used.");
+    ).toBe("That number is already used.");
   });
 
   it("keeps a general API message when there are no field errors", () => {
@@ -62,7 +62,7 @@ describe("firstFieldControlId", () => {
   it("points a duplicate rotation number at the rotation control", () => {
     expect(
       firstFieldControlId({
-        rotationNumber: "That rotation number is already used.",
+        rotationNumber: "That number is already used.",
       }),
     ).toBe("rotationNumber");
   });
@@ -70,7 +70,7 @@ describe("firstFieldControlId", () => {
   it("uses form order when several server fields failed", () => {
     expect(
       firstFieldControlId({
-        rotationNumber: "That rotation number is already used.",
+        rotationNumber: "That number is already used.",
         roleTitle: "Too short.",
         "review.enjoyment": "Required.",
       }),

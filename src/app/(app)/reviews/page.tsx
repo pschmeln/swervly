@@ -13,10 +13,10 @@ export default async function ReviewsPage() {
       <PageShell title="Reviews">
         <div className="flex flex-col gap-4">
           <p className="text-neutral-700">
-            Nothing to review yet. Come back after your first rotation.
+            Nothing here yet. Log a co-op or internship you have already done.
           </p>
           <Button href={ROUTES.reviewsNew} className="w-full sm:w-auto">
-            Log your first co-op
+            Log a co-op or internship
           </Button>
         </div>
       </PageShell>
@@ -27,9 +27,9 @@ export default async function ReviewsPage() {
     <PageShell title="Reviews">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-neutral-700">Your logged co-ops.</p>
+          <p className="text-neutral-700">Your co-ops and internships.</p>
           <Button href={ROUTES.reviewsNew} className="w-full sm:w-auto">
-            Log another co-op
+            Log another
           </Button>
         </div>
         <div className="flex flex-col gap-3">

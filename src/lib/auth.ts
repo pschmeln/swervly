@@ -16,13 +16,32 @@ type GateResult =
   | { status: "not_eligible" };
 
 function emailDomain(email: string): string {
-  const at = email.lastIndexOf("@");
-  if (at < 0 || at === email.length - 1) return "";
-  return email.slice(at + 1);
+  const normalized = email.trim().toLowerCase();
+  const at = normalized.indexOf("@");
+  if (at <= 0 || at !== normalized.lastIndexOf("@") || at === normalized.length - 1) {
+    return "";
+  }
+  return normalized.slice(at + 1);
 }
 
-function isAllowedEmail(email: string): boolean {
-  return ALLOWED_EMAIL_DOMAINS.includes(emailDomain(email));
+// Last DNS label must be "edu". includes(".edu") would accept x.edu.evil.com.
+function isEduDomain(domain: string): boolean {
+  if (domain.length === 0 || domain.length > 253 || /[\s@/\\]/.test(domain)) return false;
+  const labels = domain.split(".");
+  if (labels.length < 2) return false;
+  if (labels.some((label) => label.length === 0 || label.length > 63)) return false;
+  return labels[labels.length - 1] === "edu";
+}
+
+export function isAllowedEmail(
+  email: string,
+  allowedDomains: readonly string[] = ALLOWED_EMAIL_DOMAINS,
+): boolean {
+  const domain = emailDomain(email);
+  if (!domain) return false;
+  const extras = allowedDomains.map((item) => item.trim().toLowerCase());
+  if (extras.includes(domain)) return true;
+  return isEduDomain(domain);
 }
 
 // Postgres puts the email in the unique-violation detail. Recognize the
@@ -79,7 +98,7 @@ const resolveUser = cache(async (): Promise<GateResult> => {
   }
   if (!clerkUser) return { status: "signed_out" };
 
-  const email = clerkUser.primaryEmailAddress?.emailAddress.toLowerCase() ?? "";
+  const email = clerkUser.primaryEmailAddress?.emailAddress.trim().toLowerCase() ?? "";
   if (!email || !isAllowedEmail(email)) return { status: "not_eligible" };
 
   const user = await ensureUser(clerkUser.id, email);
@@ -106,7 +125,11 @@ export async function apiUser(): Promise<User> {
     throw new ApiError(401, "unauthorized", "Sign in required.");
   }
   if (result.status === "not_eligible") {
-    throw new ApiError(403, "not_eligible", "Sign in with a UC email.");
+    throw new ApiError(
+      403,
+      "not_eligible",
+      "Sign in with a university email that ends in .edu.",
+    );
   }
   return result.user;
 }

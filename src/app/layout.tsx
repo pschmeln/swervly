@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Swervly",
-  description: "Co-op records for University of Cincinnati students.",
+  description:
+    "Built for UC students and open to any university email. A free record of your co-ops and internships, plus your interest scores.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

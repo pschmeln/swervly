@@ -26,6 +26,7 @@ export const users = pgTable("users", {
 
 export const profiles = pgTable("profiles", {
   userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  school: text("school"),                                     // self-reported; null until onboarding saves it
   goal: text("goal").notNull(),                               // 'industry' | 'grad_school' | 'undecided'
   goalNotes: text("goal_notes"),
   locationConstraint: text("location_constraint").notNull(),  // 'cincinnati_only' | 'within_drive' | 'anywhere'

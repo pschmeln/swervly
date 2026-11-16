@@ -14,6 +14,7 @@ vi.mock("next/navigation", () => ({
 const blankDefaults = {
   consentPrivacy: false,
   consentDataUse: false,
+  school: "",
   major: "",
   year: "",
   coopTrack: "",
@@ -26,12 +27,14 @@ const blankDefaults = {
 describe("data-use consent copy", () => {
   it("stores answers for the student's own profile and defers aggregated use", () => {
     expect(DATA_USE_CONSENT_LABEL).toBe(
-      "I agree that my answers and co-op reviews are stored for my own profile, and may in the future be used without my name to produce aggregated ratings and recommendations for UC students. I will be asked again before that starts.",
+      "I agree that my answers and co-op reviews are stored for my own profile, and may in the future be used without my name to produce aggregated ratings and recommendations for students. I will be asked again before that starts.",
     );
     const html = renderToStaticMarkup(
       <OnboardingFlow initialStep={1} defaults={blankDefaults} />,
     );
     expect(html).toContain(DATA_USE_CONSENT_LABEL);
+    expect(html).toContain("School");
+    expect(html).toContain("Suggested from your email when we recognize the domain.");
     expect(html).not.toContain(
       "stored and used, without my name, to produce ratings and recommendations",
     );

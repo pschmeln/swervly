@@ -26,12 +26,13 @@ const PAGE_SIZE = 6;
 const PAGE_COUNT = Math.ceil(INTEREST_ITEMS.length / PAGE_SIZE);
 
 export const DATA_USE_CONSENT_LABEL =
-  "I agree that my answers and co-op reviews are stored for my own profile, and may in the future be used without my name to produce aggregated ratings and recommendations for UC students. I will be asked again before that starts.";
+  "I agree that my answers and co-op reviews are stored for my own profile, and may in the future be used without my name to produce aggregated ratings and recommendations for students. I will be asked again before that starts.";
 
 const FIELD_COPY: Record<string, string> = {
   consentPrivacy: "Confirm that you have read the Privacy Policy.",
   consentDataUse:
     "Confirm that your answers and co-op reviews are stored for your profile as described.",
+  school: "Enter your school (2–120 characters).",
   major: "Select your major.",
   year: "Select your year.",
   coopTrack: "Use 40 characters or fewer.",
@@ -44,6 +45,7 @@ const FIELD_COPY: Record<string, string> = {
 const STEP_ONE_KEYS = new Set([
   "consentPrivacy",
   "consentDataUse",
+  "school",
   "major",
   "year",
   "coopTrack",
@@ -90,6 +92,7 @@ export function AttributionCredit() {
 export type OnboardingDefaults = {
   consentPrivacy: boolean;
   consentDataUse: boolean;
+  school: string;
   major: string;
   year: string;
   coopTrack: string;
@@ -112,6 +115,7 @@ function zodFields(error: ZodError): Record<string, string> {
 
 function profilePayload(state: OnboardingDefaults): unknown {
   return {
+    school: state.school.trim(),
     major: state.major,
     year: Number(state.year),
     coopTrack: state.coopTrack.trim(),
@@ -128,6 +132,8 @@ function stepOneErrors(state: OnboardingDefaults): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!state.consentPrivacy) errors.consentPrivacy = FIELD_COPY.consentPrivacy;
   if (!state.consentDataUse) errors.consentDataUse = FIELD_COPY.consentDataUse;
+  const school = state.school.trim();
+  if (school.length < 2 || school.length > 120) errors.school = FIELD_COPY.school;
   if (!MAJOR_OPTIONS.some((option) => option.value === state.major)) errors.major = FIELD_COPY.major;
   if (!YEAR_OPTIONS.some((option) => option.value === state.year)) errors.year = FIELD_COPY.year;
   if (state.coopTrack.trim().length > 40) errors.coopTrack = FIELD_COPY.coopTrack;
@@ -368,6 +374,21 @@ export function OnboardingFlow({
               />
               {fieldErrors.consentDataUse ? <ErrorNote>{fieldErrors.consentDataUse}</ErrorNote> : null}
             </div>
+            <Field
+              label="School"
+              htmlFor="school"
+              hint="Suggested from your email when we recognize the domain. Change it if it is wrong."
+              error={fieldErrors.school}
+            >
+              <TextInput
+                id="school"
+                name="school"
+                value={form.school}
+                maxLength={120}
+                autoComplete="organization"
+                onChange={(event) => update("school", event.target.value)}
+              />
+            </Field>
             <Field label="Major" htmlFor="major" error={fieldErrors.major}>
               <Select
                 id="major"

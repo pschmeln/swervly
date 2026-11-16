@@ -4,6 +4,7 @@ import { PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { OnboardingFlow } from "@/features/profile/components/onboarding-flow";
+import { suggestSchoolFromEmail } from "@/features/profile/school";
 import { onboardingResumeStep } from "@/features/profile/server";
 import { requireUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
@@ -25,6 +26,7 @@ export default async function OnboardingPage({
 
   const [profile] = await db
     .select({
+      school: profiles.school,
       goal: profiles.goal,
       goalNotes: profiles.goalNotes,
       locationConstraint: profiles.locationConstraint,
@@ -41,10 +43,12 @@ export default async function OnboardingPage({
           profile != null,
           user.consentPrivacyAt,
           user.consentDataUseAt,
+          Boolean(profile?.school?.trim()),
         )}
         defaults={{
           consentPrivacy: user.consentPrivacyAt != null,
           consentDataUse: user.consentDataUseAt != null,
+          school: profile?.school?.trim() || suggestSchoolFromEmail(user.email),
           major: user.major ?? "",
           year: user.year == null ? "" : String(user.year),
           coopTrack: user.coopTrack ?? "",

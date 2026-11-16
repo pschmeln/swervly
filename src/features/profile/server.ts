@@ -42,6 +42,7 @@ function clerkErrorCode(error: unknown): string {
 
 function profileFields(input: ProfileInput) {
   return {
+    school: input.school,
     goal: input.goal,
     goalNotes: input.goalNotes ?? null,
     locationConstraint: input.locationConstraint,
@@ -91,8 +92,14 @@ export function onboardingResumeStep(
   hasProfile: boolean,
   consentPrivacyAt: Date | null,
   consentDataUseAt: Date | null,
+  hasSchool = true,
 ): 1 | 3 {
-  if (hasProfile && consentPrivacyAt != null && consentDataUseAt != null) {
+  if (
+    hasProfile &&
+    hasSchool &&
+    consentPrivacyAt != null &&
+    consentDataUseAt != null
+  ) {
     return 3;
   }
   return 1;
