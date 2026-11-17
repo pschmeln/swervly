@@ -5,10 +5,17 @@ import { GET, POST } from "@/app/api/rotations/route";
 import type { User } from "@/db/schema";
 import { memorySnapshot, resetMemory, seedMemory } from "./memory-db";
 
-const currentUser = vi.hoisted(() => vi.fn());
+const auth = vi.hoisted(() => vi.fn());
+
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers(),
+}));
 
 vi.mock("@clerk/nextjs/server", () => ({
-  currentUser,
+  auth,
+  clerkClient: async () => {
+    throw new Error("clerk backend");
+  },
 }));
 
 vi.mock("@/db", async () => {
@@ -120,11 +127,8 @@ function seedCoop() {
   ]);
 }
 
-function signIn(clerkId: string, email: string) {
-  currentUser.mockResolvedValue({
-    id: clerkId,
-    primaryEmailAddress: { emailAddress: email },
-  });
+function signIn(clerkId: string) {
+  auth.mockResolvedValue({ userId: clerkId });
 }
 
 function routeContext(id?: string): {
@@ -201,12 +205,12 @@ async function expectError(response: Response, status: number, code: string) {
 
 describe("cross-user rotation authorization", () => {
   beforeEach(() => {
-    currentUser.mockReset();
+    auth.mockReset();
     seedCoop();
   });
 
   it("lets the owner update and delete their own rotation", async () => {
-    signIn(clerkIds.userA, emails.userA);
+    signIn(clerkIds.userA);
 
     const updated = await putRotation(ids.rotation, {
       employerId: ids.employer,
@@ -242,7 +246,7 @@ describe("cross-user rotation authorization", () => {
 
   it("returns only B's rotations and does not let B edit or delete A's rotation", async () => {
     const before = memorySnapshot();
-    signIn(clerkIds.userA, emails.userA);
+    signIn(clerkIds.userA);
 
     const asOwner = await getRotations();
     expect(asOwner.status).toBe(200);
@@ -262,7 +266,7 @@ describe("cross-user rotation authorization", () => {
       review: originalReview,
     });
 
-    signIn(clerkIds.userB, emails.userB);
+    signIn(clerkIds.userB);
     const listed = await getRotations();
     expect(listed.status).toBe(200);
     expect(await listed.json()).toEqual({ ok: true, data: [] });
@@ -275,7 +279,7 @@ describe("cross-user rotation authorization", () => {
 
     expect(memorySnapshot()).toEqual(before);
 
-    signIn(clerkIds.userA, emails.userA);
+    signIn(clerkIds.userA);
     const after = await getRotations();
     expect(after.status).toBe(200);
     const afterBody = await after.json();
@@ -292,7 +296,7 @@ describe("cross-user rotation authorization", () => {
 
   it("rejects a signed-in user who has not finished onboarding", async () => {
     const before = memorySnapshot();
-    signIn(clerkIds.userC, emails.userC);
+    signIn(clerkIds.userC);
 
     await expectError(await getRotations(), 403, "not_onboarded");
     await expectError(await postRotation(hijackBody()), 403, "not_onboarded");

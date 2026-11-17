@@ -1,6 +1,7 @@
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
@@ -8,10 +9,10 @@ import { users, type User } from "@/db/schema";
 import { schoolDomainFromEmail } from "@/features/profile/school";
 import { ApiError } from "@/lib/api";
 import { captureEvent } from "@/lib/analytics";
-import { clerkFailureDetail } from "@/lib/clerk-failure";
+import { clerkFailureDetail, isClerkPrerenderFailure } from "@/lib/clerk-failure";
 import { ALLOWED_EMAIL_DOMAINS, EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
 import { INVITE_COOKIE, normalizeInviteId } from "@/lib/invites";
-import { reportFailure, setInternalUser } from "@/lib/sentry";
+import { markReported, reportFailure, setInternalUser } from "@/lib/sentry";
 
 type GateResult =
   | { status: "ok"; user: User }
@@ -85,11 +86,7 @@ async function ensureUser(
     if (!isUniqueViolation(error)) throw error;
   }
 
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
+  const user = await findUserByClerkId(clerkId);
 
   if (!user) {
     reportFailure("user_email_conflict", "email_owned_by_other_clerk");
@@ -123,30 +120,90 @@ async function attachInvite(userId: string): Promise<void> {
     .where(eq(users.id, userId));
 }
 
+async function findUserByClerkId(clerkId: string): Promise<User | undefined> {
+  const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId)).limit(1);
+  return user;
+}
+
+// Layout and page renders in one request do not share React.cache, so each
+// would otherwise report the same Clerk failure. Keyed by the platform request
+// id, not by user data.
+const clerkReports = new Map<string, number>();
+
+async function readRequestId(): Promise<string | undefined> {
+  try {
+    const headerList = await headers();
+    const id = headerList.get("x-vercel-id") ?? headerList.get("x-request-id");
+    if (!id || id.length === 0 || id.length > 200) return undefined;
+    return id;
+  } catch (error) {
+    unstable_rethrow(error);
+    return undefined;
+  }
+}
+
+function duplicateClerkReport(requestId: string, detail: string): boolean {
+  const now = Date.now();
+  if (clerkReports.size > 100) {
+    for (const [key, at] of clerkReports) {
+      if (now - at > 30_000) clerkReports.delete(key);
+    }
+  }
+  const key = `${requestId}\0${detail}`;
+  const previous = clerkReports.get(key);
+  if (previous !== undefined && now - previous < 30_000) return true;
+  clerkReports.set(key, now);
+  return false;
+}
+
+function reportClerkAuthFailure(requestId: string | undefined, error: unknown): void {
+  if (isClerkPrerenderFailure(error)) {
+    markReported(error);
+    return;
+  }
+  const detail = clerkFailureDetail(error);
+  if (requestId && duplicateClerkReport(requestId, detail)) {
+    markReported(error);
+    return;
+  }
+  reportFailure("clerk_auth_failed", detail, { error });
+}
+
 // One in-flight resolution per request. Two requests can still overlap, so
 // ensureUser is race-safe on its own.
 export const resolveUser = cache(async (): Promise<GateResult> => {
-  let clerkUser: Awaited<ReturnType<typeof currentUser>>;
+  // headers() postpones the Cache Components shell before any Clerk fetch.
+  const requestId = await readRequestId();
   try {
-    clerkUser = await currentUser();
+    const session = await auth();
+    const clerkId = session.userId;
+    if (!clerkId) return { status: "signed_out" };
+
+    const existing = await findUserByClerkId(clerkId);
+    if (existing) {
+      if (!isAllowedEmail(existing.email)) return { status: "not_eligible" };
+      setInternalUser(existing.id);
+      return { status: "ok", user: existing };
+    }
+
+    // Email is not a default session claim. Fetch it once, when creating the row.
+    const clerkUser = await (await clerkClient()).users.getUser(clerkId);
+    const email = clerkUser.primaryEmailAddress?.emailAddress.trim().toLowerCase() ?? "";
+    if (!email || !isAllowedEmail(email)) return { status: "not_eligible" };
+
+    const ensured = await ensureUser(clerkId, email);
+    if (ensured.status !== "ok") return ensured;
+    setInternalUser(ensured.user.id);
+    return ensured;
   } catch (error) {
     // Static prerender hits Clerk without a request. Those bailouts are not outages.
     unstable_rethrow(error);
     if (isClerkAPIResponseError(error) && error.status === 404) {
       return { status: "signed_out" };
     }
-    reportFailure("clerk_auth_failed", clerkFailureDetail(error), { error });
+    reportClerkAuthFailure(requestId, error);
     throw error;
   }
-  if (!clerkUser) return { status: "signed_out" };
-
-  const email = clerkUser.primaryEmailAddress?.emailAddress.trim().toLowerCase() ?? "";
-  if (!email || !isAllowedEmail(email)) return { status: "not_eligible" };
-
-  const ensured = await ensureUser(clerkUser.id, email);
-  if (ensured.status !== "ok") return ensured;
-  setInternalUser(ensured.user.id);
-  return ensured;
 });
 
 export async function requireUser(): Promise<User> {

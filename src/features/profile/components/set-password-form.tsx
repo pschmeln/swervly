@@ -1,16 +1,19 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ROUTES } from "@/lib/constants";
 import { readApiResponse } from "./api";
 
-export function SetPasswordForm({ alreadySet }: { alreadySet: boolean }) {
+export function SetPasswordForm() {
+  const { user } = useUser();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(alreadySet);
+  const [replaced, setReplaced] = useState(false);
   const [pending, setPending] = useState(false);
+  const saved = replaced || user?.passwordEnabled === true;
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -33,7 +36,7 @@ export function SetPasswordForm({ alreadySet }: { alreadySet: boolean }) {
         setError(parsed && !parsed.ok ? (parsed.error.fields?.password ?? parsed.error.message) : "Something went wrong.");
         return;
       }
-      setSaved(true);
+      setReplaced(true);
       setPassword("");
       setConfirm("");
     } catch {

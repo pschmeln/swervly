@@ -1,4 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { count, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { PageShell } from "@/components/ui";
@@ -13,8 +12,7 @@ export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await requireUser();
-  const [clerk, headerList, countRows] = await Promise.all([
-    currentUser(),
+  const [headerList, countRows] = await Promise.all([
     headers(),
     db.select({ value: count() }).from(users).where(eq(users.invitedByUserId, user.id)),
   ]);
@@ -24,7 +22,6 @@ export default async function SettingsPage() {
   return (
     <PageShell title="Settings">
       <SettingsForm
-        passwordAlreadySet={clerk?.passwordEnabled === true}
         shareFreeTextDefault={user.shareFreeTextDefault}
         shareReviewsConsent={hasShareReviewsConsent(user)}
         inviteHref={`${proto}://${host}/invite/${user.id}`}

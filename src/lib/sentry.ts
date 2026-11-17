@@ -139,7 +139,12 @@ export function captureFailure(code: string, detail: string, context?: FailureCo
   }
 }
 
+export function markReported(error: unknown): void {
+  remember(error);
+}
+
 export function reportFailure(code: string, detail: string, context?: FailureContext): void {
+  if (wasReported(context?.error)) return;
   console.error(code, detail);
   captureFailure(code, detail, context);
 }

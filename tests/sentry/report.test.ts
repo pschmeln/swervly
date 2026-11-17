@@ -45,7 +45,9 @@ describe("failure reporting without a DSN", () => {
     const failure = new ApiError(502, "delete_failed", "try again");
 
     reportFailure("clerk_delete_failed", "missing_clerk_id", { error: failure, status: 502 });
+    reportFailure("clerk_delete_failed", "missing_clerk_id", { error: failure, status: 502 });
 
+    expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith("clerk_delete_failed", "missing_clerk_id");
     expect(mocks.captureException).not.toHaveBeenCalled();
     errorSpy.mockRestore();

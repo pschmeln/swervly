@@ -25,3 +25,17 @@ export function clerkFailureDetail(error: unknown): string {
 
   return "unknown";
 }
+
+// Clerk's Backend SDK labels a thrown fetch as `unexpected_error` and drops the
+// original digest. Next.js aborts that fetch when a Cache Components pass ends.
+export function isClerkPrerenderFailure(error: unknown): boolean {
+  if (!isClerkAPIResponseError(error)) return false;
+  const message = error.errors[0]?.message;
+  if (typeof message !== "string") return false;
+  return (
+    message.includes("HANGING_PROMISE_REJECTION") ||
+    message.includes("During prerendering") ||
+    message.includes("prerender is complete") ||
+    message.includes("bail out of prerendering")
+  );
+}

@@ -1,6 +1,6 @@
 import { ClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { describe, expect, it } from "vitest";
-import { clerkFailureDetail } from "@/lib/clerk-failure";
+import { clerkFailureDetail, isClerkPrerenderFailure } from "@/lib/clerk-failure";
 
 describe("clerkFailureDetail", () => {
   const fakeLiveKey = ["sk", "live", "example"].join("_");
@@ -22,5 +22,26 @@ describe("clerkFailureDetail", () => {
 
   it("returns unknown for an unrelated error", () => {
     expect(clerkFailureDetail(new Error("connection refused"))).toBe("unknown");
+  });
+
+  it("recognizes a prerender fetch that Clerk relabeled unexpected_error", () => {
+    const prerender = new ClerkAPIResponseError("fetch failed", {
+      status: 500,
+      data: [
+        {
+          code: "unexpected_error",
+          message:
+            "During prerendering, fetch() rejects when the prerender is complete. digest HANGING_PROMISE_REJECTION",
+        },
+      ],
+    });
+    const network = new ClerkAPIResponseError("fetch failed", {
+      status: 500,
+      data: [{ code: "unexpected_error", message: "socket hang up" }],
+    });
+
+    expect(clerkFailureDetail(prerender)).toBe("unexpected_error");
+    expect(isClerkPrerenderFailure(prerender)).toBe(true);
+    expect(isClerkPrerenderFailure(network)).toBe(false);
   });
 });
