@@ -1,3 +1,4 @@
+import { ClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { DrizzleQueryError } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User } from "@/db/schema";
@@ -5,9 +6,11 @@ import { apiUser, requireUser, resolveUser } from "@/lib/auth";
 import { EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
 
 const mocks = vi.hoisted(() => ({
-  currentUser: vi.fn(),
+  auth: vi.fn(),
+  getUser: vi.fn(),
   insert: vi.fn(),
   selectLimit: vi.fn(),
+  requestId: { current: "req" },
   redirect: vi.fn((url: string): never => {
     throw new Error(`NEXT_REDIRECT:${url}`);
   }),
@@ -18,13 +21,22 @@ vi.mock("next/navigation", () => ({
   unstable_rethrow: vi.fn(),
 }));
 
-vi.mock("@clerk/nextjs/server", () => ({
-  currentUser: mocks.currentUser,
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "x-vercel-id": mocks.requestId.current }),
 }));
 
-vi.mock("@clerk/nextjs/errors", () => ({
-  isClerkAPIResponseError: () => false,
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: mocks.auth,
+  clerkClient: async () => ({ users: { getUser: mocks.getUser } }),
 }));
+
+vi.mock("@clerk/nextjs/errors", async () => {
+  const actual = await vi.importActual<typeof import("@clerk/nextjs/errors")>("@clerk/nextjs/errors");
+  return {
+    ClerkAPIResponseError: actual.ClerkAPIResponseError,
+    isClerkAPIResponseError: actual.isClerkAPIResponseError,
+  };
+});
 
 vi.mock("@/db", () => ({
     db: {
@@ -101,7 +113,8 @@ function clerkIdFromLookup(condition: unknown): string | undefined {
 }
 
 function signIn(id = clerkId, address = "Student@mail.uc.edu") {
-  mocks.currentUser.mockResolvedValue({
+  mocks.auth.mockResolvedValue({ userId: id });
+  mocks.getUser.mockResolvedValue({
     id,
     primaryEmailAddress: { emailAddress: address },
   });
@@ -112,7 +125,9 @@ describe("apiUser first sign-in", () => {
 
   beforeEach(() => {
     rows.clear();
-    mocks.currentUser.mockReset();
+    mocks.requestId.current = `req-${crypto.randomUUID()}`;
+    mocks.auth.mockReset();
+    mocks.getUser.mockReset();
     mocks.insert.mockReset();
     mocks.selectLimit.mockReset();
     mocks.redirect.mockClear();
@@ -148,13 +163,13 @@ describe("apiUser first sign-in", () => {
     expect(rows.size).toBe(1);
   });
 
-  it("returns the existing row when the insert is skipped", async () => {
+  it("returns the existing row without calling Clerk for the user", async () => {
     const row = userRow({ clerkId, email, onboardedAt: new Date("2026-11-15T12:00:00.000Z") });
     rows.set(clerkId, row);
-    mocks.insert.mockResolvedValue(undefined);
 
     await expect(apiUser()).resolves.toEqual(row);
-    expect(mocks.insert).toHaveBeenCalledOnce();
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
   });
 
   it("returns email_conflict and does not adopt a row owned by another clerk id", async () => {
@@ -216,10 +231,45 @@ describe("apiUser first sign-in", () => {
   it("reports a Clerk auth failure and still throws", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const failure = new Error("Clerk: Missing secretKey.");
-    mocks.currentUser.mockRejectedValue(failure);
+    mocks.auth.mockRejectedValue(failure);
 
     await expect(apiUser()).rejects.toBe(failure);
     expect(errorSpy).toHaveBeenCalledWith("clerk_auth_failed", "missing_secret_key");
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("reports one Clerk failure when the same request resolves twice", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.requestId.current = "req-duplicate";
+    mocks.getUser
+      .mockRejectedValueOnce(new Error("Clerk: network down"))
+      .mockRejectedValueOnce(new Error("Clerk: network down again"));
+
+    await expect(resolveUser()).rejects.toThrow("Clerk: network down");
+    await expect(resolveUser()).rejects.toThrow("Clerk: network down again");
+
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith("clerk_auth_failed", "clerk_error");
+    errorSpy.mockRestore();
+  });
+
+  it("does not report a prerender fetch that Clerk relabeled unexpected_error", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failure = new ClerkAPIResponseError("fetch failed", {
+      status: 500,
+      data: [
+        {
+          code: "unexpected_error",
+          message: "During prerendering, fetch() rejects when the prerender is complete.",
+        },
+      ],
+    });
+    mocks.getUser.mockRejectedValue(failure);
+
+    await expect(resolveUser()).rejects.toBe(failure);
+    expect(errorSpy).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
     errorSpy.mockRestore();
   });
@@ -229,7 +279,7 @@ describe("apiUser first sign-in", () => {
     mocks.insert.mockRejectedValue(failure);
 
     await expect(apiUser()).rejects.toBe(failure);
-    expect(mocks.selectLimit).not.toHaveBeenCalled();
+    expect(mocks.selectLimit).toHaveBeenCalledOnce();
   });
 
   it("creates a user for a .edu address outside the extra allowlist", async () => {
@@ -251,8 +301,9 @@ describe("apiUser first sign-in", () => {
   });
 
   it("does not insert a row for a signed-out or non-university session", async () => {
-    mocks.currentUser.mockResolvedValue(null);
+    mocks.auth.mockResolvedValue({ userId: null });
     await expect(apiUser()).rejects.toMatchObject({ status: 401, code: "unauthorized" });
+    expect(mocks.getUser).not.toHaveBeenCalled();
 
     signIn(clerkId, "person@gmail.com");
     await expect(apiUser()).rejects.toMatchObject({ status: 403, code: "not_eligible" });

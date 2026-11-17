@@ -12,14 +12,12 @@ import { readApiResponse } from "./api";
 const CONFIRM = "DELETE";
 
 export function SettingsForm({
-  passwordAlreadySet,
   shareFreeTextDefault,
   shareReviewsConsent,
   inviteHref,
   inviteCount,
   founder,
 }: {
-  passwordAlreadySet: boolean;
   shareFreeTextDefault: boolean;
   shareReviewsConsent: boolean;
   inviteHref: string;
@@ -149,7 +147,7 @@ export function SettingsForm({
 
   return (
     <div className="grid gap-4">
-      <SetPasswordForm alreadySet={passwordAlreadySet} />
+      <SetPasswordForm />
       <Card>
         <h2 className="text-lg font-semibold">Anonymous company pages</h2>
         <p className="mt-1 text-neutral-700">
