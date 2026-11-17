@@ -5,6 +5,7 @@ import { db } from "@/db";
 import {
   assessments,
   employers,
+  majorSubmissions,
   profiles,
   reviews,
   rotations,
@@ -15,10 +16,12 @@ import {
   type Rotation,
   type User,
 } from "@/db/schema";
+import { loadMajorSearchContext } from "@/features/majors/load";
+import { resolveMajorWrite, type ProfileWriteInput } from "@/features/majors/selection";
 import { ApiError } from "@/lib/api";
 import { reportFailure } from "@/lib/sentry";
 import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
-import { type AssessmentInput, type ProfileInput } from "./schemas";
+import { type AssessmentInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
 import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
 
@@ -42,7 +45,7 @@ function clerkErrorCode(error: unknown): string {
   return "unknown";
 }
 
-function profileFields(input: ProfileInput) {
+function profileFields(input: ProfileWriteInput) {
   return {
     school: input.school,
     goal: input.goal,
@@ -55,8 +58,17 @@ function profileFields(input: ProfileInput) {
 
 export async function saveProfile(
   userId: string,
-  input: ProfileInput,
+  input: ProfileWriteInput,
 ): Promise<{ user: User; profile: Profile }> {
+  const context = await loadMajorSearchContext();
+  const resolved = resolveMajorWrite(input, context);
+  if (!resolved.ok) {
+    throw new ApiError(400, "invalid_body", "Check the fields below and try again.", {
+      majorSelection: resolved.message,
+    });
+  }
+
+  const write = resolved.write;
   const fields = profileFields(input);
   const shareConsent =
     input.consentShareReviews === true
@@ -65,29 +77,84 @@ export async function saveProfile(
           shareReviewsConsentVersion: sql`coalesce(${users.shareReviewsConsentVersion}, ${SHARE_REVIEWS_CONSENT_VERSION})`,
         }
       : {};
-  const [userRows, profileRows] = await db.batch([
-    db
-      .update(users)
-      .set({
-        major: input.major,
-        year: input.year,
-        coopTrack: input.coopTrack ?? null,
-        consentPrivacyAt: sql`coalesce(${users.consentPrivacyAt}, now())`,
-        consentDataUseAt: sql`coalesce(${users.consentDataUseAt}, now())`,
-        ...shareConsent,
-        updatedAt: sql`now()`,
-      })
-      .where(eq(users.id, userId))
-      .returning(),
-    db
-      .insert(profiles)
-      .values({ userId, ...fields })
-      .onConflictDoUpdate({
-        target: profiles.userId,
-        set: fields,
-      })
-      .returning(),
-  ]);
+
+  let submissionId: string | null = null;
+  let existingPendingId: string | null = null;
+  if (write.submission) {
+    const [existing] = await db
+      .select({ id: majorSubmissions.id })
+      .from(majorSubmissions)
+      .where(and(eq(majorSubmissions.userId, userId), eq(majorSubmissions.status, "pending")))
+      .limit(1);
+    if (existing) {
+      submissionId = existing.id;
+      existingPendingId = existing.id;
+    } else {
+      submissionId = crypto.randomUUID();
+    }
+  }
+
+  const userUpdate = db
+    .update(users)
+    .set({
+      major: write.major,
+      majorSource: write.source,
+      customMajorText: write.customMajorText,
+      majorSubmissionId: submissionId,
+      exploringMajors: write.exploringMajors,
+      year: input.year,
+      coopTrack: input.coopTrack ?? null,
+      consentPrivacyAt: sql`coalesce(${users.consentPrivacyAt}, now())`,
+      consentDataUseAt: sql`coalesce(${users.consentDataUseAt}, now())`,
+      ...shareConsent,
+      updatedAt: sql`now()`,
+    })
+    .where(eq(users.id, userId))
+    .returning();
+  const profileWrite = db
+    .insert(profiles)
+    .values({ userId, ...fields })
+    .onConflictDoUpdate({
+      target: profiles.userId,
+      set: fields,
+    })
+    .returning();
+
+  const results = write.submission
+    ? existingPendingId
+      ? await db.batch([
+          db
+            .update(majorSubmissions)
+            .set({
+              rawName: write.submission.rawName,
+              normalizedName: write.submission.normalizedName,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(majorSubmissions.id, existingPendingId),
+                eq(majorSubmissions.userId, userId),
+                eq(majorSubmissions.status, "pending"),
+              ),
+            ),
+          userUpdate,
+          profileWrite,
+        ])
+      : await db.batch([
+          db.insert(majorSubmissions).values({
+            id: submissionId ?? crypto.randomUUID(),
+            userId,
+            rawName: write.submission.rawName,
+            normalizedName: write.submission.normalizedName,
+            status: "pending",
+          }),
+          userUpdate,
+          profileWrite,
+        ])
+    : await db.batch([userUpdate, profileWrite]);
+
+  const userRows = results[results.length - 2] as User[];
+  const profileRows = results[results.length - 1] as Profile[];
 
   const user = userRows[0];
   const profile = profileRows[0];

@@ -1,7 +1,3 @@
-import { MAJORS } from "@/lib/constants";
-
-export const MAJOR_OPTIONS = MAJORS.map((major) => ({ value: major, label: major }));
-
 export const YEAR_OPTIONS = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },

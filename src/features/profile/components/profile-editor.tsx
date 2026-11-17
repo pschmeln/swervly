@@ -2,14 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, Card, ErrorNote, Field, Select, Textarea, TextInput } from "@/components/ui";
+import { Button, Card, Checkbox, ErrorNote, Field, Select, Textarea, TextInput } from "@/components/ui";
+import { MajorPicker } from "@/features/majors/components/major-picker";
+import type { MajorSearchContext } from "@/features/majors/catalog";
+import type { MajorPickerValue } from "@/features/majors/selection";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
-import { GOAL_OPTIONS, LOCATION_OPTIONS, MAJOR_OPTIONS, YEAR_OPTIONS } from "./options";
+import { GOAL_OPTIONS, LOCATION_OPTIONS, YEAR_OPTIONS } from "./options";
 
 export type ProfileEditorValues = {
   school: string;
-  major: string;
+  major: MajorPickerValue;
+  exploringMajors: boolean;
   year: string;
   coopTrack: string;
   goal: string;
@@ -18,7 +22,13 @@ export type ProfileEditorValues = {
   constraintsNotes: string;
 };
 
-export function ProfileEditor({ initial }: { initial: ProfileEditorValues }) {
+export function ProfileEditor({
+  initial,
+  majorSearch,
+}: {
+  initial: ProfileEditorValues;
+  majorSearch?: MajorSearchContext;
+}) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +36,7 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorValues }) {
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  function update(key: keyof ProfileEditorValues, value: string) {
+  function update<K extends keyof ProfileEditorValues>(key: K, value: ProfileEditorValues[K]) {
     setForm((current) => ({ ...current, [key]: value }));
     setSaved(false);
     setFieldErrors((current) => {
@@ -43,9 +53,14 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorValues }) {
     setPending(true);
     setError(null);
     setFieldErrors({});
+    const majorSelection =
+      form.major.source === "undecided"
+        ? { source: "undecided" as const }
+        : form.major.source === "custom"
+          ? { source: "custom" as const, name: form.major.name.trim() }
+          : { source: "catalog" as const, name: form.major.name };
     const result = await sendJson(ROUTES.profileUpdate, "PUT", {
       school: form.school.trim(),
-      major: form.major,
       year: Number(form.year),
       coopTrack: form.coopTrack.trim(),
       goal: form.goal,
@@ -54,6 +69,8 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorValues }) {
       constraintsNotes: form.constraintsNotes.trim(),
       consentPrivacy: true,
       consentDataUse: true,
+      majorSelection,
+      exploringMajors: form.major.source === "undecided" ? false : form.exploringMajors,
     });
     setPending(false);
     if (!result.ok) {
@@ -73,9 +90,24 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorValues }) {
           <Field label="School" htmlFor="school" error={fieldErrors.school}>
             <TextInput id="school" name="school" value={form.school} disabled={pending} onChange={(event) => update("school", event.target.value)} />
           </Field>
-          <Field label="Major" htmlFor="major" error={fieldErrors.major}>
-            <Select id="major" name="major" value={form.major} options={MAJOR_OPTIONS} placeholder="Select your major" disabled={pending} onChange={(value) => update("major", value)} />
-          </Field>
+          <MajorPicker
+            id="major"
+            value={form.major}
+            context={majorSearch}
+            disabled={pending}
+            error={fieldErrors.major}
+            onChange={(value) => update("major", value)}
+          />
+          {form.major.source !== "undecided" ? (
+            <Checkbox
+              id="exploringMajors"
+              name="exploringMajors"
+              checked={form.exploringMajors}
+              disabled={pending}
+              onChange={(event) => update("exploringMajors", event.target.checked)}
+              label="Show suggested majors too. Career direction stays available either way."
+            />
+          ) : null}
           <Field label="Year" htmlFor="year" error={fieldErrors.year}>
             <Select id="year" name="year" value={form.year} options={YEAR_OPTIONS} placeholder="Select your year" disabled={pending} onChange={(value) => update("year", value)} />
           </Field>

@@ -3,6 +3,8 @@ import { Button, Card, PageShell } from "@/components/ui";
 import { INSTRUMENT } from "@/content/mini-ipip";
 import { db } from "@/db";
 import { assessments, profiles } from "@/db/schema";
+import { loadMajorSearchContext } from "@/features/majors/load";
+import { selectionFromStored } from "@/features/majors/selection";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
 import { readTraits } from "@/features/profile/traits";
 import type { TraitScores } from "@/features/profile/scoring";
@@ -39,7 +41,7 @@ export default async function ProfilePage() {
     );
   }
 
-  const [profileRows, assessmentRows] = await Promise.all([
+  const [profileRows, assessmentRows, majorSearch] = await Promise.all([
     db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1),
     db
       .select({ instrument: assessments.instrument, scored: assessments.scored })
@@ -47,6 +49,7 @@ export default async function ProfilePage() {
       .where(eq(assessments.userId, user.id))
       .orderBy(desc(assessments.takenAt))
       .limit(1),
+    loadMajorSearchContext(),
   ]);
   const profile = profileRows[0];
   const latest = assessmentRows[0];
@@ -60,9 +63,11 @@ export default async function ProfilePage() {
       ) : null}
       {profile ? (
         <ProfileEditor
+          majorSearch={majorSearch}
           initial={{
             school: profile.school ?? "",
-            major: user.major ?? "",
+            major: selectionFromStored(user),
+            exploringMajors: user.exploringMajors,
             year: user.year == null ? "" : String(user.year),
             coopTrack: user.coopTrack ?? "",
             goal: profile.goal,

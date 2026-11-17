@@ -20,7 +20,8 @@ const blankDefaults: OnboardingDefaults = {
   consentDataUse: false,
   consentShareReviews: false,
   school: "",
-  major: "",
+  major: { source: "catalog", name: "" },
+  exploringMajors: false,
   year: "",
   coopTrack: "",
   goal: "",
@@ -34,7 +35,8 @@ const readyWithoutShare: OnboardingDefaults = {
   consentDataUse: true,
   consentShareReviews: false,
   school: "University of Cincinnati",
-  major: MAJORS[0],
+  major: { source: "catalog", name: MAJORS[0] },
+  exploringMajors: false,
   year: "3",
   coopTrack: "",
   goal: "industry",
@@ -78,7 +80,7 @@ describe("optional share-reviews consent", () => {
   it("accepts a profile save payload without granting share-reviews consent", () => {
     const parsed = ProfileInput.safeParse({
       school: readyWithoutShare.school,
-      major: readyWithoutShare.major,
+      major: MAJORS[0],
       year: Number(readyWithoutShare.year),
       goal: readyWithoutShare.goal,
       locationConstraint: readyWithoutShare.locationConstraint,

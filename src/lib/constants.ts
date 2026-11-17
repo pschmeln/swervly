@@ -32,6 +32,7 @@ export const ROUTES = {
   rotation: "/api/rotations/[id]",
   privacy: "/privacy",
   direction: "/direction",
+  directionDismiss: "/api/direction/dismiss",
   feedback: "/feedback",
   feedbackApi: "/api/feedback",
   company: "/companies/[id]",
@@ -44,6 +45,8 @@ export const ROUTES = {
   invite: "/invite/[userId]",
 } as const;
 
+// Legacy onboarding enum. The searchable catalog lives in src/features/majors/catalog.ts.
+// Profile writes use that catalog. This list stays so older ProfileInput checks still parse.
 export const MAJORS = [
   "Aerospace Engineering",
   "Architectural Engineering",
