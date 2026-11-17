@@ -7,6 +7,10 @@ import { Button, ErrorNote, Field, TextInput } from "@/components/ui";
 import { PasswordInput } from "@/features/auth/components/password-input";
 import { mapClerkFieldError, mapPasswordErrorCode, PASSWORD_HINT } from "@/features/auth/password-messages";
 import {
+  needsFinalizeBeforeApp,
+  shouldRedirectToApp,
+} from "@/features/auth/sign-up-session";
+import {
   RESEND_COOLDOWN_MS,
   validateSignUpCredentials,
 } from "@/features/auth/sign-up-validation";
@@ -47,12 +51,16 @@ export function SignUpForm() {
     signUp.status === "missing_requirements" &&
     signUp.unverifiedFields.includes("email_address") &&
     signUp.missingFields.length === 0;
+  const awaitingFinalize =
+    !!signUp && needsFinalizeBeforeApp({ status: signUp.status, isSignedIn: !!isSignedIn });
 
+  // Only an active session may leave sign-up. status === "complete" is not enough;
+  // finalize() must run first (Clerk Core 3).
   useEffect(() => {
-    if (isSignedIn || signUp?.status === "complete") {
+    if (shouldRedirectToApp(!!isSignedIn)) {
       router.replace(ROUTES.home);
     }
-  }, [isSignedIn, signUp?.status, router]);
+  }, [isSignedIn, router]);
 
   useEffect(() => {
     if (resendSecondsLeft <= 0) return;
@@ -82,6 +90,30 @@ export function SignUpForm() {
       return false;
     }
     setResendSecondsLeft(Math.ceil(RESEND_COOLDOWN_MS / 1000));
+    return true;
+  }
+
+  async function finalizeSignUp(): Promise<boolean> {
+    if (!signUp) return false;
+    const { error: finalizeError } = await signUp.finalize({
+      navigate: ({ decorateUrl }) => {
+        const url = decorateUrl(ROUTES.home);
+        if (url.startsWith("http")) {
+          window.location.href = url;
+        } else {
+          router.push(url);
+        }
+      },
+    });
+    if (finalizeError) {
+      setLocalErrors({
+        form:
+          finalizeError.longMessage ??
+          finalizeError.message ??
+          "Verification worked, but we could not finish sign-up. Try again.",
+      });
+      return false;
+    }
     return true;
   }
 
@@ -139,29 +171,23 @@ export function SignUpForm() {
         return;
       }
       if (signUp.status === "complete") {
-        const { error: finalizeError } = await signUp.finalize({
-          navigate: ({ decorateUrl }) => {
-            const url = decorateUrl(ROUTES.home);
-            if (url.startsWith("http")) {
-              window.location.href = url;
-            } else {
-              router.push(url);
-            }
-          },
-        });
-        if (finalizeError) {
-          setLocalErrors({
-            form:
-              finalizeError.longMessage ??
-              finalizeError.message ??
-              "Verification worked, but we could not finish sign-up.",
-          });
-        }
+        await finalizeSignUp();
       } else {
         setLocalErrors({
           form: "Verification succeeded, but sign-up is not complete yet. Try again or sign in.",
         });
       }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function onRetryFinalize() {
+    if (!signUp || pending) return;
+    setSubmitting(true);
+    setLocalErrors({});
+    try {
+      await finalizeSignUp();
     } finally {
       setSubmitting(false);
     }
@@ -178,12 +204,32 @@ export function SignUpForm() {
     }
   }
 
-  if (isSignedIn || signUp?.status === "complete") {
+  if (shouldRedirectToApp(!!isSignedIn)) {
     return <p className="text-neutral-700">Taking you to Swervly…</p>;
   }
 
   if (!signUp) {
     return <p className="text-neutral-700">Loading sign-up…</p>;
+  }
+
+  if (awaitingFinalize) {
+    return (
+      <div className="grid w-full max-w-md gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Finishing sign-up</h1>
+          <p className="mt-2 leading-7 text-neutral-700">
+            Your email is verified. Activating your session before opening Swervly.
+          </p>
+        </div>
+        {localErrors.form ? <ErrorNote>{localErrors.form}</ErrorNote> : null}
+        {pending ? <p className="text-neutral-700">Finishing sign-up…</p> : null}
+        {!pending ? (
+          <Button type="button" className="w-full" onClick={() => void onRetryFinalize()}>
+            Continue
+          </Button>
+        ) : null}
+      </div>
+    );
   }
 
   if (awaitingVerification) {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { INSTRUMENT, QUIZ_ITEMS } from "@/content/mini-ipip";
+import { PASSWORD_TOO_LONG_BYTES, utf8ByteLength } from "@/features/auth/password-messages";
 import { MAJORS } from "@/lib/constants";
 
 const quizItemIds = QUIZ_ITEMS.map((item) => item.id) as [string, ...string[]];
@@ -29,9 +30,12 @@ export const AssessmentInput = z.object({
 export type AssessmentInput = z.infer<typeof AssessmentInput>;
 
 export const PasswordInput = z.object({
-  password: z.string().min(8, { error: "Use at least 8 characters." }).max(72, {
-    error: "Use 72 characters or fewer.",
-  }),
+  password: z
+    .string()
+    .min(8, { error: "Use at least 8 characters." })
+    .refine((value) => utf8ByteLength(value) <= 72, {
+      error: PASSWORD_TOO_LONG_BYTES,
+    }),
 });
 
 export const ShareDefaultInput = z.object({

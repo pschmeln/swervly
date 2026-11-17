@@ -4,7 +4,11 @@ import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { Button, Card, Field } from "@/components/ui";
 import { PasswordInput } from "@/features/auth/components/password-input";
-import { PASSWORD_HINT } from "@/features/auth/password-messages";
+import {
+  PASSWORD_HINT,
+  PASSWORD_TOO_LONG_BYTES,
+  utf8ByteLength,
+} from "@/features/auth/password-messages";
 import { ROUTES } from "@/lib/constants";
 import { readApiResponse } from "./api";
 
@@ -26,8 +30,8 @@ export function SetPasswordForm() {
       setError("Use at least 8 characters.");
       return;
     }
-    if (password.length > 72) {
-      setError("Use 72 characters or fewer.");
+    if (utf8ByteLength(password) > 72) {
+      setError(PASSWORD_TOO_LONG_BYTES);
       return;
     }
     if (password !== confirm) {

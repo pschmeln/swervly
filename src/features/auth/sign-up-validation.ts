@@ -1,3 +1,4 @@
+import { PASSWORD_TOO_LONG_BYTES, utf8ByteLength } from "@/features/auth/password-messages";
 import { eligibilityErrorForEmail } from "@/lib/email-eligibility";
 
 export const RESEND_COOLDOWN_MS = 30_000;
@@ -23,8 +24,8 @@ export function validateSignUpCredentials(
 
   if (input.password.length < 8) {
     errors.password = "Use at least 8 characters.";
-  } else if (input.password.length > 72) {
-    errors.password = "Use 72 characters or fewer.";
+  } else if (utf8ByteLength(input.password) > 72) {
+    errors.password = PASSWORD_TOO_LONG_BYTES;
   }
 
   if (input.password !== input.confirm) {
