@@ -712,7 +712,8 @@ After it runs, seed employers again so GE Aerospace and its aliases (`GE`, `Gene
 
 Hand steps outside the repo:
 
-- Clerk Dashboard → User & authentication: keep email verification code on for sign-up and sign-in. Turn Password on, and leave it optional so the first sign-in can stay an emailed code. Students set a password later from Settings.
+- Clerk Dashboard → User & authentication: keep email verification code on for sign-up and sign-in. Enable **Sign-up with password** so `/sign-up` can collect a password before the verification code. Password sign-in should stay available afterward. Students can still replace a password later from Settings.
+- Clerk Dashboard → Access mode / allowlist (paid in production): enable the allowlist and add identifiers that match the `.edu` policy, then confirm an ineligible address never receives a verification email. Until that is verified in the Dashboard, app-side eligibility on `/sign-up` plus `resolveUser` is not a complete Clerk-side block. Do not claim verification-email blocking is finished without that check.
 - Clerk Dashboard → Protect → Protections → Device Trust (formerly Client Trust): leave it on. A password sign-in from a new device without MFA asks for an emailed code once. The prebuilt `<SignIn />` handles `needs_client_trust`.
 - Vercel, Production and Preview: `NEXT_PUBLIC_POSTHOG_KEY` (blank disables tracking) and optional `NEXT_PUBLIC_POSTHOG_HOST` (defaults to `https://us.i.posthog.com`). Events are `sign_up`, `quiz_finished`, `review_saved`, and `direction_viewed`, keyed by `users.id`.
 - Vercel: `FOUNDER_EMAILS`, a comma-separated list of the two founder addresses. Blank hides `/founders`.
