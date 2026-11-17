@@ -703,3 +703,17 @@ In order: paste-your-reflection prefill for Review (brings the LLM key, the per-
 ## Review follow-up
 
 Paste-your-UC-reflection prefill: a model reads the pasted text and proposes form values, the student confirms before anything saves, the pasted text sits in a separate labelled part of the prompt, the output is schema-validated, and the per-user daily cap and `usage_events` table ship with it. Then follow-through matching, once Direction creates recommendations.
+
+## Week of Nov 17
+
+The live app changes are in `drizzle/0002_nov17_features.sql`. Run that migration on production yourself. Do not wipe production rows. It clears the old 30-number profile vector (those answers cannot be reused), copies `return_offer` into `would_return` (`yes`/`no` stay, anything else becomes `maybe`), sets existing `role_type` to `other`, then drops `return_offer`.
+
+After it runs, seed employers again so GE Aerospace and its aliases (`GE`, `General Electric`, `GE Aero`) are upserted: `npx tsx scripts/seed-employers.ts` against the target database.
+
+Hand steps outside the repo:
+
+- Clerk Dashboard → User & authentication: keep email verification code on for sign-up and sign-in. Turn Password on, and leave it optional so the first sign-in can stay an emailed code. Students set a password later from Settings.
+- Clerk Dashboard → Protect → Protections → Device Trust (formerly Client Trust): leave it on. A password sign-in from a new device without MFA asks for an emailed code once. The prebuilt `<SignIn />` handles `needs_client_trust`.
+- Vercel, Production and Preview: `NEXT_PUBLIC_POSTHOG_KEY` (blank disables tracking) and optional `NEXT_PUBLIC_POSTHOG_HOST` (defaults to `https://us.i.posthog.com`). Events are `sign_up`, `quiz_finished`, `review_saved`, and `direction_viewed`, keyed by `users.id`.
+- Vercel: `FOUNDER_EMAILS`, a comma-separated list of the two founder addresses. Blank hides `/founders`.
+- PostHog: create a project and copy the public project key. No server secret is required for these capture calls.

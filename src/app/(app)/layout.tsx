@@ -9,6 +9,7 @@ const NAV = [
   { href: ROUTES.home, label: "Home" },
   { href: ROUTES.profile, label: "Profile" },
   { href: ROUTES.reviews, label: "Reviews" },
+  { href: ROUTES.direction, label: "Direction" },
   { href: ROUTES.settings, label: "Settings" },
 ] as const;
 
@@ -27,7 +28,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-full flex-1 flex-col">
       <SentryUser userId={user.id} />
       <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-2">
           <nav className="flex flex-wrap items-center gap-1" aria-label="Main">
             {NAV.map((item) => (
               <Link

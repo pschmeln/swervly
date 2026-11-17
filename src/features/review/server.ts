@@ -1,9 +1,12 @@
-import { and, asc, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or } from "drizzle-orm";
+import { SKILLS } from "@/content/skills";
 import { db } from "@/db";
-import { employers, reviews, rotations, type Employer } from "@/db/schema";
+import { employers, reviews, rotations, skills, type Employer } from "@/db/schema";
 import { ApiError } from "@/lib/api";
+import { captureEvent } from "@/lib/analytics";
 import { DATA_SOURCE } from "@/lib/constants";
 import { normalizeEmployerName } from "@/features/review/normalize";
+import { rankEmployers } from "@/features/review/search";
 import type {
   EmployerCreateInput,
   RotationInput,
@@ -26,7 +29,8 @@ export type RotationWithDetails = {
   termYear: number;
   rotationNumber: number;
   payHourly: string | null;
-  returnOffer: string;
+  roleType: string;
+  wouldReturn: string;
   source: string;
   createdAt: Date;
   updatedAt: Date;
@@ -46,10 +50,6 @@ export type RotationWithDetails = {
     updatedAt: Date;
   };
 };
-
-function escapeLikePattern(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
 
 type UniqueViolationCarrier = {
   code?: unknown;
@@ -140,6 +140,37 @@ async function findEmployerByAliasNormalized(
   return null;
 }
 
+const STARTER_SKILLS = new Set<string>(SKILLS);
+
+export async function assertSkillsAllowed(userId: string, names: string[]): Promise<void> {
+  const extra = names.filter((name) => !STARTER_SKILLS.has(name));
+  if (extra.length === 0) return;
+
+  const rows = await db
+    .select({
+      name: skills.name,
+      status: skills.status,
+      createdByUserId: skills.createdByUserId,
+    })
+    .from(skills)
+    .where(inArray(skills.name, extra));
+
+  const allowed = new Set(
+    rows
+      .filter(
+        (row) =>
+          row.status === "approved" ||
+          (row.status === "pending" && row.createdByUserId === userId),
+      )
+      .map((row) => row.name),
+  );
+  if (extra.every((name) => allowed.has(name))) return;
+
+  throw new ApiError(400, "invalid_body", "Check the fields below and try again.", {
+    "review.skillsUsed": "Pick a skill from the list, or add it first.",
+  });
+}
+
 export async function searchEmployers(
   userId: string,
   q: string,
@@ -147,35 +178,19 @@ export async function searchEmployers(
   const trimmed = q.trim();
   if (trimmed.length < 2) return [];
 
-  const normalizedQ = normalizeEmployerName(trimmed);
-  if (!normalizedQ) return [];
-
-  const namePattern = `%${escapeLikePattern(normalizedQ)}%`;
-  const aliasPattern = `%${escapeLikePattern(trimmed)}%`;
-
   const rows = await db
     .select({
       id: employers.id,
       name: employers.name,
       city: employers.city,
+      aliases: employers.aliases,
     })
     .from(employers)
-    .where(
-      and(
-        employerVisibleToUser(userId),
-        or(
-          like(employers.normalizedName, namePattern),
-          sql`exists (
-            select 1
-            from unnest(${employers.aliases}) as alias(value)
-            where alias.value ilike ${aliasPattern} escape '\\'
-          )`,
-        ),
-      ),
-    )
-    .limit(8);
+    .where(employerVisibleToUser(userId));
 
-  return rows;
+  return rankEmployers(trimmed, rows)
+    .slice(0, 8)
+    .map(({ id, name, city }) => ({ id, name, city }));
 }
 
 export async function createOrFindEmployer(
@@ -320,6 +335,7 @@ export async function createRotation(
   input: RotationInput,
 ): Promise<RotationWithDetails> {
   await requireVisibleEmployer(userId, input.employerId);
+  await assertSkillsAllowed(userId, input.review.skillsUsed);
 
   const rotationId = crypto.randomUUID();
   const reviewId = crypto.randomUUID();
@@ -332,11 +348,12 @@ export async function createRotation(
         userId,
         employerId: input.employerId,
         roleTitle: input.roleTitle,
+        roleType: input.roleType,
         termSeason: input.termSeason,
         termYear: input.termYear,
         rotationNumber: input.rotationNumber,
         payHourly: payHourlyToDb(input.payHourly),
-        returnOffer: input.returnOffer,
+        wouldReturn: input.wouldReturn,
         source: DATA_SOURCE,
         createdAt: now,
         updatedAt: now,
@@ -368,6 +385,7 @@ export async function createRotation(
     throw error;
   }
 
+  await captureEvent("review_saved", userId, { action: "create" });
   return loadRotationWithDetails(userId, rotationId);
 }
 
@@ -378,6 +396,7 @@ export async function updateRotation(
 ): Promise<RotationWithDetails> {
   await requireOwnedRotation(userId, rotationId);
   await requireVisibleEmployer(userId, input.employerId);
+  await assertSkillsAllowed(userId, input.review.skillsUsed);
 
   const now = new Date();
 
@@ -388,11 +407,12 @@ export async function updateRotation(
         .set({
           employerId: input.employerId,
           roleTitle: input.roleTitle,
+          roleType: input.roleType,
           termSeason: input.termSeason,
           termYear: input.termYear,
           rotationNumber: input.rotationNumber,
           payHourly: payHourlyToDb(input.payHourly),
-          returnOffer: input.returnOffer,
+          wouldReturn: input.wouldReturn,
           updatedAt: now,
         })
         .where(and(eq(rotations.id, rotationId), eq(rotations.userId, userId))),
@@ -422,6 +442,7 @@ export async function updateRotation(
     throw error;
   }
 
+  await captureEvent("review_saved", userId, { action: "update" });
   return loadRotationWithDetails(userId, rotationId);
 }
 

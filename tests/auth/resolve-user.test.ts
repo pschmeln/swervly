@@ -27,12 +27,14 @@ vi.mock("@clerk/nextjs/errors", () => ({
 }));
 
 vi.mock("@/db", () => ({
-  db: {
-    insert: () => ({
-      values: (values: { clerkId: string; email: string }) => ({
-        onConflictDoNothing: (config?: unknown) => mocks.insert(values, config),
+    db: {
+      insert: () => ({
+        values: (values: { clerkId: string; email: string }) => ({
+          onConflictDoNothing: (config?: unknown) => ({
+            returning: () => mocks.insert(values, config),
+          }),
+        }),
       }),
-    }),
     select: () => ({
       from: () => ({
         where: (condition: unknown) => ({
@@ -55,6 +57,9 @@ function userRow(overrides: Pick<User, "clerkId" | "email"> & Partial<User>): Us
     consentPrivacyAt: null,
     consentDataUseAt: null,
     onboardedAt: null,
+    school: null,
+    invitedByUserId: null,
+    shareFreeTextDefault: false,
     source: "early",
     createdAt: new Date("2026-11-15T00:00:00.000Z"),
     updatedAt: new Date("2026-11-15T00:00:00.000Z"),
@@ -123,7 +128,7 @@ describe("apiUser first sign-in", () => {
     let attempts = 0;
     mocks.insert.mockImplementation(async (values: { clerkId: string; email: string }, config?: unknown) => {
       expect(config).toBeUndefined();
-      expect(values).toEqual({ clerkId, email });
+      expect(values).toEqual({ clerkId, email, school: "mail.uc.edu" });
       attempts += 1;
       if (attempts === 1) {
         rows.set(values.clerkId, row);

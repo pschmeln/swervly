@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, ErrorNote } from "@/components/ui";
+import { roleLabel } from "@/features/review/roles";
 import { ROUTES } from "@/lib/constants";
 import { readApiJson } from "@/features/review/components/api-client";
 import type { RotationListItem } from "@/features/review/components/types";
@@ -56,9 +58,19 @@ export function RotationCard({ rotation }: { rotation: RotationListItem }) {
       <div className="flex flex-col gap-3">
         <div>
           <h2 className="text-lg font-semibold text-neutral-900">
-            {rotation.employer.name}
+            <Link
+              href={ROUTES.company.replace("[id]", rotation.employer.id)}
+              className="underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            >
+              {rotation.employer.name}
+            </Link>
           </h2>
-          <p className="mt-1 text-neutral-700">{rotation.roleTitle}</p>
+          <p className="mt-1 break-words text-neutral-700">
+            {rotation.roleTitle} · {roleLabel(rotation.roleType)}
+          </p>
+          <p className="mt-1 text-sm text-neutral-600">
+            Would go back: {rotation.wouldReturn === "yes" ? "Yes" : rotation.wouldReturn === "no" ? "No" : "Maybe"}
+          </p>
           <p className="mt-1 text-sm text-neutral-600">
             {termLabel(rotation.termSeason, rotation.termYear)} · Co-op or internship{" "}
             {rotation.rotationNumber}

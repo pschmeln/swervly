@@ -1,118 +1,101 @@
 import { desc, eq } from "drizzle-orm";
 import { Button, Card, PageShell } from "@/components/ui";
+import { INSTRUMENT } from "@/content/mini-ipip";
 import { db } from "@/db";
 import { assessments, profiles } from "@/db/schema";
-import {
-  GOAL_OPTIONS,
-  LOCATION_OPTIONS,
-  optionLabel,
-  RIASEC_SCORES,
-  textOrDash,
-} from "@/features/profile/components/options";
-import { requireOnboardedUser } from "@/lib/auth";
+import { ProfileEditor } from "@/features/profile/components/profile-editor";
+import { readTraits } from "@/features/profile/traits";
+import type { TraitScores } from "@/features/profile/scoring";
+import { TRAITS } from "@/content/mini-ipip";
+import { requireUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Profile" };
 
-function scoreText(value: unknown): string {
-  const number = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
-  if (!Number.isFinite(number)) return "—";
-  return number.toFixed(2);
+function scoresFrom(value: unknown): TraitScores | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const scores = {} as TraitScores;
+  for (const trait of TRAITS) {
+    const score = record[trait];
+    if (typeof score !== "number") return null;
+    scores[trait] = score;
+  }
+  return scores;
 }
 
 export default async function ProfilePage() {
-  const user = await requireOnboardedUser();
+  const user = await requireUser();
+  if (!user.onboardedAt) {
+    return (
+      <PageShell title="Profile">
+        <Card>
+          <p className="text-neutral-700">Finish the quiz and your basics first. Then you can edit them here.</p>
+          <div className="mt-4">
+            <Button href={ROUTES.onboarding} className="w-full sm:w-auto">Finish your profile</Button>
+          </div>
+        </Card>
+      </PageShell>
+    );
+  }
+
   const [profileRows, assessmentRows] = await Promise.all([
+    db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1),
     db
-      .select({
-        school: profiles.school,
-        goal: profiles.goal,
-        goalNotes: profiles.goalNotes,
-        locationConstraint: profiles.locationConstraint,
-        constraintsNotes: profiles.constraintsNotes,
-      })
-      .from(profiles)
-      .where(eq(profiles.userId, user.id))
-      .limit(1),
-    db
-      .select({ scored: assessments.scored })
+      .select({ instrument: assessments.instrument, scored: assessments.scored })
       .from(assessments)
       .where(eq(assessments.userId, user.id))
       .orderBy(desc(assessments.takenAt))
       .limit(1),
   ]);
-
   const profile = profileRows[0];
-  const scored = assessmentRows[0]?.scored ?? null;
+  const latest = assessmentRows[0];
+  const parsedScores = latest?.instrument === INSTRUMENT ? scoresFrom(latest.scored) : null;
+  const readings = parsedScores ? readTraits(parsedScores) : null;
 
   return (
     <PageShell title="Profile">
-      <div className="grid gap-4">
-        <Card>
-          <h2 className="text-lg font-semibold">Basics</h2>
-          <dl className="mt-4 grid gap-3">
-            <div>
-              <dt className="text-sm text-neutral-600">School</dt>
-              <dd className="text-base break-words text-neutral-900">{textOrDash(profile?.school)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-neutral-600">Major</dt>
-              <dd className="text-base text-neutral-900">{textOrDash(user.major)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-neutral-600">Year</dt>
-              <dd className="text-base text-neutral-900">
-                {user.year == null ? "—" : String(user.year)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-neutral-600">Co-op track</dt>
-              <dd className="text-base text-neutral-900">{textOrDash(user.coopTrack)}</dd>
-            </div>
-          </dl>
-        </Card>
-        <Card>
-          <h2 className="text-lg font-semibold">Goals</h2>
-          <dl className="mt-4 grid gap-3">
-            <div>
-              <dt className="text-sm text-neutral-600">Goal</dt>
-              <dd className="text-base text-neutral-900">{optionLabel(GOAL_OPTIONS, profile?.goal)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-neutral-600">Goal notes</dt>
-              <dd className="text-base break-words text-neutral-900">{textOrDash(profile?.goalNotes)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-neutral-600">Location constraint</dt>
-              <dd className="text-base text-neutral-900">
-                {optionLabel(LOCATION_OPTIONS, profile?.locationConstraint)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-neutral-600">Other constraints</dt>
-              <dd className="text-base break-words text-neutral-900">
-                {textOrDash(profile?.constraintsNotes)}
-              </dd>
-            </div>
-          </dl>
-        </Card>
-        <Card>
-          <h2 className="text-lg font-semibold">Interests</h2>
-          <dl className="mt-4 grid gap-3">
-            {RIASEC_SCORES.map((scale) => (
-              <div key={scale.key}>
-                <dt className="text-sm text-neutral-600">{scale.label}</dt>
-                <dd className="text-base text-neutral-900">{scoreText(scored?.[scale.key])}</dd>
-              </div>
+      {user.school ? (
+        <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
+      ) : null}
+      {profile ? (
+        <ProfileEditor
+          initial={{
+            school: profile.school ?? "",
+            major: user.major ?? "",
+            year: user.year == null ? "" : String(user.year),
+            coopTrack: user.coopTrack ?? "",
+            goal: profile.goal,
+            goalNotes: profile.goalNotes ?? "",
+            locationConstraint: profile.locationConstraint,
+            constraintsNotes: profile.constraintsNotes ?? "",
+          }}
+        />
+      ) : null}
+      <Card>
+        <h2 className="text-lg font-semibold">Quiz result</h2>
+        {readings ? (
+          <ul className="mt-4 grid gap-4">
+            {readings.map((reading) => (
+              <li key={reading.trait}>
+                <p className="text-sm text-neutral-600">{reading.category}</p>
+                <p className="text-base font-medium text-neutral-900">{reading.headline}</p>
+                <p className="text-neutral-700">{reading.coopLine}</p>
+              </li>
             ))}
-          </dl>
-          <div className="mt-4">
-            <Button href={`${ROUTES.onboarding}?retake=1`} variant="secondary" className="w-full sm:w-auto">
-              Retake the interest questions
-            </Button>
-          </div>
-        </Card>
-      </div>
+          </ul>
+        ) : (
+          <p className="mt-2 text-neutral-700">Take the short personality quiz to see this in plain language.</p>
+        )}
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <Button href={`${ROUTES.onboarding}?retake=1`} variant="secondary" className="w-full sm:w-auto">
+            Retake the quiz
+          </Button>
+          <Button href={ROUTES.direction} variant="secondary" className="w-full sm:w-auto">
+            See your direction
+          </Button>
+        </div>
+      </Card>
     </PageShell>
   );
 }

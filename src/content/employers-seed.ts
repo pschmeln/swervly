@@ -38,6 +38,16 @@ export const EMPLOYERS_SEED: { name: string; aliases: string[]; industry: string
     "city": null
   },
   {
+    "name": "GE Aerospace",
+    "aliases": [
+      "GE",
+      "General Electric",
+      "GE Aero"
+    ],
+    "industry": "Aerospace",
+    "city": "Cincinnati, OH"
+  },
+  {
     "name": "GE Appliances",
     "aliases": [
       "GE Appliances, a Haier company"

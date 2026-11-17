@@ -5,9 +5,12 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { users, type User } from "@/db/schema";
+import { schoolDomainFromEmail } from "@/features/profile/school";
 import { ApiError } from "@/lib/api";
+import { captureEvent } from "@/lib/analytics";
 import { clerkFailureDetail } from "@/lib/clerk-failure";
 import { ALLOWED_EMAIL_DOMAINS, EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
+import { INVITE_COOKIE, normalizeInviteId } from "@/lib/invites";
 import { reportFailure, setInternalUser } from "@/lib/sentry";
 
 type GateResult =
@@ -68,7 +71,16 @@ async function ensureUser(
   // the read below is only by clerk id. A missing row means the email is
   // already owned. The driver error includes that email, so it is not logged.
   try {
-    await db.insert(users).values({ clerkId, email }).onConflictDoNothing();
+    const inserted = await db
+      .insert(users)
+      .values({ clerkId, email, school: schoolDomainFromEmail(email) })
+      .onConflictDoNothing()
+      .returning({ id: users.id });
+    const createdId = Array.isArray(inserted) ? inserted[0]?.id : undefined;
+    if (createdId) {
+      await attachInvite(createdId);
+      await captureEvent("sign_up", createdId);
+    }
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
   }
@@ -85,6 +97,30 @@ async function ensureUser(
   }
 
   return { status: "ok", user };
+}
+
+async function attachInvite(userId: string): Promise<void> {
+  let raw: string | undefined;
+  try {
+    const { cookies } = await import("next/headers");
+    raw = (await cookies()).get(INVITE_COOKIE)?.value;
+  } catch {
+    return;
+  }
+  const inviteId = normalizeInviteId(raw);
+  if (!inviteId || inviteId === userId) return;
+
+  const [inviter] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, inviteId))
+    .limit(1);
+  if (!inviter || inviter.id === userId) return;
+
+  await db
+    .update(users)
+    .set({ invitedByUserId: inviter.id, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 }
 
 // One in-flight resolution per request. Two requests can still overlap, so

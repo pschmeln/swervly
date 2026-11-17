@@ -1,14 +1,29 @@
 "use client";
 
 import { useClerk } from "@clerk/nextjs";
+import Link from "next/link";
 import { useRef, useState } from "react";
-import { Button, Card, ErrorNote, Field, TextInput } from "@/components/ui";
+import { Button, Card, Checkbox, ErrorNote, Field, TextInput } from "@/components/ui";
 import { ROUTES } from "@/lib/constants";
+import { InviteLink } from "./invite-link";
+import { SetPasswordForm } from "./set-password-form";
 import { readApiResponse } from "./api";
 
 const CONFIRM = "DELETE";
 
-export function SettingsForm() {
+export function SettingsForm({
+  passwordAlreadySet,
+  shareFreeTextDefault,
+  inviteHref,
+  inviteCount,
+  founder,
+}: {
+  passwordAlreadySet: boolean;
+  shareFreeTextDefault: boolean;
+  inviteHref: string;
+  inviteCount: number;
+  founder: boolean;
+}) {
   const { signOut } = useClerk();
   const downloadRef = useRef(false);
   const deleteRef = useRef(false);
@@ -17,6 +32,8 @@ export function SettingsForm() {
   const [confirm, setConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [shareDefault, setShareDefault] = useState(shareFreeTextDefault);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   async function download() {
     if (downloadRef.current) return;
@@ -91,12 +108,72 @@ export function SettingsForm() {
     }
   }
 
+  async function saveShareDefault(next: boolean) {
+    setShareDefault(next);
+    setShareError(null);
+    const response = await fetch(ROUTES.preferences, {
+      method: "PUT",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({ shareFreeTextDefault: next }),
+    });
+    const payload = await response.json().catch(() => null);
+    const parsed = readApiResponse<unknown>(payload);
+    if (!response.ok || !parsed?.ok) {
+      setShareDefault(!next);
+      setShareError(parsed && !parsed.ok ? parsed.error.message : "Something went wrong.");
+    }
+  }
+
   return (
     <div className="grid gap-4">
+      <SetPasswordForm alreadySet={passwordAlreadySet} />
+      <Card>
+        <h2 className="text-lg font-semibold">Sharing notes</h2>
+        <p className="mt-1 text-neutral-700">
+          This is the starting choice for a new review. The box stays off until you type a note,
+          and an empty note is never shared.
+        </p>
+        <div className="mt-4">
+          <Checkbox
+            id="shareFreeTextDefault"
+            label="Start with sharing turned on when I write a note"
+            checked={shareDefault}
+            onChange={(event) => void saveShareDefault(event.target.checked)}
+          />
+        </div>
+        {shareError ? (
+          <div className="mt-3">
+            <ErrorNote>{shareError}</ErrorNote>
+          </div>
+        ) : null}
+      </Card>
+      <Card>
+        <h2 className="text-lg font-semibold">Invite a classmate</h2>
+        <p className="mt-1 text-neutral-700">
+          Anyone with a .edu email can join. We count who arrives through your link.
+        </p>
+        <div className="mt-4">
+          <InviteLink href={inviteHref} count={inviteCount} />
+        </div>
+      </Card>
+      {founder ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Founder queue</h2>
+          <p className="mt-1 text-neutral-700">Approve companies and skills students added.</p>
+          <div className="mt-4">
+            <Link
+              href={ROUTES.founders}
+              className="inline-flex min-h-12 items-center font-medium underline"
+            >
+              Open the review queue
+            </Link>
+          </div>
+        </Card>
+      ) : null}
       <Card>
         <h2 className="text-lg font-semibold">Download my data</h2>
         <p className="mt-1 text-neutral-700">
-          Download a JSON file of your account, profile, interest answers, and co-ops.
+          Download a JSON file of your account, profile, quiz answers, and co-ops.
         </p>
         <div className="mt-4">
           <Button
@@ -117,7 +194,7 @@ export function SettingsForm() {
       <Card>
         <h2 className="text-lg font-semibold">Delete my account</h2>
         <p id="delete-account-explanation" className="mt-1 text-neutral-700">
-          Deleting your account removes your profile, interest answers, co-ops and internships, and reviews.
+          Deleting your account removes your profile, quiz answers, co-ops and internships, and reviews.
           Your sign-in is removed as well. This cannot be undone.
         </p>
         <form

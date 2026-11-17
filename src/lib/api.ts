@@ -82,7 +82,7 @@ export async function parseBody<T>(req: Request, schema: ZodType<T>): Promise<T>
       const key = issue.path.map((part) => String(part)).join(".") || "body";
       if (!fields[key]) fields[key] = issue.message;
     }
-    throw new ApiError(400, "invalid_body", "Invalid request body.", fields);
+    throw new ApiError(400, "invalid_body", "Check the fields below and try again.", fields);
   }
 
   return parsed.data;

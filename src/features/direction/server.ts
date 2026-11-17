@@ -1,0 +1,98 @@
+import { desc, eq } from "drizzle-orm";
+import { INSTRUMENT, TRAITS, type Trait } from "@/content/mini-ipip";
+import { db } from "@/db";
+import { assessments, profiles, reviews, rotations, type User } from "@/db/schema";
+import {
+  buildDirection,
+  type DirectionSuggestion,
+  type SimilarReview,
+} from "@/features/direction/rules";
+import { readTraits, type TraitReading } from "@/features/profile/traits";
+import type { TraitScores } from "@/features/profile/scoring";
+import { isRoleType } from "@/features/review/roles";
+
+export type DirectionPayload = {
+  readings: TraitReading[];
+  label: string;
+  basis: "rules" | "similar_students";
+  suggestions: DirectionSuggestion[];
+};
+
+function parseScores(value: unknown): TraitScores | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const scores = {} as TraitScores;
+  for (const trait of TRAITS) {
+    const score = record[trait];
+    if (typeof score !== "number" || !Number.isFinite(score)) return null;
+    scores[trait as Trait] = score;
+  }
+  return scores;
+}
+
+export async function loadDirection(user: User): Promise<DirectionPayload | null> {
+  const [profileRows, assessmentRows, reviewRows] = await Promise.all([
+    db
+      .select({ goal: profiles.goal })
+      .from(profiles)
+      .where(eq(profiles.userId, user.id))
+      .limit(1),
+    db
+      .select({
+        userId: assessments.userId,
+        instrument: assessments.instrument,
+        scored: assessments.scored,
+      })
+      .from(assessments)
+      .orderBy(desc(assessments.takenAt)),
+    db
+      .select({
+        userId: rotations.userId,
+        roleType: rotations.roleType,
+        enjoyment: reviews.enjoyment,
+      })
+      .from(reviews)
+      .innerJoin(rotations, eq(reviews.rotationId, rotations.id)),
+  ]);
+
+  const self = assessmentRows.find((row) => row.userId === user.id);
+  if (!self || self.instrument !== INSTRUMENT) return null;
+  const traits = parseScores(self.scored);
+  if (!traits) return null;
+
+  const latest = new Map<string, TraitScores>();
+  const seen = new Set<string>();
+  for (const row of assessmentRows) {
+    if (seen.has(row.userId)) continue;
+    seen.add(row.userId);
+    if (row.instrument !== INSTRUMENT) continue;
+    const parsed = parseScores(row.scored);
+    if (parsed) latest.set(row.userId, parsed);
+  }
+
+  const similar: SimilarReview[] = [];
+  for (const row of reviewRows) {
+    if (row.userId === user.id || !isRoleType(row.roleType)) continue;
+    const profileTraits = latest.get(row.userId);
+    if (!profileTraits) continue;
+    similar.push({
+      traits: profileTraits,
+      roleType: row.roleType,
+      enjoyment: row.enjoyment,
+    });
+  }
+
+  const goalValue = profileRows[0]?.goal;
+  const goal = goalValue === "grad_school" || goalValue === "undecided" ? goalValue : "industry";
+  const direction = buildDirection(
+    { traits, major: user.major ?? "Other", goal },
+    similar,
+  );
+
+  return {
+    readings: readTraits(traits),
+    label: direction.label,
+    basis: direction.basis,
+    suggestions: direction.suggestions,
+  };
+}

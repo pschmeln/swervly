@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { PageShell } from "@/components/ui";
 
 export const NOT_ELIGIBLE_COPY =
-  "Swervly is built for University of Cincinnati students and open to any university email. Sign in with an address that ends in .edu.";
+  "Swervly is for students with a .edu email. Sign in with your school address. Other addresses are refused and do not create an account.";
 
 export default function NotEligiblePage() {
   return (

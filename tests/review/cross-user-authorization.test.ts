@@ -50,6 +50,9 @@ function userRow(id: string, clerkId: string, email: string, onboardedAt: Date |
     consentPrivacyAt: new Date("2026-02-01T00:00:00.000Z"),
     consentDataUseAt: new Date("2026-02-01T00:00:00.000Z"),
     onboardedAt,
+    school: "mail.uc.edu",
+    invitedByUserId: null,
+    shareFreeTextDefault: false,
     source: "early",
     createdAt,
     updatedAt: createdAt,
@@ -96,7 +99,8 @@ function seedCoop() {
       termYear: 2024,
       rotationNumber: 1,
       payHourly: "22.50",
-      returnOffer: "yes",
+      wouldReturn: "yes",
+      roleType: "design",
       source: "early",
       createdAt,
       updatedAt: createdAt,
@@ -136,7 +140,8 @@ function hijackBody() {
     termSeason: "summer",
     termYear: 2025,
     rotationNumber: 1,
-    returnOffer: "no",
+    roleType: "software",
+    wouldReturn: "no",
     review: {
       enjoyment: 1,
       learning: 1,
@@ -208,7 +213,8 @@ describe("cross-user rotation authorization", () => {
       termYear: 2024,
       rotationNumber: 1,
       payHourly: 22.5,
-      returnOffer: "yes",
+      roleType: "design",
+      wouldReturn: "yes",
       review: {
         enjoyment: 1,
         learning: 4,
@@ -249,7 +255,8 @@ describe("cross-user rotation authorization", () => {
       termYear: 2024,
       rotationNumber: 1,
       payHourly: "22.50",
-      returnOffer: "yes",
+      wouldReturn: "yes",
+      roleType: "design",
       review: originalReview,
     });
 
@@ -275,7 +282,8 @@ describe("cross-user rotation authorization", () => {
       id: ids.rotation,
       roleTitle: "Controls Intern",
       payHourly: "22.50",
-      returnOffer: "yes",
+      wouldReturn: "yes",
+      roleType: "design",
       review: originalReview,
     });
   });

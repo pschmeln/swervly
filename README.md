@@ -24,6 +24,12 @@ Set these in Vercel for **Production** and **Preview**. The DSN is public (it ca
 
 Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all set. Session replay and tracing are off. Events may include the internal `users.id`. They do not include email, cookies, request bodies, IP addresses, or Clerk secret keys.
 
+## Product analytics
+
+PostHog receives `sign_up`, `quiz_finished`, `review_saved`, and `direction_viewed` when `NEXT_PUBLIC_POSTHOG_KEY` is set. With the key unset, tracking does nothing and `next build` still succeeds. `NEXT_PUBLIC_POSTHOG_HOST` is optional and defaults to `https://us.i.posthog.com`. Events use the internal `users.id`. They do not include email, pay, free text, or quiz answers.
+
+`FOUNDER_EMAILS` is a comma-separated list of founder addresses that can open the review queue at `/founders`. Leave it unset to keep that page hidden.
+
 ### One-time Sentry setup
 
 1. Create a Sentry organization and a project. Choose the Next.js platform. The Developer (free) plan is enough.

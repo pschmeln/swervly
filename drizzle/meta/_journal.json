@@ -15,6 +15,13 @@
       "when": 1794864518891,
       "tag": "0001_profile_school",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795000000000,
+      "tag": "0002_nov17_features",
+      "breakpoints": true
     }
   ]
 }

@@ -1,57 +1,78 @@
 import { describe, expect, it } from "vitest";
-import { INTEREST_ITEMS } from "@/content/interest-items";
-import { scoreRiasec, toProfileVector, VECTOR_VERSION } from "@/features/profile/scoring";
+import { CONTENT_VERSION, INSTRUMENT, QUIZ_ITEMS, TRAITS } from "@/content/mini-ipip";
+import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "@/features/profile/scoring";
+import { readTraits } from "@/features/profile/traits";
 
-function answersFor(valueAt: (index: number) => number): Record<string, number> {
-  return Object.fromEntries(
-    INTEREST_ITEMS.map((item, index) => [item.id, valueAt(index)]),
-  );
+function answers(value: number): Record<string, number> {
+  return Object.fromEntries(QUIZ_ITEMS.map((item) => [item.id, value]));
 }
 
-describe("toProfileVector", () => {
-  it("maps all-3 answers to a zero vector", () => {
-    expect(toProfileVector(answersFor(() => 3))).toEqual(
-      Array(INTEREST_ITEMS.length).fill(0),
-    );
-  });
-
-  it("maps all-5 answers to all 1", () => {
-    expect(toProfileVector(answersFor(() => 5))).toEqual(
-      Array(INTEREST_ITEMS.length).fill(1),
-    );
-  });
-
-  it("follows INTEREST_ITEMS order", () => {
-    const byIndex = answersFor((index) => (index % 5) + 1);
-    const reversedInsertion = Object.fromEntries(
-      [...INTEREST_ITEMS].reverse().map((item) => [item.id, byIndex[item.id]]),
-    );
-    const expected = INTEREST_ITEMS.map((_, index) => (((index % 5) + 1) - 3) / 2);
-    expect(toProfileVector(reversedInsertion)).toEqual(expected);
+describe("Mini-IPIP content", () => {
+  it("keeps 20 versioned items, original wording, and keying", () => {
+    expect(CONTENT_VERSION).toBe(1);
+    expect(INSTRUMENT).toBe("mini_ipip_20");
+    expect(QUIZ_ITEMS).toHaveLength(20);
+    for (const trait of TRAITS) {
+      expect(QUIZ_ITEMS.filter((item) => item.trait === trait)).toHaveLength(4);
+    }
+    const reverse = new Set(["q06", "q07", "q08", "q09", "q10", "q15", "q16", "q17", "q18", "q19", "q20"]);
+    for (const item of QUIZ_ITEMS) {
+      expect(item.original.length).toBeGreaterThan(0);
+      expect(item.text.length).toBeGreaterThan(0);
+      expect(item.keyed).toBe(reverse.has(item.id) ? "reverse" : "forward");
+    }
+    expect(QUIZ_ITEMS[0]?.original).toBe("Am the life of the party.");
+    expect(QUIZ_ITEMS[5]?.original).toBe("Don't talk a lot.");
   });
 });
 
-describe("scoreRiasec", () => {
-  it("returns each scale mean rounded to two decimals", () => {
-    const answers = Object.fromEntries(
-      INTEREST_ITEMS.map((item) => [item.id, item.scale === "R" ? 1 : 3]),
-    );
-    const realistic = INTEREST_ITEMS.filter((item) => item.scale === "R");
-    answers[realistic[0].id] = 2;
-
-    expect(scoreRiasec(answers)).toEqual({
-      R: 1.2,
-      I: 3,
-      A: 3,
-      S: 3,
-      E: 3,
-      C: 3,
+describe("scoreMiniIpip", () => {
+  it("scores a neutral quiz at the midpoint", () => {
+    expect(scoreMiniIpip(answers(3))).toEqual({
+      extraversion: 12,
+      agreeableness: 12,
+      conscientiousness: 12,
+      neuroticism: 12,
+      openness: 12,
     });
   });
+
+  it("reverse-keys items before summing", () => {
+    const highExtraversion = answers(3);
+    highExtraversion.q01 = 5;
+    highExtraversion.q06 = 1;
+    highExtraversion.q11 = 5;
+    highExtraversion.q16 = 1;
+    expect(scoreMiniIpip(highExtraversion).extraversion).toBe(20);
+  });
 });
 
-describe("VECTOR_VERSION", () => {
-  it("is 1", () => {
-    expect(VECTOR_VERSION).toBe(1);
+describe("toProfileVector", () => {
+  it("stores the 20 raw answers in content order", () => {
+    const raw = answers(3);
+    raw.q01 = 5;
+    raw.q20 = 1;
+    const vector = toProfileVector(raw);
+    expect(vector).toHaveLength(20);
+    expect(vector[0]).toBe(5);
+    expect(vector[19]).toBe(1);
+    expect(VECTOR_VERSION).toBe(2);
+  });
+});
+
+describe("readTraits", () => {
+  it("uses plain language instead of a trait score", () => {
+    const readings = readTraits({
+      extraversion: 8,
+      agreeableness: 16,
+      conscientiousness: 12,
+      neuroticism: 16,
+      openness: 8,
+    });
+    const text = readings.map((reading) => `${reading.headline} ${reading.coopLine}`).join(" ");
+    expect(text).toContain("You recharge alone");
+    expect(text).toContain("You look out for the people around you");
+    expect(text).not.toContain("Extraversion:");
+    expect(text).not.toMatch(/\b8\/20\b/);
   });
 });

@@ -308,7 +308,19 @@ function insert(table: Table) {
       return {
         ...executable(() => write(false)),
         onConflictDoNothing() {
-          return executable(() => write(true));
+          const run = () => {
+            const before = tableRows(tableName).length;
+            write(true);
+            if (tableRows(tableName).length === before) return [];
+            const row = tableRows(tableName).at(-1);
+            return row ? [{ id: row.id }] : [];
+          };
+          return {
+            ...executable(run),
+            returning() {
+              return executable(run);
+            },
+          };
         },
       };
     },
