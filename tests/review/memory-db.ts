@@ -359,3 +359,7 @@ export function memorySnapshot(): { rotations: MemoryRow[]; reviews: MemoryRow[]
     reviews: structuredClone(tables.reviews),
   };
 }
+
+export function memoryUsers(): MemoryRow[] {
+  return structuredClone(tables.users);
+}

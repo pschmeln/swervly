@@ -1,4 +1,6 @@
 import type { Trait } from "@/content/mini-ipip";
+import { careerRoleLabel, type ExtraCareerRole } from "@/features/direction/career-roles";
+import { majorFamily, usesEngineeringDirection, type MajorFamily } from "@/features/majors/catalog";
 import type { TraitScores } from "@/features/profile/scoring";
 import { traitBand } from "@/features/profile/traits";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
@@ -10,6 +12,12 @@ export const DIRECTION_RULES_LABEL =
 /** Shown when at least one role has enough independent student evidence. */
 export const DIRECTION_EVIDENCE_LABEL =
   "Worth exploring — some roles below use student reviews; others are still early hypotheses.";
+
+export const DIRECTION_MAJOR_GOAL_LABEL =
+  "Worth exploring — early hypotheses from your major and stated goal. Not a career diagnosis, and not a fit score.";
+
+export const DIRECTION_INSUFFICIENT_LABEL =
+  "Not enough information for a role suggestion. Quiz scores are not a career-fit score.";
 
 export const SIMILAR_MAX_DISTANCE = 6;
 
@@ -28,7 +36,7 @@ export type DirectionContext = {
 };
 
 export type DirectionSuggestion = {
-  roleType: RoleType;
+  roleType: RoleType | ExtraCareerRole;
   roleLabel: string;
   reason: string;
   source: "rules" | "similar_students";
@@ -242,7 +250,97 @@ export function traitDistance(left: TraitScores, right: TraitScores): number {
   return Math.sqrt(sum);
 }
 
+const FAMILY_SUGGESTIONS: Partial<
+  Record<MajorFamily, { role: RoleType | ExtraCareerRole; reason: string }[]>
+> = {
+  business: [
+    { role: "business_operations", reason: "Your major is in business, so operations is a place to explore. This is not a fit score." },
+    { role: "marketing", reason: "Marketing is worth exploring from a business major. This is not a fit score." },
+    { role: "finance", reason: "Finance is worth exploring from a business major. This is not a fit score." },
+  ],
+  economics: [
+    { role: "finance", reason: "Your major lines up with finance work worth exploring. This is not a fit score." },
+    { role: "policy_research", reason: "Policy work is worth exploring from economics. This is not a fit score." },
+    { role: "business_operations", reason: "Operations is a related path worth exploring. This is not a fit score." },
+  ],
+  healthcare: [
+    { role: "healthcare_clinical", reason: "Your major is in healthcare, so clinical work is a place to explore. This is not a fit score." },
+    { role: "healthcare_admin", reason: "Healthcare administration is worth exploring from your major. This is not a fit score." },
+  ],
+  natural_science: [
+    { role: "laboratory", reason: "Your major is in the sciences, so laboratory work is a place to explore. This is not a fit score." },
+    { role: "research", reason: "Research is worth exploring from a science major. This is not a fit score." },
+  ],
+  social_science: [
+    { role: "policy_research", reason: "Policy and research-style work is worth exploring from your major. This is not a fit score." },
+    { role: "counseling_support", reason: "Counseling and support work is worth exploring from your major. This is not a fit score." },
+  ],
+  education: [
+    { role: "teaching", reason: "Your major is in education, so teaching is a place to explore. This is not a fit score." },
+    { role: "counseling_support", reason: "Student support work is worth exploring from an education major. This is not a fit score." },
+  ],
+  arts_humanities: [
+    { role: "writing_media", reason: "Writing and media work is worth exploring from your major. This is not a fit score." },
+    { role: "teaching", reason: "Teaching is a related path worth exploring. This is not a fit score." },
+  ],
+  communication: [
+    { role: "writing_media", reason: "Your major lines up with writing and media work worth exploring. This is not a fit score." },
+    { role: "marketing", reason: "Marketing is a related path worth exploring. This is not a fit score." },
+  ],
+  math: [
+    { role: "data_analytics", reason: "Your major lines up with data work worth exploring. This is not a fit score." },
+    { role: "research", reason: "Research is worth exploring from a math major. This is not a fit score." },
+  ],
+  interdisciplinary: [
+    { role: "policy_research", reason: "Research-style work is one place to explore from an interdisciplinary major. This is not a fit score." },
+    { role: "writing_media", reason: "Writing is another place to explore. This is not a fit score." },
+  ],
+};
+
+function asSuggestion(role: RoleType | ExtraCareerRole, reason: string): DirectionSuggestion {
+  return {
+    roleType: role,
+    roleLabel: careerRoleLabel(role),
+    reason: withRulesLabel(reason),
+    source: "rules",
+    evidenceLabel: "Early hypothesis",
+  };
+}
+
+function nonEngineeringSuggestions(context: DirectionContext): DirectionSuggestion[] {
+  const family = majorFamily(context.major);
+  const rows = FAMILY_SUGGESTIONS[family] ?? [];
+  const chosen = rows.slice(0, 3).map((row) => asSuggestion(row.role, row.reason));
+  if (
+    context.goal === "grad_school" &&
+    family !== "unknown" &&
+    !chosen.some((item) => item.roleType === "research")
+  ) {
+    chosen.unshift(
+      asSuggestion(
+        "research",
+        "You said graduate school is a goal, so research is worth exploring. This is not a fit score.",
+      ),
+    );
+  }
+  if (chosen.length === 0) {
+    return [
+      {
+        roleType: "insufficient",
+        roleLabel: careerRoleLabel("insufficient"),
+        reason: withRulesLabel(
+          "There isn't enough information to suggest a role yet. Quiz scores are not a career-fit score.",
+        ),
+        source: "rules",
+        evidenceLabel: "Not enough information",
+      },
+    ];
+  }
+  return chosen.slice(0, 3);
+}
+
 export function suggestionsFromRules(context: DirectionContext): DirectionSuggestion[] {
+  if (!usesEngineeringDirection(context.major)) return nonEngineeringSuggestions(context);
   const scored = new Map<RoleType, { points: number; reason: string }>();
   for (const rule of RULES) {
     if (!rule.when(context)) continue;
@@ -348,8 +446,17 @@ export function buildDirection(
   context: DirectionContext,
   reviews: readonly SimilarReview[],
 ): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
-  const fromStudents = suggestionsFromSimilar(context.traits, reviews);
   const fromRules = suggestionsFromRules(context);
+  if (!usesEngineeringDirection(context.major)) {
+    const concrete = fromRules.some((item) => item.roleType !== "insufficient");
+    return {
+      label: concrete ? DIRECTION_MAJOR_GOAL_LABEL : DIRECTION_INSUFFICIENT_LABEL,
+      basis: "rules",
+      suggestions: fromRules,
+    };
+  }
+
+  const fromStudents = suggestionsFromSimilar(context.traits, reviews);
 
   if (fromStudents.length === 0) {
     return { label: DIRECTION_RULES_LABEL, basis: "rules", suggestions: fromRules };

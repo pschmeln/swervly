@@ -2,11 +2,13 @@ import { desc, eq } from "drizzle-orm";
 import { INSTRUMENT, TRAITS, type Trait } from "@/content/mini-ipip";
 import { db } from "@/db";
 import { assessments, profiles, reviews, rotations, users, type User } from "@/db/schema";
+import { withoutDismissedRoles } from "@/features/direction/career-roles";
 import {
   buildDirection,
   type DirectionSuggestion,
   type SimilarReview,
 } from "@/features/direction/rules";
+import { academicExploration, academicSource, type AcademicExploration } from "@/features/majors/selection";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { readTraits, type TraitReading } from "@/features/profile/traits";
 import type { TraitScores } from "@/features/profile/scoring";
@@ -17,6 +19,7 @@ export type DirectionPayload = {
   label: string;
   basis: "rules" | "similar_students" | "mixed";
   suggestions: DirectionSuggestion[];
+  academic: AcademicExploration;
 };
 
 function parseScores(value: unknown): TraitScores | null {
@@ -97,15 +100,19 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
 
   const goalValue = profileRows[0]?.goal;
   const goal = goalValue === "grad_school" || goalValue === "undecided" ? goalValue : "industry";
-  const direction = buildDirection(
-    { traits, major: user.major ?? "Other", goal },
-    similar,
-  );
+  const majorForRules =
+    user.majorSource === "undecided" || user.majorSource === "custom" ? "" : (user.major ?? "");
+  const direction = buildDirection({ traits, major: majorForRules, goal }, similar);
 
   return {
     readings: readTraits(traits),
     label: direction.label,
     basis: direction.basis,
-    suggestions: direction.suggestions,
+    suggestions: withoutDismissedRoles(direction.suggestions, user.dismissedCareerRoles),
+    academic: academicExploration({
+      source: academicSource(user),
+      exploringMajors: user.exploringMajors,
+      goal,
+    }),
   };
 }

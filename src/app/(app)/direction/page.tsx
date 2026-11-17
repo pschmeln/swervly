@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Button, Card, PageShell } from "@/components/ui";
 import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
+import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import { loadDirection } from "@/features/direction/server";
 import { captureEvent } from "@/lib/analytics";
 import { requireOnboardedUser } from "@/lib/auth";
@@ -30,6 +32,30 @@ export default async function DirectionPage() {
     <PageShell title="Direction">
       <p className="text-neutral-700">{direction.label}</p>
       <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
+      {direction.academic.visible ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Suggested majors</h2>
+          <p className="mt-1 text-sm text-neutral-600">{direction.academic.note}</p>
+          {direction.academic.suggestions.length > 0 ? (
+            <ul className="mt-4 grid gap-4">
+              {direction.academic.suggestions.map((suggestion) => (
+                <li key={suggestion.name}>
+                  <p className="text-sm text-neutral-600">{suggestion.category}</p>
+                  <p className="font-medium text-neutral-900">{suggestion.name}</p>
+                  <p className="text-neutral-700">{suggestion.reason}</p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Card>
+      ) : (
+        <p className="text-sm text-neutral-600">
+          {direction.academic.note}{" "}
+          <Link className="font-medium underline" href={ROUTES.profile}>
+            Edit your profile
+          </Link>
+        </p>
+      )}
       <Card>
         <h2 className="text-lg font-semibold">How you work</h2>
         <p className="mt-1 text-sm text-neutral-600">
@@ -45,7 +71,15 @@ export default async function DirectionPage() {
           ))}
         </ul>
       </Card>
+      <h2 className="text-lg font-semibold">Career direction</h2>
       <div className="grid gap-4">
+        {direction.suggestions.length === 0 ? (
+          <Card>
+            <p className="text-neutral-700">
+              You dismissed the current suggestions. You can change your major on your profile. Nothing here is a fit score.
+            </p>
+          </Card>
+        ) : null}
         {direction.suggestions.map((suggestion) => (
           <Card key={suggestion.roleType}>
             <h2 className="text-lg font-semibold">{suggestion.roleLabel}</h2>
@@ -53,6 +87,7 @@ export default async function DirectionPage() {
               <p className="mt-1 text-sm text-neutral-600">{suggestion.evidenceLabel}</p>
             ) : null}
             <p className="mt-1 text-neutral-700">{suggestion.reason}</p>
+            {suggestion.roleType !== "insufficient" ? <DismissSuggestion roleType={suggestion.roleType} /> : null}
           </Card>
         ))}
       </div>
