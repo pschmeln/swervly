@@ -4,7 +4,7 @@ import { onboardingResumeStep } from "@/features/profile/server";
 const consentedAt = new Date("2026-01-15T15:00:00.000Z");
 
 describe("onboardingResumeStep", () => {
-  it("resumes at step 3 when a profile exists and all consents are set", () => {
+  it("resumes at step 3 when a profile exists and required consents are set", () => {
     expect(onboardingResumeStep(true, consentedAt, consentedAt)).toBe(3);
   });
 
@@ -14,10 +14,6 @@ describe("onboardingResumeStep", () => {
 
   it("starts at step 1 when a profile exists but data-use consent is missing", () => {
     expect(onboardingResumeStep(true, consentedAt, null)).toBe(1);
-  });
-
-  it("starts at step 1 when share-reviews consent is missing", () => {
-    expect(onboardingResumeStep(true, consentedAt, consentedAt, true, false)).toBe(1);
   });
 
   it("starts at step 1 when a profile exists and both consents are missing", () => {

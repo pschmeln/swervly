@@ -103,14 +103,13 @@ export function onboardingResumeStep(
   consentPrivacyAt: Date | null,
   consentDataUseAt: Date | null,
   hasSchool = true,
-  hasShareReviewsConsent = true,
 ): 1 | 3 {
+  // Share-reviews consent is optional and must not force users back to step 1.
   if (
     hasProfile &&
     hasSchool &&
     consentPrivacyAt != null &&
-    consentDataUseAt != null &&
-    hasShareReviewsConsent
+    consentDataUseAt != null
   ) {
     return 3;
   }

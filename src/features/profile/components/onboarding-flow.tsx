@@ -35,8 +35,6 @@ const FIELD_COPY: Record<string, string> = {
   consentPrivacy: "Confirm that you have read the Privacy Policy.",
   consentDataUse:
     "Confirm that your answers and reviews can be stored as described.",
-  consentShareReviews:
-    "Confirm that anonymous company pages and Direction may use your reviews.",
   school: "Enter your school (2–120 characters).",
   major: "Select your major.",
   year: "Select your year.",
@@ -101,11 +99,11 @@ function profilePayload(state: OnboardingDefaults): unknown {
   };
 }
 
-function stepOneErrors(state: OnboardingDefaults): Record<string, string> {
+/** Step-1 validation. Share-reviews consent is optional and never blocks progress. */
+export function stepOneErrors(state: OnboardingDefaults): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!state.consentPrivacy) errors.consentPrivacy = FIELD_COPY.consentPrivacy;
   if (!state.consentDataUse) errors.consentDataUse = FIELD_COPY.consentDataUse;
-  if (!state.consentShareReviews) errors.consentShareReviews = FIELD_COPY.consentShareReviews;
   const school = state.school.trim();
   if (school.length < 2 || school.length > 120) errors.school = FIELD_COPY.school;
   if (!MAJOR_OPTIONS.some((option) => option.value === state.major)) errors.major = FIELD_COPY.major;
@@ -355,11 +353,7 @@ export function OnboardingFlow({
                 checked={form.consentShareReviews}
                 onChange={(event) => update("consentShareReviews", event.target.checked)}
                 label={SHARE_REVIEWS_CONSENT_LABEL}
-                aria-invalid={fieldErrors.consentShareReviews ? true : undefined}
               />
-              {fieldErrors.consentShareReviews ? (
-                <ErrorNote>{fieldErrors.consentShareReviews}</ErrorNote>
-              ) : null}
             </div>
             <Field
               label="School"

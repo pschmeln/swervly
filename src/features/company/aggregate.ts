@@ -31,6 +31,7 @@ export type PublicMajorView = {
   contributorCount: number;
   headline: string;
   maybeLine: string;
+  basisLine: string;
   averages: {
     enjoyment: number;
     learning: number;
@@ -66,6 +67,7 @@ export function aggregateForMajor(
     contributorCount: contributors.size,
     headline: "",
     maybeLine: "",
+    basisLine: "",
     averages: null,
     topSkills: [],
     payRange: null,
@@ -76,7 +78,12 @@ export function aggregateForMajor(
   const yes = group.filter((review) => review.wouldReturn === "yes").length;
   const maybe = group.filter((review) => review.wouldReturn === "maybe").length;
   const no = group.filter((review) => review.wouldReturn === "no").length;
-  const summary = wouldGoBackSummary({ yes, maybe, no, major });
+  const summary = wouldGoBackSummary({
+    yes,
+    maybe,
+    no,
+    contributorCount: contributors.size,
+  });
 
   const counts = new Map<string, number>();
   for (const review of group) {
@@ -114,6 +121,7 @@ export function aggregateForMajor(
     contributorCount: contributors.size,
     headline: summary.headline,
     maybeLine: summary.maybeLine,
+    basisLine: summary.basisLine,
     averages: {
       enjoyment: mean(group.map((review) => review.enjoyment)),
       learning: mean(group.map((review) => review.learning)),

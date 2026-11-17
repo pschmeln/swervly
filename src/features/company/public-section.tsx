@@ -35,7 +35,7 @@ export function PublicMajorSection({
       <p className="mt-2 text-base text-neutral-900">{view.headline}</p>
       <p className="text-neutral-700">{view.maybeLine}</p>
       <p className="mt-1 text-sm text-neutral-600">
-        {view.contributorCount} students · {view.reviewCount} reviews from this major. No names.
+        {view.basisLine} No names.
       </p>
       {view.averages ? (
         <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">

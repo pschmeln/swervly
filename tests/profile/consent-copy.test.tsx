@@ -4,14 +4,18 @@ import {
   DATA_USE_CONSENT_LABEL,
   OnboardingFlow,
   SHARE_REVIEWS_CONSENT_LABEL,
+  stepOneErrors,
+  type OnboardingDefaults,
 } from "@/features/profile/components/onboarding-flow";
 import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
+import { ProfileInput } from "@/features/profile/schemas";
+import { MAJORS } from "@/lib/constants";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined }),
 }));
 
-const blankDefaults = {
+const blankDefaults: OnboardingDefaults = {
   consentPrivacy: false,
   consentDataUse: false,
   consentShareReviews: false,
@@ -25,10 +29,25 @@ const blankDefaults = {
   constraintsNotes: "",
 };
 
+const readyWithoutShare: OnboardingDefaults = {
+  consentPrivacy: true,
+  consentDataUse: true,
+  consentShareReviews: false,
+  school: "University of Cincinnati",
+  major: MAJORS[0],
+  year: "3",
+  coopTrack: "",
+  goal: "industry",
+  goalNotes: "",
+  locationConstraint: "anywhere",
+  constraintsNotes: "",
+};
+
 describe("data-use consent copy", () => {
-  it("separates storage consent from versioned public sharing consent", () => {
+  it("separates required storage consent from optional public sharing consent", () => {
     expect(DATA_USE_CONSENT_LABEL).toContain("stored");
     expect(DATA_USE_CONSENT_LABEL).not.toContain("company pages");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toMatch(/^Optional:/);
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("anonymous company pages");
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("3 different students");
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Settings");
@@ -45,5 +64,29 @@ describe("data-use consent copy", () => {
     expect(quiz).toContain("About you");
     expect(quiz).toContain(QUIZ_EXPLORATORY_DISCLAIMER);
     expect(quiz).not.toContain("O*NET");
+  });
+});
+
+describe("optional share-reviews consent", () => {
+  it("lets step one succeed when sharing is declined", () => {
+    expect(stepOneErrors(readyWithoutShare)).toEqual({});
+    expect(stepOneErrors({ ...readyWithoutShare, consentShareReviews: true })).toEqual({});
+    expect(stepOneErrors({ ...readyWithoutShare, consentPrivacy: false }).consentPrivacy).toBeTruthy();
+    expect(stepOneErrors({ ...readyWithoutShare, consentDataUse: false }).consentDataUse).toBeTruthy();
+  });
+
+  it("accepts a profile save payload without granting share-reviews consent", () => {
+    const parsed = ProfileInput.safeParse({
+      school: readyWithoutShare.school,
+      major: readyWithoutShare.major,
+      year: Number(readyWithoutShare.year),
+      goal: readyWithoutShare.goal,
+      locationConstraint: readyWithoutShare.locationConstraint,
+      consentPrivacy: true,
+      consentDataUse: true,
+      consentShareReviews: false,
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.consentShareReviews).toBe(false);
   });
 });

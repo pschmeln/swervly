@@ -45,7 +45,6 @@ export default async function OnboardingPage({
           user.consentPrivacyAt,
           user.consentDataUseAt,
           Boolean(profile?.school?.trim()),
-          hasShareReviewsConsent(user),
         )}
         defaults={{
           consentPrivacy: user.consentPrivacyAt != null,

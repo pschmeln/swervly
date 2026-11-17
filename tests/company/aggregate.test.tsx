@@ -53,15 +53,18 @@ describe("aggregateForMajor", () => {
     );
     expect(threeStudents.visible).toBe(true);
     expect(threeStudents.contributorCount).toBe(3);
-    expect(threeStudents.headline).toBe("2 of 3 Electrical Engineering students would go back");
-    expect(threeStudents.maybeLine).toBe("1 said maybe");
+    expect(threeStudents.headline).toBe(
+      '2 of 3 co-op experiences were rated "Would go back".',
+    );
+    expect(threeStudents.maybeLine).toBe("1 said maybe.");
+    expect(threeStudents.basisLine).toBe("Based on 3 reviews from 3 students.");
     expect(threeStudents.payRange).toBeNull();
     expect(threeStudents.topSkills).toEqual(["CAD"]);
     expect(threeStudents.sharedNotes).toEqual(["Bring boots."]);
     expect(JSON.stringify(threeStudents)).not.toContain("@");
   });
 
-  it("requires 3 distinct pay contributors", () => {
+  it("counts experiences for would-go-back and students separately", () => {
     const shown = aggregateForMajor(
       [
         review({ userId: "a", payHourly: 20.2, wouldReturn: "maybe" }),
@@ -74,8 +77,11 @@ describe("aggregateForMajor", () => {
     );
     expect(shown.visible).toBe(true);
     expect(shown.payRange).toEqual({ low: 20, high: 40 });
-    expect(shown.headline).toBe("2 of 4 Electrical Engineering students would go back");
-    expect(shown.maybeLine).toBe("1 said maybe");
+    expect(shown.headline).toBe('2 of 4 co-op experiences were rated "Would go back".');
+    expect(shown.maybeLine).toBe("1 said maybe.");
+    expect(shown.basisLine).toBe("Based on 4 reviews from 3 students.");
+    expect(shown.reviewCount).toBe(4);
+    expect(shown.contributorCount).toBe(3);
   });
 
   it("keeps one student with multiple reviews from unlocking pay alone", () => {
@@ -106,9 +112,9 @@ describe("PublicMajorSection", () => {
       SKILLS,
     );
     const html = renderToStaticMarkup(<PublicMajorSection employerName="Test Employer A" view={view} />);
-    expect(html).toContain("1 of 3 Electrical Engineering students would go back");
-    expect(html).toContain("1 said maybe");
-    expect(html).toContain("3 students · 3 reviews");
+    expect(html).toContain("1 of 3 co-op experiences were rated &quot;Would go back&quot;.");
+    expect(html).toContain("1 said maybe.");
+    expect(html).toContain("Based on 3 reviews from 3 students.");
     expect(html).toContain("Bring boots.");
     expect(html).toContain("Anything a student should know");
     expect(html).not.toContain("22.4");

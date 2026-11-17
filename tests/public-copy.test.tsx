@@ -45,6 +45,8 @@ describe("public copy", () => {
     expect(text).toContain("range");
     expect(text.toLowerCase()).toContain("would go back");
     expect(text).toContain("turned on sharing");
+    expect(text).toContain("Sharing is optional");
+    expect(text).toContain("co-op experiences");
     expect(text).toContain("exploratory");
     expect(text).toContain("November 17, 2026");
     expect(text).not.toContain("only you can see your profile and co-op reviews");
