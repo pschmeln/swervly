@@ -129,7 +129,8 @@ function initialFromRotation(rotation: RotationListItem): FormFields {
     rotationNumber: String(rotation.rotationNumber),
     payHourly: rotation.payHourly ?? "",
     roleType: rotation.roleType,
-    wouldReturn: rotation.wouldReturn,
+    // Historical return_offer copies are not genuine would-return answers.
+    wouldReturn: rotation.wouldReturnAnswered ? rotation.wouldReturn : "",
     enjoyment: rotation.review.enjoyment,
     learning: rotation.review.learning,
     mentorship: rotation.review.mentorship,
@@ -584,6 +585,11 @@ export function ReviewForm({
         label="Would you go back to this co-op?"
         htmlFor="wouldReturn"
         error={fieldError(fieldErrors, "wouldReturn")}
+        hint={
+          mode === "edit" && rotation && !rotation.wouldReturnAnswered
+            ? "This answer was never confirmed. Older data mixed up a return offer with wanting to go back — please choose Yes, Maybe, or No."
+            : undefined
+        }
       >
         <Select
           id="wouldReturn"

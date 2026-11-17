@@ -1,4 +1,5 @@
 import { Button, Card, PageShell } from "@/components/ui";
+import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
 import { loadDirection } from "@/features/direction/server";
 import { captureEvent } from "@/lib/analytics";
 import { requireOnboardedUser } from "@/lib/auth";
@@ -14,6 +15,7 @@ export default async function DirectionPage() {
       <PageShell title="Direction">
         <Card>
           <p className="text-neutral-700">Take the quiz first. Direction is a guess from those answers.</p>
+          <p className="mt-2 text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
           <div className="mt-4">
             <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">Take the quiz</Button>
           </div>
@@ -27,8 +29,12 @@ export default async function DirectionPage() {
   return (
     <PageShell title="Direction">
       <p className="text-neutral-700">{direction.label}</p>
+      <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
       <Card>
         <h2 className="text-lg font-semibold">How you work</h2>
+        <p className="mt-1 text-sm text-neutral-600">
+          Exploratory readings from your quiz. Personality similarity is not proof of career fit.
+        </p>
         <ul className="mt-4 grid gap-4">
           {direction.readings.map((reading) => (
             <li key={reading.trait}>
@@ -43,6 +49,9 @@ export default async function DirectionPage() {
         {direction.suggestions.map((suggestion) => (
           <Card key={suggestion.roleType}>
             <h2 className="text-lg font-semibold">{suggestion.roleLabel}</h2>
+            {suggestion.evidenceLabel ? (
+              <p className="mt-1 text-sm text-neutral-600">{suggestion.evidenceLabel}</p>
+            ) : null}
             <p className="mt-1 text-neutral-700">{suggestion.reason}</p>
           </Card>
         ))}

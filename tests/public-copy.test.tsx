@@ -41,9 +41,11 @@ describe("public copy", () => {
     expect(text).toContain("ends in .edu");
     expect(text).toContain("not affiliated with or endorsed by any university");
     expect(text).toContain("does not show names");
-    expect(text).toContain("3 students");
+    expect(text).toContain("3 different students");
     expect(text).toContain("range");
     expect(text.toLowerCase()).toContain("would go back");
+    expect(text).toContain("turned on sharing");
+    expect(text).toContain("exploratory");
     expect(text).toContain("November 17, 2026");
     expect(text).not.toContain("only you can see your profile and co-op reviews");
     expect(text).not.toContain("for UC students");

@@ -3,16 +3,17 @@ import { SKILLS } from "@/content/skills";
 import { db } from "@/db";
 import { employers, reviews, rotations, skills, users, type User } from "@/db/schema";
 import { aggregateForMajor, type PublicMajorView, type ReviewForAggregate } from "@/features/company/aggregate";
+import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { employerUsableByUser } from "@/features/review/server";
 import type { CompanyPreviewInput } from "@/features/review/schemas";
-import type { WouldReturn } from "@/features/review/would-return";
+import { isWouldReturn, type WouldReturn } from "@/features/review/would-return";
 import { ApiError } from "@/lib/api";
 
-type LoadedReview = ReviewForAggregate & { userId: string; rotationId: string };
+type LoadedReview = ReviewForAggregate & { rotationId: string };
 
-function asWouldReturn(value: string): WouldReturn {
-  if (value === "yes" || value === "maybe" || value === "no") return value;
-  return "maybe";
+function answeredWouldReturn(value: string, answered: boolean): WouldReturn | null {
+  if (!answered || !isWouldReturn(value)) return null;
+  return value;
 }
 
 export async function approvedSkillNames(): Promise<string[]> {
@@ -30,6 +31,7 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       userId: rotations.userId,
       major: users.major,
       wouldReturn: rotations.wouldReturn,
+      wouldReturnAnswered: rotations.wouldReturnAnswered,
       enjoyment: reviews.enjoyment,
       learning: reviews.learning,
       mentorship: reviews.mentorship,
@@ -38,26 +40,35 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       payHourly: rotations.payHourly,
       freeText: reviews.freeText,
       shareFreeText: reviews.shareFreeText,
+      shareReviewsConsentAt: users.shareReviewsConsentAt,
+      shareReviewsConsentVersion: users.shareReviewsConsentVersion,
     })
     .from(rotations)
     .innerJoin(reviews, eq(reviews.rotationId, rotations.id))
     .innerJoin(users, eq(users.id, rotations.userId))
     .where(eq(rotations.employerId, employerId));
 
-  return rows.map((row) => ({
-    rotationId: row.rotationId,
-    userId: row.userId,
-    major: row.major ?? "",
-    wouldReturn: asWouldReturn(row.wouldReturn),
-    enjoyment: row.enjoyment,
-    learning: row.learning,
-    mentorship: row.mentorship,
-    clarityGained: row.clarityGained,
-    skillsUsed: row.skillsUsed,
-    payHourly: row.payHourly == null ? null : Number(row.payHourly),
-    freeText: row.freeText,
-    shareFreeText: row.shareFreeText,
-  }));
+  return rows
+    .filter((row) =>
+      hasShareReviewsConsent({
+        shareReviewsConsentAt: row.shareReviewsConsentAt,
+        shareReviewsConsentVersion: row.shareReviewsConsentVersion,
+      }),
+    )
+    .map((row) => ({
+      rotationId: row.rotationId,
+      userId: row.userId,
+      major: row.major ?? "",
+      wouldReturn: answeredWouldReturn(row.wouldReturn, row.wouldReturnAnswered),
+      enjoyment: row.enjoyment,
+      learning: row.learning,
+      mentorship: row.mentorship,
+      clarityGained: row.clarityGained,
+      skillsUsed: row.skillsUsed,
+      payHourly: row.payHourly == null ? null : Number(row.payHourly),
+      freeText: row.freeText,
+      shareFreeText: row.shareFreeText,
+    }));
 }
 
 export async function companyViewForUser(
@@ -94,22 +105,29 @@ export async function previewCompany(
   const kept = loaded.filter(
     (row) => !(input.rotationId && row.rotationId === input.rotationId && row.userId === user.id),
   );
+
+  // Preview includes the current user's draft only when they have share consent,
+  // matching what would appear after save for public aggregation.
+  const authorized = hasShareReviewsConsent(user);
   const note = input.freeText?.trim() ?? "";
-  const draft: ReviewForAggregate = {
-    major: user.major ?? "",
-    wouldReturn: input.wouldReturn,
-    enjoyment: input.enjoyment,
-    learning: input.learning,
-    mentorship: input.mentorship,
-    clarityGained: input.clarityGained,
-    skillsUsed: input.skillsUsed,
-    payHourly: input.payHourly ?? null,
-    freeText: note.length > 0 ? note : null,
-    shareFreeText: note.length > 0 && input.shareFreeText,
-  };
+  const draft: ReviewForAggregate | null = authorized
+    ? {
+        userId: user.id,
+        major: user.major ?? "",
+        wouldReturn: input.wouldReturn,
+        enjoyment: input.enjoyment,
+        learning: input.learning,
+        mentorship: input.mentorship,
+        clarityGained: input.clarityGained,
+        skillsUsed: input.skillsUsed,
+        payHourly: input.payHourly ?? null,
+        freeText: note.length > 0 ? note : null,
+        shareFreeText: note.length > 0 && input.shareFreeText,
+      }
+    : null;
 
   const view = aggregateForMajor(
-    [...kept, draft],
+    draft ? [...kept, draft] : kept,
     user.major ?? "",
     await approvedSkillNames(),
   );

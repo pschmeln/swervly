@@ -3,9 +3,21 @@ import type { TraitScores } from "@/features/profile/scoring";
 import { traitBand } from "@/features/profile/traits";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
 
-export const DIRECTION_LABEL = "Our early guess, gets sharper as more students review";
+/** Shown for rule-based early hypotheses. */
+export const DIRECTION_RULES_LABEL =
+  "Worth exploring — early hypotheses from your quiz and major. Not a career diagnosis.";
+
+/** Shown when at least one role has enough independent student evidence. */
+export const DIRECTION_EVIDENCE_LABEL =
+  "Worth exploring — some roles below use student reviews; others are still early hypotheses.";
+
 export const SIMILAR_MAX_DISTANCE = 6;
-export const SIMILAR_STUDENT_REASON = "Students with profiles like yours rated this highly.";
+
+/** Distinct similar students required for one role before it is evidence-backed. */
+export const MIN_DISTINCT_STUDENTS_PER_ROLE = 3;
+
+export const RULES_REASON_PREFIX = "Early hypothesis:";
+export const EVIDENCE_REASON_PREFIX = "Worth exploring:";
 
 export type Goal = "industry" | "grad_school" | "undecided";
 
@@ -20,9 +32,13 @@ export type DirectionSuggestion = {
   roleLabel: string;
   reason: string;
   source: "rules" | "similar_students";
+  /** Distinct similar students behind an evidence-backed suggestion. */
+  sampleSize?: number;
+  evidenceLabel?: string;
 };
 
 export type SimilarReview = {
+  userId: string;
   traits: TraitScores;
   roleType: RoleType;
   enjoyment: number;
@@ -198,6 +214,10 @@ const FILL_ORDER: readonly RoleType[] = [
   "field_site",
 ];
 
+function withRulesLabel(reason: string): string {
+  return `${RULES_REASON_PREFIX} ${reason}`;
+}
+
 function fillReason(role: RoleType, context: DirectionContext): string {
   const open = traitBand(context.traits.openness);
   if (role === "design") return "Design is a reasonable next guess from how you handle new problems.";
@@ -243,8 +263,9 @@ export function suggestionsFromRules(context: DirectionContext): DirectionSugges
     chosen.push({
       roleType,
       roleLabel: roleLabel(roleType),
-      reason: row.reason,
+      reason: withRulesLabel(row.reason),
       source: "rules",
+      evidenceLabel: "Early hypothesis",
     });
     if (chosen.length === 3) return chosen;
   }
@@ -254,67 +275,114 @@ export function suggestionsFromRules(context: DirectionContext): DirectionSugges
     chosen.push({
       roleType,
       roleLabel: roleLabel(roleType),
-      reason: fillReason(roleType, context),
+      reason: withRulesLabel(fillReason(roleType, context)),
       source: "rules",
+      evidenceLabel: "Early hypothesis",
     });
     if (chosen.length === 3) break;
   }
   return chosen;
 }
 
-export function suggestionsFromSimilar(
+type RoleEvidence = {
+  roleType: RoleType;
+  sampleSize: number;
+  meanEnjoyment: number;
+};
+
+/**
+ * Evidence-backed roles only. A role qualifies when at least
+ * MIN_DISTINCT_STUDENTS_PER_ROLE distinct similar students reviewed that role.
+ * Multiple reviews from one student count once for that role.
+ */
+export function evidenceBackedRoles(
   self: TraitScores,
   reviews: readonly SimilarReview[],
-): DirectionSuggestion[] | null {
+): RoleEvidence[] {
   const close = reviews.filter(
     (review) => traitDistance(self, review.traits) <= SIMILAR_MAX_DISTANCE && review.roleType !== "other",
   );
-  if (close.length < 3) return null;
 
-  const groups = new Map<RoleType, { total: number; count: number }>();
+  const byRole = new Map<RoleType, Map<string, number>>();
   for (const review of close) {
-    const group = groups.get(review.roleType) ?? { total: 0, count: 0 };
-    group.total += review.enjoyment;
-    group.count += 1;
-    groups.set(review.roleType, group);
+    const students = byRole.get(review.roleType) ?? new Map<string, number>();
+    const previous = students.get(review.userId);
+    if (previous == null) {
+      students.set(review.userId, review.enjoyment);
+    } else {
+      students.set(review.userId, (previous + review.enjoyment) / 2);
+    }
+    byRole.set(review.roleType, students);
   }
 
-  const ranked = [...groups.entries()].sort((left, right) => {
-    const leftMean = left[1].total / left[1].count;
-    const rightMean = right[1].total / right[1].count;
-    if (rightMean !== leftMean) return rightMean - leftMean;
-    if (right[1].count !== left[1].count) return right[1].count - left[1].count;
-    return ROLE_TYPE_VALUES.indexOf(left[0]) - ROLE_TYPE_VALUES.indexOf(right[0]);
-  });
+  const qualified: RoleEvidence[] = [];
+  for (const [roleType, students] of byRole) {
+    if (students.size < MIN_DISTINCT_STUDENTS_PER_ROLE) continue;
+    const values = [...students.values()];
+    const meanEnjoyment = values.reduce((sum, value) => sum + value, 0) / values.length;
+    qualified.push({ roleType, sampleSize: students.size, meanEnjoyment });
+  }
 
-  return ranked.slice(0, 3).map(([roleType]) => ({
-    roleType,
-    roleLabel: roleLabel(roleType),
-    reason: SIMILAR_STUDENT_REASON,
+  return qualified.sort((left, right) => {
+    if (right.meanEnjoyment !== left.meanEnjoyment) return right.meanEnjoyment - left.meanEnjoyment;
+    if (right.sampleSize !== left.sampleSize) return right.sampleSize - left.sampleSize;
+    return ROLE_TYPE_VALUES.indexOf(left.roleType) - ROLE_TYPE_VALUES.indexOf(right.roleType);
+  });
+}
+
+export function suggestionsFromSimilar(
+  self: TraitScores,
+  reviews: readonly SimilarReview[],
+): DirectionSuggestion[] {
+  return evidenceBackedRoles(self, reviews).map((row) => ({
+    roleType: row.roleType,
+    roleLabel: roleLabel(row.roleType),
+    reason: `${EVIDENCE_REASON_PREFIX} ${row.sampleSize} students with profiles near yours rated this role highly. Similarity is not proof of career fit.`,
     source: "similar_students" as const,
+    sampleSize: row.sampleSize,
+    evidenceLabel: `Student evidence · n=${row.sampleSize}`,
   }));
 }
 
 export function buildDirection(
   context: DirectionContext,
   reviews: readonly SimilarReview[],
-): { label: string; basis: "rules" | "similar_students"; suggestions: DirectionSuggestion[] } {
+): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
   const fromStudents = suggestionsFromSimilar(context.traits, reviews);
   const fromRules = suggestionsFromRules(context);
-  if (!fromStudents || fromStudents.length === 0) {
-    return { label: DIRECTION_LABEL, basis: "rules", suggestions: fromRules };
+
+  if (fromStudents.length === 0) {
+    return { label: DIRECTION_RULES_LABEL, basis: "rules", suggestions: fromRules };
   }
 
-  const suggestions = [...fromStudents];
+  const suggestions: DirectionSuggestion[] = [];
+  for (const evidence of fromStudents) {
+    if (suggestions.length === 3) break;
+    suggestions.push(evidence);
+  }
   for (const rule of fromRules) {
     if (suggestions.length === 3) break;
     if (suggestions.some((item) => item.roleType === rule.roleType)) continue;
     suggestions.push(rule);
   }
 
+  const hasRules = suggestions.some((item) => item.source === "rules");
+  const hasEvidence = suggestions.some((item) => item.source === "similar_students");
+  const basis = hasRules && hasEvidence ? "mixed" : hasEvidence ? "similar_students" : "rules";
+  const label =
+    basis === "rules"
+      ? DIRECTION_RULES_LABEL
+      : DIRECTION_EVIDENCE_LABEL;
+
   return {
-    label: DIRECTION_LABEL,
-    basis: "similar_students",
+    label,
+    basis,
     suggestions: suggestions.slice(0, 3),
   };
 }
+
+/** @deprecated Prefer DIRECTION_RULES_LABEL / DIRECTION_EVIDENCE_LABEL. */
+export const DIRECTION_LABEL = DIRECTION_RULES_LABEL;
+/** @deprecated Prefer evidence wording with sample size. */
+export const SIMILAR_STUDENT_REASON =
+  "Worth exploring: students with profiles near yours rated this role highly. Similarity is not proof of career fit.";

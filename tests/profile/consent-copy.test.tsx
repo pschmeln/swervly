@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DATA_USE_CONSENT_LABEL,
   OnboardingFlow,
+  SHARE_REVIEWS_CONSENT_LABEL,
 } from "@/features/profile/components/onboarding-flow";
+import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined }),
@@ -12,6 +14,7 @@ vi.mock("next/navigation", () => ({
 const blankDefaults = {
   consentPrivacy: false,
   consentDataUse: false,
+  consentShareReviews: false,
   school: "",
   major: "",
   year: "",
@@ -23,20 +26,24 @@ const blankDefaults = {
 };
 
 describe("data-use consent copy", () => {
-  it("matches public company views for any .edu student", () => {
-    expect(DATA_USE_CONSENT_LABEL).toContain("without my name");
-    expect(DATA_USE_CONSENT_LABEL).toContain("3 or more");
-    expect(DATA_USE_CONSENT_LABEL).toContain("only if I choose to share");
-    expect(DATA_USE_CONSENT_LABEL).not.toContain("UC students");
-    expect(DATA_USE_CONSENT_LABEL).not.toContain("in the future");
+  it("separates storage consent from versioned public sharing consent", () => {
+    expect(DATA_USE_CONSENT_LABEL).toContain("stored");
+    expect(DATA_USE_CONSENT_LABEL).not.toContain("company pages");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("anonymous company pages");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("3 different students");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Settings");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("UC students");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("in the future");
     const basics = renderToStaticMarkup(
       <OnboardingFlow initialStep={1} defaults={blankDefaults} />,
     );
     expect(basics).toContain(DATA_USE_CONSENT_LABEL);
+    expect(basics).toContain(SHARE_REVIEWS_CONSENT_LABEL);
     const quiz = renderToStaticMarkup(
       <OnboardingFlow initialStep={3} defaults={blankDefaults} />,
     );
     expect(quiz).toContain("About you");
+    expect(quiz).toContain(QUIZ_EXPLORATORY_DISCLAIMER);
     expect(quiz).not.toContain("O*NET");
   });
 });

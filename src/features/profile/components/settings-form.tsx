@@ -14,12 +14,14 @@ const CONFIRM = "DELETE";
 export function SettingsForm({
   passwordAlreadySet,
   shareFreeTextDefault,
+  shareReviewsConsent,
   inviteHref,
   inviteCount,
   founder,
 }: {
   passwordAlreadySet: boolean;
   shareFreeTextDefault: boolean;
+  shareReviewsConsent: boolean;
   inviteHref: string;
   inviteCount: number;
   founder: boolean;
@@ -34,6 +36,8 @@ export function SettingsForm({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [shareDefault, setShareDefault] = useState(shareFreeTextDefault);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [shareReviews, setShareReviews] = useState(shareReviewsConsent);
+  const [shareReviewsError, setShareReviewsError] = useState<string | null>(null);
 
   async function download() {
     if (downloadRef.current) return;
@@ -124,9 +128,49 @@ export function SettingsForm({
     }
   }
 
+  async function saveShareReviews(next: boolean) {
+    setShareReviews(next);
+    setShareReviewsError(null);
+    const response = await fetch(ROUTES.preferences, {
+      method: "PUT",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({
+        shareFreeTextDefault: shareDefault,
+        shareReviewsConsent: next,
+      }),
+    });
+    const payload = await response.json().catch(() => null);
+    const parsed = readApiResponse<unknown>(payload);
+    if (!response.ok || !parsed?.ok) {
+      setShareReviews(!next);
+      setShareReviewsError(parsed && !parsed.ok ? parsed.error.message : "Something went wrong.");
+    }
+  }
+
   return (
     <div className="grid gap-4">
       <SetPasswordForm alreadySet={passwordAlreadySet} />
+      <Card>
+        <h2 className="text-lg font-semibold">Anonymous company pages</h2>
+        <p className="mt-1 text-neutral-700">
+          When this is on, your reviews can count toward anonymous company pages and Direction for
+          other signed-in students. Pages stay hidden until at least 3 different students in a major
+          contribute. Turn it off to keep your reviews private.
+        </p>
+        <div className="mt-4">
+          <Checkbox
+            id="shareReviewsConsent"
+            label="Include my co-op reviews in anonymous company pages and Direction"
+            checked={shareReviews}
+            onChange={(event) => void saveShareReviews(event.target.checked)}
+          />
+        </div>
+        {shareReviewsError ? (
+          <div className="mt-3">
+            <ErrorNote>{shareReviewsError}</ErrorNote>
+          </div>
+        ) : null}
+      </Card>
       <Card>
         <h2 className="text-lg font-semibold">Sharing notes</h2>
         <p className="mt-1 text-neutral-700">

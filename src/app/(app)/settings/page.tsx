@@ -5,6 +5,7 @@ import { PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { SettingsForm } from "@/features/profile/components/settings-form";
+import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { requireUser } from "@/lib/auth";
 import { isFounderEmail } from "@/lib/founders";
 
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
       <SettingsForm
         passwordAlreadySet={clerk?.passwordEnabled === true}
         shareFreeTextDefault={user.shareFreeTextDefault}
+        shareReviewsConsent={hasShareReviewsConsent(user)}
         inviteHref={`${proto}://${host}/invite/${user.id}`}
         inviteCount={Number(countRows[0]?.value ?? 0)}
         founder={isFounderEmail(user.email)}

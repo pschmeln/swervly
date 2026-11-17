@@ -19,6 +19,9 @@ export const users = pgTable("users", {
   coopTrack: text("coop_track"),              // optional free label
   consentPrivacyAt: timestamp("consent_privacy_at", { withTimezone: true }),
   consentDataUseAt: timestamp("consent_data_use_at", { withTimezone: true }),
+  // Versioned opt-in for anonymous company aggregates and Direction evidence.
+  shareReviewsConsentAt: timestamp("share_reviews_consent_at", { withTimezone: true }),
+  shareReviewsConsentVersion: integer("share_reviews_consent_version"),
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   source: text("source").notNull().default("early"),   // 'early' | 'launch'
   invitedByUserId: uuid("invited_by_user_id").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
@@ -77,7 +80,9 @@ export const rotations = pgTable("rotations", {
   termYear: integer("term_year").notNull(),
   rotationNumber: integer("rotation_number").notNull(),
   payHourly: numeric("pay_hourly", { precision: 6, scale: 2 }),  // optional
-  wouldReturn: text("would_return").notNull(),        // 'yes' | 'maybe' | 'no'
+  wouldReturn: text("would_return").notNull(),        // 'yes' | 'maybe' | 'no' (value may be historical until answered)
+  // False for rows copied from return_offer or otherwise unconfirmed. Only true after an explicit Yes/Maybe/No save.
+  wouldReturnAnswered: boolean("would_return_answered").notNull().default(false),
   source: text("source").notNull().default("early"),
   createdAt,
   updatedAt,

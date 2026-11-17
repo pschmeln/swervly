@@ -9,6 +9,7 @@ export type RotationListItem = {
   payHourly: string | null;
   roleType: string;
   wouldReturn: string;
+  wouldReturnAnswered: boolean;
   employer: { id: string; name: string };
   review: {
     enjoyment: number;

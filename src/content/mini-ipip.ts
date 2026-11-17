@@ -3,9 +3,17 @@
 // Oswald, Baird, and Lucas (2006), in the usual administration order.
 // `text` is a light Swervly reword. Meaning and keying match `original`.
 // Version the file when items change. Do not migrate old answers.
+//
+// Important: reworded item text is for student clarity. Scores from this
+// questionnaire should not automatically be treated as having the same
+// validation evidence as the original Mini-IPIP instrument. Treat results as
+// exploratory self-reflection, not a clinical or hiring assessment.
 
 export const INSTRUMENT = "mini_ipip_20";
 export const CONTENT_VERSION = 1;
+
+export const QUIZ_EXPLORATORY_DISCLAIMER =
+  "This is a short, lightly reworded personality quiz for exploration. It is not a clinical test, and the scores are not a career diagnosis.";
 
 export const RESPONSE_LABELS = [
   "Very inaccurate",

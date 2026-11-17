@@ -4,6 +4,7 @@ import { PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { OnboardingFlow } from "@/features/profile/components/onboarding-flow";
+import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { suggestSchoolFromEmail } from "@/features/profile/school";
 import { onboardingResumeStep } from "@/features/profile/server";
 import { requireUser } from "@/lib/auth";
@@ -44,10 +45,12 @@ export default async function OnboardingPage({
           user.consentPrivacyAt,
           user.consentDataUseAt,
           Boolean(profile?.school?.trim()),
+          hasShareReviewsConsent(user),
         )}
         defaults={{
           consentPrivacy: user.consentPrivacyAt != null,
           consentDataUse: user.consentDataUseAt != null,
+          consentShareReviews: hasShareReviewsConsent(user),
           school: profile?.school?.trim() || suggestSchoolFromEmail(user.email),
           major: user.major ?? "",
           year: user.year == null ? "" : String(user.year),

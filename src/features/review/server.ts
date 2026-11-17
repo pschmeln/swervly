@@ -31,6 +31,7 @@ export type RotationWithDetails = {
   payHourly: string | null;
   roleType: string;
   wouldReturn: string;
+  wouldReturnAnswered: boolean;
   source: string;
   createdAt: Date;
   updatedAt: Date;
@@ -354,6 +355,7 @@ export async function createRotation(
         rotationNumber: input.rotationNumber,
         payHourly: payHourlyToDb(input.payHourly),
         wouldReturn: input.wouldReturn,
+        wouldReturnAnswered: true,
         source: DATA_SOURCE,
         createdAt: now,
         updatedAt: now,
@@ -413,6 +415,7 @@ export async function updateRotation(
           rotationNumber: input.rotationNumber,
           payHourly: payHourlyToDb(input.payHourly),
           wouldReturn: input.wouldReturn,
+          wouldReturnAnswered: true,
           updatedAt: now,
         })
         .where(and(eq(rotations.id, rotationId), eq(rotations.userId, userId))),

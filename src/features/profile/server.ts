@@ -17,6 +17,7 @@ import {
 } from "@/db/schema";
 import { ApiError } from "@/lib/api";
 import { reportFailure } from "@/lib/sentry";
+import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
 import { type AssessmentInput, type ProfileInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
 import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
@@ -57,6 +58,13 @@ export async function saveProfile(
   input: ProfileInput,
 ): Promise<{ user: User; profile: Profile }> {
   const fields = profileFields(input);
+  const shareConsent =
+    input.consentShareReviews === true
+      ? {
+          shareReviewsConsentAt: sql`coalesce(${users.shareReviewsConsentAt}, now())`,
+          shareReviewsConsentVersion: sql`coalesce(${users.shareReviewsConsentVersion}, ${SHARE_REVIEWS_CONSENT_VERSION})`,
+        }
+      : {};
   const [userRows, profileRows] = await db.batch([
     db
       .update(users)
@@ -66,6 +74,7 @@ export async function saveProfile(
         coopTrack: input.coopTrack ?? null,
         consentPrivacyAt: sql`coalesce(${users.consentPrivacyAt}, now())`,
         consentDataUseAt: sql`coalesce(${users.consentDataUseAt}, now())`,
+        ...shareConsent,
         updatedAt: sql`now()`,
       })
       .where(eq(users.id, userId))
@@ -94,12 +103,14 @@ export function onboardingResumeStep(
   consentPrivacyAt: Date | null,
   consentDataUseAt: Date | null,
   hasSchool = true,
+  hasShareReviewsConsent = true,
 ): 1 | 3 {
   if (
     hasProfile &&
     hasSchool &&
     consentPrivacyAt != null &&
-    consentDataUseAt != null
+    consentDataUseAt != null &&
+    hasShareReviewsConsent
   ) {
     return 3;
   }

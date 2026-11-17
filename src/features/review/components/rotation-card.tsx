@@ -69,8 +69,21 @@ export function RotationCard({ rotation }: { rotation: RotationListItem }) {
             {rotation.roleTitle} · {roleLabel(rotation.roleType)}
           </p>
           <p className="mt-1 text-sm text-neutral-600">
-            Would go back: {rotation.wouldReturn === "yes" ? "Yes" : rotation.wouldReturn === "no" ? "No" : "Maybe"}
+            {rotation.wouldReturnAnswered
+              ? `Would go back: ${rotation.wouldReturn === "yes" ? "Yes" : rotation.wouldReturn === "no" ? "No" : "Maybe"}`
+              : "Would go back: not answered yet"}
           </p>
+          {!rotation.wouldReturnAnswered ? (
+            <p className="mt-1 text-sm text-neutral-700">
+              <Link
+                href={ROUTES.reviewEdit.replace("[id]", rotation.id)}
+                className="underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              >
+                Update your answer
+              </Link>{" "}
+              — older data may have mixed up a return offer with wanting to go back.
+            </p>
+          ) : null}
           <p className="mt-1 text-sm text-neutral-600">
             {termLabel(rotation.termSeason, rotation.termYear)} · Co-op or internship{" "}
             {rotation.rotationNumber}
