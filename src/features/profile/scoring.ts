@@ -1,27 +1,27 @@
-import { INTEREST_ITEMS, type RiasecScale } from "@/content/interest-items";
+import { QUIZ_ITEMS, TRAITS, type Trait } from "@/content/mini-ipip";
 
-export const VECTOR_VERSION = 1;
+export const VECTOR_VERSION = 2;
 
-const SCALES = ["R", "I", "A", "S", "E", "C"] as const satisfies readonly RiasecScale[];
+export type TraitScores = Record<Trait, number>;
 
-function meanToTwoDecimals(values: number[]): number {
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return Number((total / values.length).toFixed(2));
+function keyedValue(answer: number, keyed: "forward" | "reverse"): number {
+  return keyed === "reverse" ? 6 - answer : answer;
 }
 
-export function scoreRiasec(
-  answers: Record<string, number>,
-): Record<RiasecScale, number> {
-  const scored = {} as Record<RiasecScale, number>;
-  for (const scale of SCALES) {
-    const values = INTEREST_ITEMS.filter((item) => item.scale === scale).map(
-      (item) => answers[item.id],
+/** Sum of the four keyed items. Range is 4–20. A neutral 3 on every item is 12. */
+export function scoreMiniIpip(answers: Record<string, number>): TraitScores {
+  const scored = {} as TraitScores;
+  for (const trait of TRAITS) {
+    const total = QUIZ_ITEMS.filter((item) => item.trait === trait).reduce(
+      (sum, item) => sum + keyedValue(answers[item.id] ?? 0, item.keyed),
+      0,
     );
-    scored[scale] = meanToTwoDecimals(values);
+    scored[trait] = total;
   }
   return scored;
 }
 
+/** The 20 item answers, in content order. Raw 1–5, not rescaled. */
 export function toProfileVector(answers: Record<string, number>): number[] {
-  return INTEREST_ITEMS.map((item) => (answers[item.id] - 3) / 2);
+  return QUIZ_ITEMS.map((item) => answers[item.id] ?? 0);
 }

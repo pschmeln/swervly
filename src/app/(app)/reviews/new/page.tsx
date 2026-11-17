@@ -10,7 +10,11 @@ export default async function NewReviewPage() {
 
   return (
     <PageShell title="Log a co-op">
-      <ReviewForm mode="create" usedRotationNumbers={usedRotationNumbers} />
+      <ReviewForm
+        mode="create"
+        usedRotationNumbers={usedRotationNumbers}
+        shareFreeTextDefault={user.shareFreeTextDefault}
+      />
     </PageShell>
   );
 }

@@ -12,6 +12,11 @@ describe("co-op or internship number", () => {
     expect(html).toContain("Co-op or internship number");
     expect(html).toContain("For summer internships, number them in the order you did them.");
     expect(html).toContain("other students without my name");
+    expect(html).toContain("Would you go back to this co-op?");
+    expect(html).toContain("Role type");
+    expect(html).toContain("id=\"shareFreeText\"");
+    expect(html).toMatch(/id="shareFreeText"[^>]*disabled/);
+    expect(html).not.toContain("Return offer");
     expect(html).not.toContain("Rotation number");
     expect(html).not.toContain("other UC students");
   });

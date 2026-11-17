@@ -11,6 +11,7 @@ const publicPaths: RegExp[] = [
   /^\/sign-up(.*)/,
   /^\/not-eligible$/,
   /^\/privacy$/,
+  /^\/invite\/(.*)/,
   /^\/\.well-known\/(.*)/,
 ];
 

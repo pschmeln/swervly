@@ -16,22 +16,22 @@ import {
   Textarea,
   TextInput,
 } from "@/components/ui";
-import { ATTRIBUTION, INSTRUMENT, INTEREST_ITEMS, RESPONSE_LABELS } from "@/content/interest-items";
+import { INSTRUMENT, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
 import { AssessmentInput, ProfileInput } from "@/features/profile/schemas";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
 import { GOAL_OPTIONS, LOCATION_OPTIONS, MAJOR_OPTIONS, YEAR_OPTIONS } from "./options";
 
-const PAGE_SIZE = 6;
-const PAGE_COUNT = Math.ceil(INTEREST_ITEMS.length / PAGE_SIZE);
+const PAGE_SIZE = 5;
+const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
 
 export const DATA_USE_CONSENT_LABEL =
-  "I agree that my answers and co-op reviews are stored for my own profile, and may in the future be used without my name to produce aggregated ratings and recommendations for students. I will be asked again before that starts.";
+  "I agree that my answers and co-op reviews are stored, and that other students can see company pages built from reviews without my name. Pay is shown only as a range once 3 or more students in a group report it. A written note is shown only if I choose to share that note.";
 
 const FIELD_COPY: Record<string, string> = {
   consentPrivacy: "Confirm that you have read the Privacy Policy.",
   consentDataUse:
-    "Confirm that your answers and co-op reviews are stored for your profile as described.",
+    "Confirm that your answers and reviews can be used as described.",
   school: "Enter your school (2–120 characters).",
   major: "Select your major.",
   year: "Select your year.",
@@ -53,41 +53,6 @@ const STEP_ONE_KEYS = new Set([
 
 const textLinkClass =
   "inline-flex min-h-12 items-center font-medium underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
-
-const creditLinkClass =
-  "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
-
-const ONET_TOOLS_LABEL = "O*NET Career Exploration Tools";
-const ONET_TOOLS_URL = "https://www.onetcenter.org/tools.html";
-const CC_LICENSE_LABEL = "CC BY-ND 4.0";
-const CC_LICENSE_URL = "https://creativecommons.org/licenses/by-nd/4.0/";
-
-function CreditLink({ href, children }: { href: string; children: string }) {
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={creditLinkClass}>
-      {children}
-      <span className="sr-only"> (opens in a new tab)</span>
-    </a>
-  );
-}
-
-export function AttributionCredit() {
-  const toolsAt = ATTRIBUTION.indexOf(ONET_TOOLS_LABEL);
-  const licenseAt = ATTRIBUTION.indexOf(CC_LICENSE_LABEL);
-  if (toolsAt < 0 || licenseAt < 0 || toolsAt > licenseAt) {
-    return <>{ATTRIBUTION}</>;
-  }
-
-  return (
-    <>
-      {ATTRIBUTION.slice(0, toolsAt)}
-      <CreditLink href={ONET_TOOLS_URL}>{ONET_TOOLS_LABEL}</CreditLink>
-      {ATTRIBUTION.slice(toolsAt + ONET_TOOLS_LABEL.length, licenseAt)}
-      <CreditLink href={CC_LICENSE_URL}>{CC_LICENSE_LABEL}</CreditLink>
-      {ATTRIBUTION.slice(licenseAt + CC_LICENSE_LABEL.length)}
-    </>
-  );
-}
 
 export type OnboardingDefaults = {
   consentPrivacy: boolean;
@@ -155,7 +120,7 @@ function stepForFields(fields: Record<string, string>): Step | null {
 }
 
 function pageForFields(fields: Record<string, string>): number | null {
-  const index = INTEREST_ITEMS.findIndex((item) => {
+  const index = QUIZ_ITEMS.findIndex((item) => {
     return Boolean(fields[item.id] || fields[`answers.${item.id}`]);
   });
   if (index < 0) return null;
@@ -264,7 +229,7 @@ export function OnboardingFlow({
 
   function onInterestsNext() {
     const start = questionPage * PAGE_SIZE;
-    const ids = INTEREST_ITEMS.slice(start, start + PAGE_SIZE).map((item) => item.id);
+    const ids = QUIZ_ITEMS.slice(start, start + PAGE_SIZE).map((item) => item.id);
     const fields = missingAnswerFields(ids);
     if (Object.keys(fields).length > 0) {
       setFormError(null);
@@ -288,7 +253,7 @@ export function OnboardingFlow({
     event.preventDefault();
     if (pendingRef.current) return;
 
-    const missing = missingAnswerFields(INTEREST_ITEMS.map((item) => item.id));
+    const missing = missingAnswerFields(QUIZ_ITEMS.map((item) => item.id));
     if (Object.keys(missing).length > 0) {
       setFormError(null);
       showFields(missing);
@@ -314,7 +279,7 @@ export function OnboardingFlow({
       parsed.data,
     );
     if (result.ok) {
-      router.push(ROUTES.home);
+      router.push(ROUTES.direction);
       return;
     }
     setFormError(result.error.message);
@@ -323,12 +288,12 @@ export function OnboardingFlow({
     setPending(false);
   }
 
-  const answeredCount = INTEREST_ITEMS.filter((item) => {
+  const answeredCount = QUIZ_ITEMS.filter((item) => {
     const value = answers[item.id];
     return value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
   }).length;
   const pageStart = questionPage * PAGE_SIZE;
-  const pageItems = INTEREST_ITEMS.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageItems = QUIZ_ITEMS.slice(pageStart, pageStart + PAGE_SIZE);
 
   return (
     <div className="grid gap-4">
@@ -504,10 +469,13 @@ export function OnboardingFlow({
 
         {step === 3 ? (
           <form className="grid gap-4" noValidate onSubmit={(event) => void onInterestsSubmit(event)}>
-            <h2 className="text-lg font-semibold">Interests</h2>
+            <h2 className="text-lg font-semibold">About you</h2>
+            <p className="text-sm text-neutral-700">
+              About a minute. There are no right answers. Pick the line that sounds like you now.
+            </p>
             <p className="text-sm text-neutral-700" aria-live="polite">
-              Questions {pageStart + 1}–{pageStart + pageItems.length} of {INTEREST_ITEMS.length}.{" "}
-              {answeredCount} of {INTEREST_ITEMS.length} answered.
+              Questions {pageStart + 1}–{pageStart + pageItems.length} of {QUIZ_ITEMS.length}.{" "}
+              {answeredCount} of {QUIZ_ITEMS.length} answered.
             </p>
             <div className="grid gap-5">
               {pageItems.map((item) => {
@@ -536,9 +504,6 @@ export function OnboardingFlow({
                 );
               })}
             </div>
-            <p className="text-xs leading-relaxed text-neutral-600">
-              <AttributionCredit />
-            </p>
             {fieldErrors.answers ? <ErrorNote>{fieldErrors.answers}</ErrorNote> : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button

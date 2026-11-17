@@ -28,6 +28,7 @@ export default async function EditReviewPage({
         mode="edit"
         rotation={rotation}
         usedRotationNumbers={usedRotationNumbers}
+        shareFreeTextDefault={user.shareFreeTextDefault}
       />
     </PageShell>
   );

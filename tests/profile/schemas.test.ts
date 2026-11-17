@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { INSTRUMENT, INTEREST_ITEMS } from "@/content/interest-items";
+import { INSTRUMENT, QUIZ_ITEMS } from "@/content/mini-ipip";
 import { AssessmentInput, ProfileInput } from "@/features/profile/schemas";
 import { MAJORS } from "@/lib/constants";
 
 function answers(value: number): Record<string, number> {
-  return Object.fromEntries(INTEREST_ITEMS.map((item) => [item.id, value]));
+  return Object.fromEntries(QUIZ_ITEMS.map((item) => [item.id, value]));
 }
 
 function profile(overrides: Record<string, unknown> = {}) {
@@ -23,7 +23,7 @@ function profile(overrides: Record<string, unknown> = {}) {
 describe("AssessmentInput", () => {
   it("rejects a missing item", () => {
     const incomplete = answers(3);
-    delete incomplete[INTEREST_ITEMS[0].id];
+    delete incomplete[QUIZ_ITEMS[0].id];
     const parsed = AssessmentInput.safeParse({
       instrument: INSTRUMENT,
       answers: incomplete,
@@ -40,7 +40,7 @@ describe("AssessmentInput", () => {
   });
 
   it("rejects a value of 0 or 6", () => {
-    const id = INTEREST_ITEMS[0].id;
+    const id = QUIZ_ITEMS[0].id;
     const zero = AssessmentInput.safeParse({
       instrument: INSTRUMENT,
       answers: { ...answers(3), [id]: 0 },

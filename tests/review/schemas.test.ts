@@ -8,13 +8,14 @@ const validBase = {
   termSeason: "summer" as const,
   termYear: 2024,
   rotationNumber: 1,
-  returnOffer: "pending" as const,
+  roleType: "design" as const,
+  wouldReturn: "yes" as const,
   review: {
     enjoyment: 4,
     learning: 5,
     mentorship: 3,
     clarityGained: 4,
-    skillsUsed: ["Programming", "CAD & 3D modeling"] as const,
+    skillsUsed: ["Programming", "CAD"] as const,
     shareFreeText: false,
   },
 };
@@ -49,24 +50,33 @@ describe("RotationInput", () => {
     ).toBe(false);
   });
 
-  it("rejects shareFreeText true with empty freeText", () => {
+  it("saves an empty note with sharing forced off", () => {
+    const blank = RotationInput.safeParse({
+      ...validBase,
+      review: {
+        ...validBase.review,
+        freeText: "   ",
+        shareFreeText: true,
+      },
+    });
+    const missing = RotationInput.safeParse({
+      ...validBase,
+      review: {
+        ...validBase.review,
+        shareFreeText: true,
+      },
+    });
+    expect(blank.success).toBe(true);
+    expect(missing.success).toBe(true);
+    if (blank.success) expect(blank.data.review.shareFreeText).toBe(false);
+    if (missing.success) expect(missing.data.review.shareFreeText).toBe(false);
+  });
+
+  it("rejects a return-offer value", () => {
     expect(
       RotationInput.safeParse({
         ...validBase,
-        review: {
-          ...validBase.review,
-          freeText: "   ",
-          shareFreeText: true,
-        },
-      }).success,
-    ).toBe(false);
-    expect(
-      RotationInput.safeParse({
-        ...validBase,
-        review: {
-          ...validBase.review,
-          shareFreeText: true,
-        },
+        wouldReturn: "pending",
       }).success,
     ).toBe(false);
   });

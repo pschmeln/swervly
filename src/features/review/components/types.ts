@@ -7,7 +7,8 @@ export type RotationListItem = {
   termYear: number;
   rotationNumber: number;
   payHourly: string | null;
-  returnOffer: string;
+  roleType: string;
+  wouldReturn: string;
   employer: { id: string; name: string };
   review: {
     enjoyment: number;

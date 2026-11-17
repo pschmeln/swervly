@@ -31,6 +31,17 @@ export const ROUTES = {
   rotations: "/api/rotations",
   rotation: "/api/rotations/[id]",
   privacy: "/privacy",
+  direction: "/direction",
+  feedback: "/feedback",
+  feedbackApi: "/api/feedback",
+  company: "/companies/[id]",
+  companyPreview: "/api/companies/preview",
+  skills: "/api/skills",
+  founders: "/founders",
+  foundersApi: "/api/founders",
+  password: "/api/account/password",
+  preferences: "/api/account/preferences",
+  invite: "/invite/[userId]",
 } as const;
 
 export const MAJORS = [

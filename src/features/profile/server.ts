@@ -18,7 +18,8 @@ import {
 import { ApiError } from "@/lib/api";
 import { reportFailure } from "@/lib/sentry";
 import { type AssessmentInput, type ProfileInput } from "./schemas";
-import { scoreRiasec, toProfileVector, VECTOR_VERSION } from "./scoring";
+import { captureEvent } from "@/lib/analytics";
+import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
 
 const CLERK_ERROR_CODE = /^[a-z0-9_]{1,64}$/;
 
@@ -108,7 +109,7 @@ export function onboardingResumeStep(
 export async function saveAssessment(
   userId: string,
   input: AssessmentInput,
-): Promise<{ scored: ReturnType<typeof scoreRiasec>; onboarded: boolean }> {
+): Promise<{ scored: ReturnType<typeof scoreMiniIpip>; onboarded: boolean }> {
   const [existing] = await db
     .select({
       userId: profiles.userId,
@@ -124,7 +125,7 @@ export async function saveAssessment(
     throw new ApiError(
       409,
       "profile_required",
-      "Save your profile before the interest questions.",
+      "Save your profile before the quiz.",
     );
   }
 
@@ -132,12 +133,12 @@ export async function saveAssessment(
     throw new ApiError(
       409,
       "consent_required",
-      "Accept both consents before the interest questions.",
+      "Accept both consents before the quiz.",
     );
   }
 
   const answers = numberRecord(input.answers);
-  const scored = scoreRiasec(answers);
+  const scored = scoreMiniIpip(answers);
 
   await db.batch([
     db.insert(assessments).values({
@@ -177,6 +178,10 @@ export async function saveAssessment(
     .where(eq(users.id, userId))
     .limit(1);
   const onboardedAt = saved?.onboardedAt ?? null;
+
+  if (onboardedAt != null) {
+    await captureEvent("quiz_finished", userId);
+  }
 
   return { scored, onboarded: onboardedAt != null };
 }

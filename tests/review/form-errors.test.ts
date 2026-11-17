@@ -22,10 +22,10 @@ describe("apiFormBannerMessage", () => {
     expect(
       apiFormBannerMessage({
         code: "invalid_body",
-        message: "Invalid request body.",
-        fields: { roleTitle: "Role title is required." },
+        message: "Check the fields below and try again.",
+        fields: { roleTitle: "Enter a role title (2–80 characters)." },
       }),
-    ).toBe("Invalid request body.");
+    ).toBe("Check the fields below and try again.");
   });
 
   it("uses a field message when the API message is blank", () => {

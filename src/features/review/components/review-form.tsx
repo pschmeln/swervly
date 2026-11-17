@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Button,
   Checkbox,
@@ -12,7 +12,12 @@ import {
   TextInput,
   Textarea,
 } from "@/components/ui";
-import { SKILLS, type Skill } from "@/content/skills";
+import { SKILLS } from "@/content/skills";
+import { PublicMajorSection } from "@/features/company/public-section";
+import type { PublicMajorView } from "@/features/company/aggregate";
+import { ROLE_TYPE_OPTIONS } from "@/features/review/roles";
+import { WOULD_RETURN_OPTIONS } from "@/features/review/would-return";
+import type { SkillChoice } from "@/features/skills/rank";
 import { ROUTES } from "@/lib/constants";
 import {
   apiFormBannerMessage,
@@ -46,12 +51,11 @@ const ROTATION_NUMBER_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({
   label: String(n),
 }));
 
-const RETURN_OFFER_OPTIONS = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-  { value: "pending", label: "Don't know yet" },
-  { value: "not_applicable", label: "Not applicable" },
-] as const;
+const STARTER_CHOICES: SkillChoice[] = SKILLS.map((name) => ({
+  name,
+  kind: "technical",
+  status: "approved",
+}));
 
 const ENJOYMENT_LABELS = [
   "Not at all",
@@ -94,12 +98,13 @@ type FormFields = {
   termYear: string;
   rotationNumber: string;
   payHourly: string;
-  returnOffer: string;
+  roleType: string;
+  wouldReturn: string;
   enjoyment: number | null;
   learning: number | null;
   mentorship: number | null;
   clarityGained: number | null;
-  skillsUsed: Skill[];
+  skillsUsed: string[];
   freeText: string;
   shareFreeText: boolean;
 };
@@ -123,14 +128,13 @@ function initialFromRotation(rotation: RotationListItem): FormFields {
     termYear: String(rotation.termYear),
     rotationNumber: String(rotation.rotationNumber),
     payHourly: rotation.payHourly ?? "",
-    returnOffer: rotation.returnOffer,
+    roleType: rotation.roleType,
+    wouldReturn: rotation.wouldReturn,
     enjoyment: rotation.review.enjoyment,
     learning: rotation.review.learning,
     mentorship: rotation.review.mentorship,
     clarityGained: rotation.review.clarityGained,
-    skillsUsed: rotation.review.skillsUsed.filter((skill): skill is Skill =>
-      (SKILLS as readonly string[]).includes(skill),
-    ),
+    skillsUsed: rotation.review.skillsUsed,
     freeText: rotation.review.freeText ?? "",
     shareFreeText: rotation.review.shareFreeText,
   };
@@ -146,7 +150,8 @@ function initialForCreate(usedRotationNumbers: number[]): FormFields {
     termYear: String(CURRENT_YEAR),
     rotationNumber: String(lowestUnusedRotationNumber(usedRotationNumbers)),
     payHourly: "",
-    returnOffer: "",
+    roleType: "",
+    wouldReturn: "",
     enjoyment: null,
     learning: null,
     mentorship: null,
@@ -172,10 +177,12 @@ export function ReviewForm({
   mode,
   rotation,
   usedRotationNumbers = [],
+  shareFreeTextDefault = false,
 }: {
   mode: "create" | "edit";
   rotation?: RotationListItem;
   usedRotationNumbers?: number[];
+  shareFreeTextDefault?: boolean;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormFields>(() =>
@@ -186,7 +193,32 @@ export function ReviewForm({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
+  const [skillChoices, setSkillChoices] = useState<SkillChoice[]>(STARTER_CHOICES);
+  const [newSkill, setNewSkill] = useState("");
+  const [newSkillKind, setNewSkillKind] = useState("technical");
+  const [skillMessage, setSkillMessage] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ employerName: string; view: PublicMajorView } | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const saveErrorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!form.employerId) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetch(`${ROUTES.skills}?employerId=${encodeURIComponent(form.employerId)}`, {
+        signal: controller.signal,
+      })
+        .then((response) => response.json())
+        .then((payload: { ok?: boolean; data?: { skills?: SkillChoice[] } }) => {
+          if (payload.ok && payload.data?.skills) setSkillChoices(payload.data.skills);
+        })
+        .catch(() => undefined);
+    }, 250);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [form.employerId]);
 
   function presentSaveFailure(fields: FieldErrors, banner: string | undefined) {
     const message =
@@ -233,7 +265,43 @@ export function ReviewForm({
     });
   }
 
-  function toggleSkill(skill: Skill) {
+  async function addSkill() {
+    const name = newSkill.trim();
+    if (name.length < 2 || saving) return;
+    setSkillMessage(null);
+    try {
+      const response = await fetch(ROUTES.skills, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, kind: newSkillKind }),
+      });
+      const result = await readApiJson<{ name: string; kind: "technical" | "non_technical"; status: "approved" | "pending" }>(response);
+      if (!result.ok) {
+        setSkillMessage(result.error.fields?.name ?? result.error.message);
+        return;
+      }
+      setSkillChoices((current) =>
+        current.some((skill) => skill.name === result.data.name)
+          ? current
+          : [...current, { name: result.data.name, kind: result.data.kind, status: result.data.status }],
+      );
+      setForm((current) =>
+        current.skillsUsed.includes(result.data.name) || current.skillsUsed.length >= 10
+          ? current
+          : { ...current, skillsUsed: [...current.skillsUsed, result.data.name] },
+      );
+      setNewSkill("");
+      setSkillMessage(
+        result.data.status === "pending"
+          ? "Added for you. Other students see it after a founder approves it."
+          : "Added.",
+      );
+    } catch {
+      setSkillMessage("Could not add that skill.");
+    }
+  }
+
+  function toggleSkill(skill: string) {
     setForm((prev) => {
       const exists = prev.skillsUsed.includes(skill);
       if (exists) {
@@ -251,6 +319,51 @@ export function ReviewForm({
       delete next["review.skillsUsed"];
       return next;
     });
+  }
+
+  async function loadPreview() {
+    if (!form.employerId || !form.wouldReturn || !form.roleType) {
+      setPreviewError("Choose a company, a role type, and whether you would go back.");
+      setPreview(null);
+      return;
+    }
+    if (form.enjoyment == null || form.learning == null || form.mentorship == null || form.clarityGained == null) {
+      setPreviewError("Answer the four ratings before previewing.");
+      setPreview(null);
+      return;
+    }
+    setPreviewError(null);
+    const payTrimmed = form.payHourly.trim();
+    const payHourly = payTrimmed === "" ? undefined : Number(payTrimmed);
+    try {
+      const response = await fetch(ROUTES.companyPreview, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          employerId: form.employerId,
+          ...(mode === "edit" && rotation ? { rotationId: rotation.id } : {}),
+          roleType: form.roleType,
+          wouldReturn: form.wouldReturn,
+          ...(payHourly !== undefined && Number.isFinite(payHourly) ? { payHourly } : {}),
+          enjoyment: form.enjoyment,
+          learning: form.learning,
+          mentorship: form.mentorship,
+          clarityGained: form.clarityGained,
+          skillsUsed: form.skillsUsed,
+          freeText: form.freeText,
+          shareFreeText: form.freeText.trim().length > 0 && form.shareFreeText,
+        }),
+      });
+      const result = await readApiJson<{ employerName: string; view: PublicMajorView }>(response);
+      if (!result.ok) {
+        setPreviewError(result.error.message);
+        setPreview(null);
+        return;
+      }
+      setPreview(result.data);
+    } catch {
+      setPreviewError("Could not build the preview.");
+    }
   }
 
   async function onSubmit(event: FormEvent) {
@@ -292,7 +405,8 @@ export function ReviewForm({
       termYear: Number(form.termYear),
       rotationNumber: Number(form.rotationNumber),
       ...(payHourly !== undefined ? { payHourly } : {}),
-      returnOffer: form.returnOffer,
+      roleType: form.roleType,
+      wouldReturn: form.wouldReturn,
       review: {
         enjoyment: form.enjoyment,
         learning: form.learning,
@@ -302,7 +416,7 @@ export function ReviewForm({
         ...(form.freeText.trim() !== ""
           ? { freeText: form.freeText.trim() }
           : {}),
-        shareFreeText: form.shareFreeText,
+        shareFreeText: form.freeText.trim().length > 0 && form.shareFreeText,
       },
     };
 
@@ -451,18 +565,34 @@ export function ReviewForm({
       </Field>
 
       <Field
-        label="Return offer"
-        htmlFor="returnOffer"
-        error={fieldError(fieldErrors, "returnOffer")}
+        label="Role type"
+        htmlFor="roleType"
+        error={fieldError(fieldErrors, "roleType")}
       >
         <Select
-          id="returnOffer"
-          name="returnOffer"
-          value={form.returnOffer}
+          id="roleType"
+          name="roleType"
+          value={form.roleType}
           disabled={saving}
           placeholder="Select one"
-          options={RETURN_OFFER_OPTIONS}
-          onChange={(value) => update("returnOffer", value)}
+          options={ROLE_TYPE_OPTIONS}
+          onChange={(value) => update("roleType", value)}
+        />
+      </Field>
+
+      <Field
+        label="Would you go back to this co-op?"
+        htmlFor="wouldReturn"
+        error={fieldError(fieldErrors, "wouldReturn")}
+      >
+        <Select
+          id="wouldReturn"
+          name="wouldReturn"
+          value={form.wouldReturn}
+          disabled={saving}
+          placeholder="Select one"
+          options={WOULD_RETURN_OPTIONS}
+          onChange={(value) => update("wouldReturn", value)}
         />
       </Field>
 
@@ -527,26 +657,58 @@ export function ReviewForm({
         <p className="text-sm font-medium text-neutral-900">Skills used</p>
         <p className="text-sm text-neutral-600">Pick up to 10.</p>
         <div className="flex flex-wrap gap-2">
-          {SKILLS.map((skill) => {
-            const selected = form.skillsUsed.includes(skill);
+          {skillChoices.map((skill) => {
+            const selected = form.skillsUsed.includes(skill.name);
             return (
               <button
-                key={skill}
+                key={skill.name}
                 type="button"
                 disabled={saving || (!selected && form.skillsUsed.length >= 10)}
                 aria-pressed={selected}
-                className={`min-h-12 rounded-lg border px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`min-h-12 max-w-full rounded-lg border px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                   selected
                     ? "border-neutral-900 bg-neutral-900 text-white"
                     : "border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50"
                 }`}
-                onClick={() => toggleSkill(skill)}
+                onClick={() => toggleSkill(skill.name)}
               >
-                {skill}
+                {skill.name}
+                {skill.status === "pending" ? " (private until approved)" : ""}
               </button>
             );
           })}
         </div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <TextInput
+            id="newSkill"
+            name="newSkill"
+            value={newSkill}
+            disabled={saving}
+            placeholder="Add a skill"
+            maxLength={60}
+            onChange={(event) => setNewSkill(event.target.value)}
+          />
+          <Select
+            id="newSkillKind"
+            value={newSkillKind}
+            options={[
+              { value: "technical", label: "Technical" },
+              { value: "non_technical", label: "Non-technical" },
+            ]}
+            onChange={setNewSkillKind}
+            disabled={saving}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            disabled={saving || newSkill.trim().length < 2}
+            onClick={() => void addSkill()}
+          >
+            Add skill
+          </Button>
+        </div>
+        {skillMessage ? <p className="text-sm text-neutral-600">{skillMessage}</p> : null}
         {fieldError(fieldErrors, "skillsUsed", "review.skillsUsed") ? (
           <ErrorNote>
             {fieldError(fieldErrors, "skillsUsed", "review.skillsUsed")}
@@ -565,7 +727,14 @@ export function ReviewForm({
           value={form.freeText}
           disabled={saving}
           maxLength={2000}
-          onChange={(event) => update("freeText", event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value;
+            const hadText = form.freeText.trim().length > 0;
+            const hasText = value.trim().length > 0;
+            update("freeText", value);
+            if (!hasText) update("shareFreeText", false);
+            else if (!hadText && shareFreeTextDefault) update("shareFreeText", true);
+          }}
         />
       </Field>
 
@@ -574,8 +743,8 @@ export function ReviewForm({
           id="shareFreeText"
           name="shareFreeText"
           label="It's OK to show this text to other students without my name."
-          checked={form.shareFreeText}
-          disabled={saving}
+          checked={form.freeText.trim().length > 0 && form.shareFreeText}
+          disabled={saving || form.freeText.trim().length === 0}
           onChange={(event) => update("shareFreeText", event.target.checked)}
         />
         {fieldError(fieldErrors, "shareFreeText", "review.shareFreeText") ? (
@@ -594,6 +763,12 @@ export function ReviewForm({
           <ErrorNote>{formError}</ErrorNote>
         </div>
       ) : null}
+
+      <Button type="button" variant="secondary" className="w-full sm:w-auto" disabled={saving} onClick={() => void loadPreview()}>
+        Preview what other students will see
+      </Button>
+      {previewError ? <ErrorNote>{previewError}</ErrorNote> : null}
+      {preview ? <PublicMajorSection employerName={preview.employerName} view={preview.view} /> : null}
 
       <Button type="submit" disabled={saving} className="w-full sm:w-auto">
         {saving ? "Saving…" : mode === "edit" ? "Save changes" : "Save co-op"}

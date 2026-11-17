@@ -15,6 +15,13 @@ function domainLabels(email: string): string[] {
   return domain.split(".");
 }
 
+/** The email's domain, such as mail.uc.edu. Empty when the address is not usable. */
+export function schoolDomainFromEmail(email: string): string | null {
+  const labels = domainLabels(email);
+  if (labels.length < 2) return null;
+  return labels.join(".");
+}
+
 export function suggestSchoolFromEmail(email: string): string {
   const labels = domainLabels(email);
   if (labels.length < 2) return "";

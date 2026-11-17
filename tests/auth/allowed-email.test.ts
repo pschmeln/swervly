@@ -23,7 +23,10 @@ describe("isAllowedEmail", () => {
     expect(isAllowedEmail("person@notedu.com")).toBe(false);
     expect(isAllowedEmail("person@school.education")).toBe(false);
     expect(isAllowedEmail("person@edu.com")).toBe(false);
-    expect(isAllowedEmail("person@gmail.com")).toBe(false);
+    expect(isAllowedEmail("x@gmail.com")).toBe(false);
+    expect(isAllowedEmail("x@edu.example.com")).toBe(false);
+    expect(isAllowedEmail("x@osu.edu")).toBe(true);
+    expect(isAllowedEmail("x@mail.uc.edu")).toBe(true);
   });
 
   it("rejects a bare edu label and broken addresses", () => {
