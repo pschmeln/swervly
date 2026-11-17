@@ -69,7 +69,8 @@ export function RotationCard({ rotation }: { rotation: RotationListItem }) {
             {rotation.roleTitle} · {roleLabel(rotation.roleType)}
           </p>
           <p className="mt-1 text-sm text-neutral-600">
-            Would go back: {rotation.wouldReturn === "yes" ? "Yes" : rotation.wouldReturn === "no" ? "No" : "Maybe"}
+            Would go back:{" "}
+            {rotation.wouldReturn === "yes" ? "Yes" : rotation.wouldReturn === "no" ? "No" : "Maybe"}
           </p>
           <p className="mt-1 text-sm text-neutral-600">
             {termLabel(rotation.termSeason, rotation.termYear)} · Co-op or internship{" "}

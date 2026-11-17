@@ -4,7 +4,7 @@ import { onboardingResumeStep } from "@/features/profile/server";
 const consentedAt = new Date("2026-01-15T15:00:00.000Z");
 
 describe("onboardingResumeStep", () => {
-  it("resumes at step 3 when a profile exists and both consents are set", () => {
+  it("resumes at step 3 when a profile exists and required consents are set", () => {
     expect(onboardingResumeStep(true, consentedAt, consentedAt)).toBe(3);
   });
 

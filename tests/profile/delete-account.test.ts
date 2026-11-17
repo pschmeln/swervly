@@ -55,6 +55,8 @@ function userRow(overrides: Partial<User> = {}): User {
     coopTrack: null,
     consentPrivacyAt: null,
     consentDataUseAt: null,
+    shareReviewsConsentAt: null,
+    shareReviewsConsentVersion: null,
     onboardedAt: null,
     school: null,
     invitedByUserId: null,

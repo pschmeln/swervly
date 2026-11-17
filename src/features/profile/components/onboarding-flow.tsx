@@ -16,7 +16,8 @@ import {
   Textarea,
   TextInput,
 } from "@/components/ui";
-import { INSTRUMENT, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
+import { INSTRUMENT, QUIZ_EXPLORATORY_DISCLAIMER, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
+import { SHARE_REVIEWS_CONSENT_LABEL } from "@/features/privacy/share-consent";
 import { AssessmentInput, ProfileInput } from "@/features/profile/schemas";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
@@ -26,12 +27,14 @@ const PAGE_SIZE = 5;
 const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
 
 export const DATA_USE_CONSENT_LABEL =
-  "I agree that my answers and co-op reviews are stored, and that other students can see company pages built from reviews without my name. Pay is shown only as a range once 3 or more students in a group report it. A written note is shown only if I choose to share that note.";
+  "I agree that my answers and co-op reviews are stored so Swervly can show my profile and reviews to me, and so the founders can operate the service.";
+
+export { SHARE_REVIEWS_CONSENT_LABEL };
 
 const FIELD_COPY: Record<string, string> = {
   consentPrivacy: "Confirm that you have read the Privacy Policy.",
   consentDataUse:
-    "Confirm that your answers and reviews can be used as described.",
+    "Confirm that your answers and reviews can be stored as described.",
   school: "Enter your school (2–120 characters).",
   major: "Select your major.",
   year: "Select your year.",
@@ -45,6 +48,7 @@ const FIELD_COPY: Record<string, string> = {
 const STEP_ONE_KEYS = new Set([
   "consentPrivacy",
   "consentDataUse",
+  "consentShareReviews",
   "school",
   "major",
   "year",
@@ -57,6 +61,7 @@ const textLinkClass =
 export type OnboardingDefaults = {
   consentPrivacy: boolean;
   consentDataUse: boolean;
+  consentShareReviews: boolean;
   school: string;
   major: string;
   year: string;
@@ -90,10 +95,12 @@ function profilePayload(state: OnboardingDefaults): unknown {
     constraintsNotes: state.constraintsNotes.trim(),
     consentPrivacy: state.consentPrivacy,
     consentDataUse: state.consentDataUse,
+    consentShareReviews: state.consentShareReviews,
   };
 }
 
-function stepOneErrors(state: OnboardingDefaults): Record<string, string> {
+/** Step-1 validation. Share-reviews consent is optional and never blocks progress. */
+export function stepOneErrors(state: OnboardingDefaults): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!state.consentPrivacy) errors.consentPrivacy = FIELD_COPY.consentPrivacy;
   if (!state.consentDataUse) errors.consentDataUse = FIELD_COPY.consentDataUse;
@@ -339,6 +346,15 @@ export function OnboardingFlow({
               />
               {fieldErrors.consentDataUse ? <ErrorNote>{fieldErrors.consentDataUse}</ErrorNote> : null}
             </div>
+            <div className="grid gap-1.5 [&_label]:items-start [&_input]:mt-0.5">
+              <Checkbox
+                id="consentShareReviews"
+                name="consentShareReviews"
+                checked={form.consentShareReviews}
+                onChange={(event) => update("consentShareReviews", event.target.checked)}
+                label={SHARE_REVIEWS_CONSENT_LABEL}
+              />
+            </div>
             <Field
               label="School"
               htmlFor="school"
@@ -473,6 +489,7 @@ export function OnboardingFlow({
             <p className="text-sm text-neutral-700">
               About a minute. There are no right answers. Pick the line that sounds like you now.
             </p>
+            <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
             <p className="text-sm text-neutral-700" aria-live="polite">
               Questions {pageStart + 1}–{pageStart + pageItems.length} of {QUIZ_ITEMS.length}.{" "}
               {answeredCount} of {QUIZ_ITEMS.length} answered.

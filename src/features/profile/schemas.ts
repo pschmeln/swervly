@@ -15,6 +15,8 @@ export const ProfileInput = z.object({
   constraintsNotes: z.string().max(500).optional(),
   consentPrivacy: z.literal(true),
   consentDataUse: z.literal(true),
+  /** When true, grants versioned share-reviews consent (onboarding). Omitted on profile edits. */
+  consentShareReviews: z.boolean().optional(),
 });
 
 export type ProfileInput = z.infer<typeof ProfileInput>;
@@ -34,6 +36,7 @@ export const PasswordInput = z.object({
 
 export const ShareDefaultInput = z.object({
   shareFreeTextDefault: z.boolean(),
+  shareReviewsConsent: z.boolean().optional(),
 });
 
 export const FeedbackInput = z.object({

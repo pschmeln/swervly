@@ -8,16 +8,26 @@ export const WOULD_RETURN_OPTIONS: readonly { value: WouldReturn; label: string 
   { value: "no", label: "No" },
 ];
 
+export function isWouldReturn(value: string): value is WouldReturn {
+  return value === "yes" || value === "maybe" || value === "no";
+}
+
+/**
+ * V1 headline counts co-op experiences (review records), not distinct students.
+ * Pass contributorCount separately for the basis line.
+ */
 export function wouldGoBackSummary(input: {
   yes: number;
   maybe: number;
   no: number;
-  major: string;
-}): { headline: string; maybeLine: string } {
+  contributorCount: number;
+}): { headline: string; maybeLine: string; basisLine: string } {
   const total = input.yes + input.maybe + input.no;
-  const who = input.major.trim().length > 0 ? `${input.major} students` : "students";
+  const studentWord = input.contributorCount === 1 ? "student" : "students";
+  const reviewWord = total === 1 ? "review" : "reviews";
   return {
-    headline: `${input.yes} of ${total} ${who} would go back`,
-    maybeLine: `${input.maybe} said maybe`,
+    headline: `${input.yes} of ${total} co-op experiences were rated "Would go back".`,
+    maybeLine: `${input.maybe} said maybe.`,
+    basisLine: `Based on ${total} ${reviewWord} from ${input.contributorCount} ${studentWord}.`,
   };
 }

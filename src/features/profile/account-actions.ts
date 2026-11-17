@@ -3,6 +3,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { feedback, users, type User } from "@/db/schema";
+import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
 import { ApiError } from "@/lib/api";
 import type { FeedbackInput, ShareDefaultInput } from "@/features/profile/schemas";
 
@@ -31,9 +32,26 @@ export async function setPassword(user: User, password: string): Promise<void> {
 }
 
 export async function saveShareDefault(userId: string, input: ShareDefaultInput): Promise<void> {
+  const shareReviews =
+    input.shareReviewsConsent === undefined
+      ? {}
+      : input.shareReviewsConsent
+        ? {
+            shareReviewsConsentAt: new Date(),
+            shareReviewsConsentVersion: SHARE_REVIEWS_CONSENT_VERSION,
+          }
+        : {
+            shareReviewsConsentAt: null,
+            shareReviewsConsentVersion: null,
+          };
+
   await db
     .update(users)
-    .set({ shareFreeTextDefault: input.shareFreeTextDefault, updatedAt: new Date() })
+    .set({
+      shareFreeTextDefault: input.shareFreeTextDefault,
+      ...shareReviews,
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, userId));
 }
 

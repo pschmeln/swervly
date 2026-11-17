@@ -46,7 +46,9 @@ export default function PrivacyPage() {
             constraints, and notes. If you join through another student&apos;s
             invite link, we store that connection. Our sign-in provider processes
             the information needed to authenticate you, including a password if
-            you set one.
+            you set one. We also store when you consent to the Privacy Policy,
+            to storing your data, and to including reviews in anonymous company
+            pages.
           </p>
         </section>
 
@@ -56,11 +58,14 @@ export default function PrivacyPage() {
           </h2>
           <p>
             We use this information to create your profile, let you save co-op
-            reviews, show other signed-in students an anonymous company view, and
-            offer Direction, a labelled early guess of role types. Direction is
-            made from a written rules table and, once enough similar reviews
-            exist, from how students with profiles like yours rated those roles.
-            Swervly does not send your text to an AI model.
+            reviews, show other signed-in students an anonymous company view when
+            you have agreed to share, and offer Direction, labelled ideas of role
+            types worth exploring. Direction starts from a written rules table.
+            When enough distinct students with nearby quiz profiles have reviewed
+            a role, that role can also show a sample size. Similarity is not proof
+            of career fit. Swervly does not send your text to an AI model. The quiz
+            uses lightly reworded Mini-IPIP items; treat scores as exploratory, not
+            as having the same validation evidence as the original instrument.
           </p>
         </section>
 
@@ -70,15 +75,20 @@ export default function PrivacyPage() {
           </h2>
           <p>
             You can see your own profile, quiz result, and reviews. Other
-            signed-in students can see a company page for your major. That
-            section stays hidden until at least 3 students in the major have
-            reviewed the company, so one student cannot be picked out. The page
-            shows how many would go back (counting Yes only, with Maybe shown
-            separately), average ratings, top skills, and shared notes. It does
-            not show names. Pay is shown only as a range, and only when 3 or
-            more students in that group reported pay. A written note appears
-            only if you ticked the share box for that note. The box is off until
-            you type something.
+            signed-in students can see a company page for your major only when you
+            have turned on sharing for reviews. That section stays hidden until at
+            least 3 different students in the major have authorized reviews for
+            the company, so one student with several reviews cannot unlock it
+            alone. Sharing is optional; you can keep reviews private and still use
+            the quiz and rule-based Direction. The page shows how many co-op
+            experiences were rated &quot;Would go back&quot; (counting Yes only, with
+            Maybe shown separately), with a separate count of reviews and students,
+            plus average ratings, top skills, and shared notes. It does not show
+            names. Pay is shown only as a range, and only when 3 different students
+            in that group reported pay. A written note appears only if you ticked
+            the share box for that note. The box is off until you type something. A
+            threshold of three is a minimum, not a guarantee of anonymity in a
+            small major or unusual role.
           </p>
           <p>
             The two Swervly founders can see records because they operate the
@@ -102,13 +112,13 @@ export default function PrivacyPage() {
             >
               Settings
             </Link>{" "}
-            page you can download a JSON file of your account, profile, quiz
-            answers, and co-ops, including employers, ratings, optional pay, and
-            optional free text. On that page you can choose the default for
-            sharing a note, copy an invite link, and delete your account by
-            typing DELETE. Deletion removes your profile, quiz answers,
-            co-ops and internships, and reviews from the application database, and
-            deletes your sign-in account.
+            page you can turn anonymous company-page sharing on or off, choose the
+            default for sharing a note, download a JSON file of your account,
+            profile, quiz answers, and co-ops (including employers, ratings,
+            optional pay, and optional free text), copy an invite link, and delete
+            your account by typing DELETE. Deletion removes your profile, quiz
+            answers, co-ops and internships, and reviews from the application
+            database, and deletes your sign-in account.
           </p>
         </section>
 

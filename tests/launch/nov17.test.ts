@@ -41,3 +41,16 @@ describe("nov 17 migration", () => {
     expect(sql).toContain("create table \"feedback\"");
   });
 });
+
+describe("release hardening migration", () => {
+  const sql = readFileSync("drizzle/0003_release_hardening.sql", "utf8").toLowerCase();
+
+  it("adds share consent without wiping rows or unanswered would-return columns", () => {
+    expect(sql).not.toMatch(/\btruncate\b/);
+    expect(sql).not.toContain("delete from");
+    expect(sql).toContain("share_reviews_consent_at");
+    expect(sql).toContain("share_reviews_consent_version");
+    expect(sql).not.toMatch(/alter table "rotations"/);
+    expect(sql).not.toContain("add column \"would_return");
+  });
+});

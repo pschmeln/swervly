@@ -1,12 +1,13 @@
 import { desc, eq } from "drizzle-orm";
 import { INSTRUMENT, TRAITS, type Trait } from "@/content/mini-ipip";
 import { db } from "@/db";
-import { assessments, profiles, reviews, rotations, type User } from "@/db/schema";
+import { assessments, profiles, reviews, rotations, users, type User } from "@/db/schema";
 import {
   buildDirection,
   type DirectionSuggestion,
   type SimilarReview,
 } from "@/features/direction/rules";
+import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { readTraits, type TraitReading } from "@/features/profile/traits";
 import type { TraitScores } from "@/features/profile/scoring";
 import { isRoleType } from "@/features/review/roles";
@@ -14,7 +15,7 @@ import { isRoleType } from "@/features/review/roles";
 export type DirectionPayload = {
   readings: TraitReading[];
   label: string;
-  basis: "rules" | "similar_students";
+  basis: "rules" | "similar_students" | "mixed";
   suggestions: DirectionSuggestion[];
 };
 
@@ -50,9 +51,12 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
         userId: rotations.userId,
         roleType: rotations.roleType,
         enjoyment: reviews.enjoyment,
+        shareReviewsConsentAt: users.shareReviewsConsentAt,
+        shareReviewsConsentVersion: users.shareReviewsConsentVersion,
       })
       .from(reviews)
-      .innerJoin(rotations, eq(reviews.rotationId, rotations.id)),
+      .innerJoin(rotations, eq(reviews.rotationId, rotations.id))
+      .innerJoin(users, eq(users.id, rotations.userId)),
   ]);
 
   const self = assessmentRows.find((row) => row.userId === user.id);
@@ -73,9 +77,18 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
   const similar: SimilarReview[] = [];
   for (const row of reviewRows) {
     if (row.userId === user.id || !isRoleType(row.roleType)) continue;
+    if (
+      !hasShareReviewsConsent({
+        shareReviewsConsentAt: row.shareReviewsConsentAt,
+        shareReviewsConsentVersion: row.shareReviewsConsentVersion,
+      })
+    ) {
+      continue;
+    }
     const profileTraits = latest.get(row.userId);
     if (!profileTraits) continue;
     similar.push({
+      userId: row.userId,
       traits: profileTraits,
       roleType: row.roleType,
       enjoyment: row.enjoyment,

@@ -19,8 +19,8 @@ export function PublicMajorSection({
         <h2 className="text-lg font-semibold">What other students see</h2>
         {employerName ? <p className="mt-1 text-neutral-700">{employerName}</p> : null}
         <p className="mt-2 text-neutral-700">
-          This stays hidden until at least 3 students in your major review this company. Nothing
-          from a smaller group is shown.
+          This stays hidden until at least 3 different students in your major review this company.
+          Multiple reviews from one student do not unlock it. Nothing from a smaller group is shown.
         </p>
       </Card>
     );
@@ -34,7 +34,9 @@ export function PublicMajorSection({
       </h2>
       <p className="mt-2 text-base text-neutral-900">{view.headline}</p>
       <p className="text-neutral-700">{view.maybeLine}</p>
-      <p className="mt-1 text-sm text-neutral-600">{view.reviewCount} reviews from this major. No names.</p>
+      <p className="mt-1 text-sm text-neutral-600">
+        {view.basisLine} No names.
+      </p>
       {view.averages ? (
         <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
           <div>
@@ -79,7 +81,7 @@ export function PublicMajorSection({
           </p>
         ) : (
           <p className="mt-1 text-sm text-neutral-600">
-            Pay stays hidden until 3 students in this group report it.
+            Pay stays hidden until 3 different students in this group report it.
           </p>
         )}
       </div>
