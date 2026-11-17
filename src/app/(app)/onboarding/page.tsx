@@ -24,8 +24,9 @@ export default async function OnboardingPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [user, params, majorSearch] = await Promise.all([requireUser(), searchParams, loadMajorSearchContext()]);
+  const [user, params] = await Promise.all([requireUser(), searchParams]);
   if (user.onboardedAt && !isRetake(params.retake)) redirect(ROUTES.home);
+  const majorSearch = await loadMajorSearchContext();
 
   const [profile] = await db
     .select({
