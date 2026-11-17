@@ -8,6 +8,6 @@ Anyone can change any path. CI and review are the gates.
 4. Get a review.
 5. Squash merge into `main`.
 
-Run `npm run check` on the branch before you ask for review.
+Run `npm run check` on the branch before you ask for review. Coding agents run `scripts/preflight.sh` instead and follow [docs/AGENT_SAFETY.md](docs/AGENT_SAFETY.md).
 
 Setup, migrations, deploy, and error reporting are in [docs/RUNBOOK.md](docs/RUNBOOK.md).
