@@ -61,20 +61,20 @@ describe("aggregateForMajor", () => {
     expect(JSON.stringify(threeStudents)).not.toContain("@");
   });
 
-  it("requires 3 distinct pay contributors and ignores unanswered would-return", () => {
+  it("requires 3 distinct pay contributors", () => {
     const shown = aggregateForMajor(
       [
-        review({ userId: "a", payHourly: 20.2, wouldReturn: null }),
+        review({ userId: "a", payHourly: 20.2, wouldReturn: "maybe" }),
         review({ userId: "b", payHourly: 30.8, wouldReturn: "yes" }),
         review({ userId: "c", payHourly: 25, wouldReturn: "no" }),
-        review({ userId: "a", payHourly: 40, wouldReturn: "maybe" }),
+        review({ userId: "a", payHourly: 40, wouldReturn: "yes" }),
       ],
       "Electrical Engineering",
       SKILLS,
     );
     expect(shown.visible).toBe(true);
     expect(shown.payRange).toEqual({ low: 20, high: 40 });
-    expect(shown.headline).toBe("1 of 3 Electrical Engineering students would go back");
+    expect(shown.headline).toBe("2 of 4 Electrical Engineering students would go back");
     expect(shown.maybeLine).toBe("1 said maybe");
   });
 
@@ -108,10 +108,9 @@ describe("PublicMajorSection", () => {
     const html = renderToStaticMarkup(<PublicMajorSection employerName="Test Employer A" view={view} />);
     expect(html).toContain("1 of 3 Electrical Engineering students would go back");
     expect(html).toContain("1 said maybe");
-    expect(html).toContain("3 students");
+    expect(html).toContain("3 students · 3 reviews");
     expect(html).toContain("Bring boots.");
     expect(html).toContain("Anything a student should know");
-    expect(html).toContain("3 students · 3 reviews");
     expect(html).not.toContain("22.4");
 
     const hidden = renderToStaticMarkup(

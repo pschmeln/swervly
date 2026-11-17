@@ -13,8 +13,7 @@ export const MIN_PAY_REPORTS = MIN_DISTINCT_PAY_CONTRIBUTORS;
 export type ReviewForAggregate = {
   userId: string;
   major: string;
-  /** Null when the student has not explicitly answered "Would you go back?" */
-  wouldReturn: WouldReturn | null;
+  wouldReturn: WouldReturn;
   enjoyment: number;
   learning: number;
   mentorship: number;
@@ -74,10 +73,9 @@ export function aggregateForMajor(
   };
   if (contributors.size < MIN_DISTINCT_CONTRIBUTORS) return hidden;
 
-  const answered = group.filter((review) => review.wouldReturn != null);
-  const yes = answered.filter((review) => review.wouldReturn === "yes").length;
-  const maybe = answered.filter((review) => review.wouldReturn === "maybe").length;
-  const no = answered.filter((review) => review.wouldReturn === "no").length;
+  const yes = group.filter((review) => review.wouldReturn === "yes").length;
+  const maybe = group.filter((review) => review.wouldReturn === "maybe").length;
+  const no = group.filter((review) => review.wouldReturn === "no").length;
   const summary = wouldGoBackSummary({ yes, maybe, no, major });
 
   const counts = new Map<string, number>();

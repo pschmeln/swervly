@@ -102,7 +102,6 @@ function seedCoop() {
       rotationNumber: 1,
       payHourly: "22.50",
       wouldReturn: "yes",
-      wouldReturnAnswered: true,
       roleType: "design",
       source: "early",
       createdAt,

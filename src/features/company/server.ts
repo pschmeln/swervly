@@ -11,9 +11,9 @@ import { ApiError } from "@/lib/api";
 
 type LoadedReview = ReviewForAggregate & { rotationId: string };
 
-function answeredWouldReturn(value: string, answered: boolean): WouldReturn | null {
-  if (!answered || !isWouldReturn(value)) return null;
-  return value;
+function asWouldReturn(value: string): WouldReturn {
+  if (isWouldReturn(value)) return value;
+  return "maybe";
 }
 
 export async function approvedSkillNames(): Promise<string[]> {
@@ -31,7 +31,6 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       userId: rotations.userId,
       major: users.major,
       wouldReturn: rotations.wouldReturn,
-      wouldReturnAnswered: rotations.wouldReturnAnswered,
       enjoyment: reviews.enjoyment,
       learning: reviews.learning,
       mentorship: reviews.mentorship,
@@ -59,7 +58,7 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       rotationId: row.rotationId,
       userId: row.userId,
       major: row.major ?? "",
-      wouldReturn: answeredWouldReturn(row.wouldReturn, row.wouldReturnAnswered),
+      wouldReturn: asWouldReturn(row.wouldReturn),
       enjoyment: row.enjoyment,
       learning: row.learning,
       mentorship: row.mentorship,

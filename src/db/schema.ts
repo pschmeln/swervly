@@ -80,9 +80,7 @@ export const rotations = pgTable("rotations", {
   termYear: integer("term_year").notNull(),
   rotationNumber: integer("rotation_number").notNull(),
   payHourly: numeric("pay_hourly", { precision: 6, scale: 2 }),  // optional
-  wouldReturn: text("would_return").notNull(),        // 'yes' | 'maybe' | 'no' (value may be historical until answered)
-  // False for rows copied from return_offer or otherwise unconfirmed. Only true after an explicit Yes/Maybe/No save.
-  wouldReturnAnswered: boolean("would_return_answered").notNull().default(false),
+  wouldReturn: text("would_return").notNull(),        // 'yes' | 'maybe' | 'no' — "Would you go back?"
   source: text("source").notNull().default("early"),
   createdAt,
   updatedAt,

@@ -79,11 +79,11 @@ export default function PrivacyPage() {
             have turned on sharing for reviews. That section stays hidden until at
             least 3 different students in the major have authorized reviews for
             the company, so one student with several reviews cannot unlock it
-            alone. The page shows how many would go back among confirmed answers
-            (counting Yes only, with Maybe shown separately), average ratings, top
-            skills, and shared notes. It does not show names. Pay is shown only as
-            a range, and only when 3 different students in that group reported pay.
-            A written note appears only if you ticked the share box for that note.
+            alone. The page shows how many would go back (counting Yes only, with
+            Maybe shown separately), average ratings, top skills, and shared notes.
+            It does not show names. Pay is shown only as a range, and only when 3
+            different students in that group reported pay. A written note appears
+            only if you ticked the share box for that note.
             The box is off until you type something. A threshold of three is a
             minimum, not a guarantee of anonymity in a small major or unusual role.
           </p>
