@@ -6,11 +6,15 @@ export const ALLOWED_EMAIL_DOMAINS = ["mail.uc.edu"];
 
 export const DATA_SOURCE = "early" as const;
 
+export const EMAIL_CONFLICT_MESSAGE =
+  "This email already has a Swervly account tied to a different sign-in.";
+
 export const ROUTES = {
   landing: "/",
   signIn: "/sign-in",
   signUp: "/sign-up",
   notEligible: "/not-eligible",
+  accountConflict: "/account-conflict",
   home: "/home",
   me: "/api/me",
   onboarding: "/onboarding",

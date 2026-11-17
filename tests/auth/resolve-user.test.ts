@@ -1,16 +1,20 @@
 import { DrizzleQueryError } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User } from "@/db/schema";
-import { apiUser } from "@/lib/auth";
+import { apiUser, requireUser, resolveUser } from "@/lib/auth";
+import { EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
 
 const mocks = vi.hoisted(() => ({
   currentUser: vi.fn(),
   insert: vi.fn(),
   selectLimit: vi.fn(),
+  redirect: vi.fn((url: string): never => {
+    throw new Error(`NEXT_REDIRECT:${url}`);
+  }),
 }));
 
 vi.mock("next/navigation", () => ({
-  redirect: vi.fn(),
+  redirect: mocks.redirect,
   unstable_rethrow: vi.fn(),
 }));
 
@@ -104,6 +108,7 @@ describe("apiUser first sign-in", () => {
     mocks.currentUser.mockReset();
     mocks.insert.mockReset();
     mocks.selectLimit.mockReset();
+    mocks.redirect.mockClear();
     signIn();
     mocks.selectLimit.mockImplementation(async (condition: unknown) => {
       const id = clerkIdFromLookup(condition);
@@ -145,7 +150,8 @@ describe("apiUser first sign-in", () => {
     expect(mocks.insert).toHaveBeenCalledOnce();
   });
 
-  it("does not adopt a row whose email belongs to a different clerk id", async () => {
+  it("returns email_conflict and does not adopt a row owned by another clerk id", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const existing = userRow({
       id: "00000000-0000-4000-8000-000000000002",
       clerkId: "user_existing",
@@ -154,21 +160,27 @@ describe("apiUser first sign-in", () => {
     rows.set(existing.clerkId, existing);
     mocks.insert.mockRejectedValue(uniqueViolation("users_email_unique"));
 
-    const error = await apiUser().then(
-      () => {
-        throw new Error("expected apiUser to reject");
-      },
-      (caught: unknown) => caught,
-    );
+    await expect(resolveUser()).resolves.toEqual({ status: "email_conflict" });
+    await expect(requireUser()).rejects.toThrow(`NEXT_REDIRECT:${ROUTES.accountConflict}`);
+    expect(mocks.redirect).toHaveBeenCalledWith(ROUTES.accountConflict);
+    await expect(apiUser()).rejects.toMatchObject({
+      status: 409,
+      code: "email_conflict",
+      message: EMAIL_CONFLICT_MESSAGE,
+    });
 
-    expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toBe("User row missing after insert.");
-    expect((error as Error).message).not.toContain("@");
+    const logged = errorSpy.mock.calls.map((call) => call.map(String).join(" ")).join("\n");
+    expect(errorSpy).toHaveBeenCalledWith("user_email_conflict", "email_owned_by_other_clerk");
+    expect(logged).not.toContain("@");
+    expect(logged).not.toContain(email);
+    expect(logged).not.toContain("User row missing after insert.");
     expect(rows.get("user_existing")).toEqual(existing);
     expect(rows.has(clerkId)).toBe(false);
+    errorSpy.mockRestore();
   });
 
-  it("does not adopt that row when the email conflict is ignored", async () => {
+  it("returns email_conflict when the email conflict is ignored", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const existing = userRow({
       id: "00000000-0000-4000-8000-000000000002",
       clerkId: "user_existing",
@@ -177,9 +189,21 @@ describe("apiUser first sign-in", () => {
     rows.set(existing.clerkId, existing);
     mocks.insert.mockResolvedValue(undefined);
 
-    await expect(apiUser()).rejects.toThrow("User row missing after insert.");
+    await expect(resolveUser()).resolves.toEqual({ status: "email_conflict" });
+    await expect(apiUser()).rejects.toMatchObject({ status: 409, code: "email_conflict" });
+    const rejection = await apiUser().then(
+      () => {
+        throw new Error("expected apiUser to reject");
+      },
+      (caught: unknown) => caught,
+    );
+    expect(rejection).toBeInstanceOf(Error);
+    expect((rejection as Error).message).toBe(EMAIL_CONFLICT_MESSAGE);
+    expect((rejection as Error).message).not.toContain("@");
+    expect(errorSpy).toHaveBeenCalledWith("user_email_conflict", "email_owned_by_other_clerk");
     expect(rows.get("user_existing")).toEqual(existing);
     expect(rows.has(clerkId)).toBe(false);
+    errorSpy.mockRestore();
   });
 
   it("reports a Clerk auth failure and still throws", async () => {

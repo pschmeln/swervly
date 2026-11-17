@@ -3,6 +3,8 @@ import type { NextMiddleware } from "next/server";
 import { clerkFailureDetail } from "@/lib/clerk-failure";
 import { reportFailure } from "@/lib/sentry";
 
+// /account-conflict is not listed. auth.protect() allows a signed-in Clerk
+// session through, and that page does not need a users row.
 const publicPaths: RegExp[] = [
   /^\/$/,
   /^\/sign-in(.*)/,
@@ -12,9 +14,12 @@ const publicPaths: RegExp[] = [
   /^\/\.well-known\/(.*)/,
 ];
 
+export function isPublicPath(pathname: string): boolean {
+  return publicPaths.some((pattern) => pattern.test(pathname));
+}
+
 const clerkProxy: NextMiddleware = clerkMiddleware(async (auth, request) => {
-  const isPublic = publicPaths.some((pattern) => pattern.test(request.nextUrl.pathname));
-  if (!isPublic) {
+  if (!isPublicPath(request.nextUrl.pathname)) {
     await auth.protect();
   }
 });

@@ -7,13 +7,14 @@ import { db } from "@/db";
 import { users, type User } from "@/db/schema";
 import { ApiError } from "@/lib/api";
 import { clerkFailureDetail } from "@/lib/clerk-failure";
-import { ALLOWED_EMAIL_DOMAINS, ROUTES } from "@/lib/constants";
+import { ALLOWED_EMAIL_DOMAINS, EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
 import { reportFailure, setInternalUser } from "@/lib/sentry";
 
 type GateResult =
   | { status: "ok"; user: User }
   | { status: "signed_out" }
-  | { status: "not_eligible" };
+  | { status: "not_eligible" }
+  | { status: "email_conflict" };
 
 function emailDomain(email: string): string {
   const normalized = email.trim().toLowerCase();
@@ -57,11 +58,15 @@ function isUniqueViolation(error: unknown): boolean {
   return false;
 }
 
-async function ensureUser(clerkId: string, email: string): Promise<User> {
+async function ensureUser(
+  clerkId: string,
+  email: string,
+): Promise<{ status: "ok"; user: User } | { status: "email_conflict" }> {
   // No conflict target: ON CONFLICT (clerk_id) still raises 23505 when the
   // email unique index loses a race. The layout and the page both insert on
   // the first request. A different clerk id must not take over that email;
-  // the read below is only by clerk id.
+  // the read below is only by clerk id. A missing row means the email is
+  // already owned. The driver error includes that email, so it is not logged.
   try {
     await db.insert(users).values({ clerkId, email }).onConflictDoNothing();
   } catch (error) {
@@ -75,15 +80,16 @@ async function ensureUser(clerkId: string, email: string): Promise<User> {
     .limit(1);
 
   if (!user) {
-    throw new Error("User row missing after insert.");
+    reportFailure("user_email_conflict", "email_owned_by_other_clerk");
+    return { status: "email_conflict" };
   }
 
-  return user;
+  return { status: "ok", user };
 }
 
 // One in-flight resolution per request. Two requests can still overlap, so
 // ensureUser is race-safe on its own.
-const resolveUser = cache(async (): Promise<GateResult> => {
+export const resolveUser = cache(async (): Promise<GateResult> => {
   let clerkUser: Awaited<ReturnType<typeof currentUser>>;
   try {
     clerkUser = await currentUser();
@@ -101,15 +107,17 @@ const resolveUser = cache(async (): Promise<GateResult> => {
   const email = clerkUser.primaryEmailAddress?.emailAddress.trim().toLowerCase() ?? "";
   if (!email || !isAllowedEmail(email)) return { status: "not_eligible" };
 
-  const user = await ensureUser(clerkUser.id, email);
-  setInternalUser(user.id);
-  return { status: "ok", user };
+  const ensured = await ensureUser(clerkUser.id, email);
+  if (ensured.status !== "ok") return ensured;
+  setInternalUser(ensured.user.id);
+  return ensured;
 });
 
 export async function requireUser(): Promise<User> {
   const result = await resolveUser();
   if (result.status === "signed_out") redirect(ROUTES.signIn);
   if (result.status === "not_eligible") redirect(ROUTES.notEligible);
+  if (result.status === "email_conflict") redirect(ROUTES.accountConflict);
   return result.user;
 }
 
@@ -130,6 +138,9 @@ export async function apiUser(): Promise<User> {
       "not_eligible",
       "Sign in with a university email that ends in .edu.",
     );
+  }
+  if (result.status === "email_conflict") {
+    throw new ApiError(409, "email_conflict", EMAIL_CONFLICT_MESSAGE);
   }
   return result.user;
 }

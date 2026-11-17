@@ -336,7 +336,7 @@ Notes on the schema:
 | --- | --- |
 | `db` from `@/db` | Drizzle client on the Neon HTTP driver. It has no interactive transactions: for writes that must succeed together, use `db.batch([...])` and generate ids in code with `crypto.randomUUID()`. |
 | `* as schema` from `@/db/schema` | Tables and row types from C2. |
-| `requireUser()` from `@/lib/auth` | For pages. Returns the `User` row (created on first sight). Redirects to `/sign-in` if signed out, `/not-eligible` if the email is not a UC address. |
+| `requireUser()` from `@/lib/auth` | For pages. Returns the `User` row (created on first sight). Redirects to `/sign-in` if signed out, `/not-eligible` if the email is not allowed, and `/account-conflict` if that email already belongs to a different Clerk user. It never adopts the other row. |
 | `requireOnboardedUser()` from `@/lib/auth` | Same, plus redirects to `/onboarding` when `onboardedAt` is null. |
 | `apiUser()`, `apiOnboardedUser()` from `@/lib/auth` | For route handlers. Same checks, but throw `ApiError` (401, 403 `not_eligible`, 403 `not_onboarded`). |
 | `handle(fn)`, `ok(data)`, `ApiError`, `parseBody(req, zodSchema)` from `@/lib/api` | Wrap every route handler in `handle`. Success is `{ ok: true, data }`. Failure is `{ ok: false, error: { code, message, fields? } }` with the right status. Invalid bodies become 400 `invalid_body`. |
@@ -357,6 +357,7 @@ Security rules for every route handler, both lanes:
 | --- | --- |
 | `/` | Logged-out landing with a sign-in button |
 | `/sign-in`, `/sign-up`, `/not-eligible` | Auth screens |
+| `/account-conflict` | Signed-in screen when this email already belongs to a different Clerk user. No `users` row required |
 | `/home` | After sign-in: step 1 "Finish your profile", step 2 "Log your co-ops" |
 | `GET /api/me` | `{ user, profile }` for the signed-in user |
 | `/onboarding` | Consent, basics, goals, 30 interest questions |
@@ -368,7 +369,7 @@ Security rules for every route handler, both lanes:
 | `GET/POST /api/employers`, `GET/POST /api/rotations`, `PUT/DELETE /api/rotations/[id]` | See the Review section |
 | `/privacy` | Privacy policy page (public) |
 
-Public routes in `src/proxy.ts`: `/`, `/sign-in(.*)`, `/sign-up(.*)`, `/not-eligible`, `/privacy`, `/.well-known/(.*)`. Everything else requires a session.
+Public routes in `src/proxy.ts`: `/`, `/sign-in(.*)`, `/sign-up(.*)`, `/not-eligible`, `/privacy`, `/.well-known/(.*)`. Everything else requires a session. `/account-conflict` is one of those signed-in routes: `auth.protect()` allows the Clerk session, and the page is outside the `(app)` layout so it does not call `requireUser()`.
 
 A user counts as onboarded when all of these are true: both consent timestamps are set, a `profiles` row exists, and one `assessments` row exists. Lane A sets `users.onboardedAt` at that moment. Lane B only reads it, through `requireOnboardedUser()` and `apiOnboardedUser()`.
 
@@ -399,7 +400,7 @@ A user counts as onboarded when all of these are true: both consent timestamps a
 
 ### C8. Error reporting (Sentry)
 
-The app reports server errors, browser errors, sign-in and Clerk auth failures, API route 5xx responses, and the failure codes `clerk_auth_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, and `account_rows_delete_failed`. Nothing is sent until a DSN is set, and `next build` succeeds with these variables unset.
+The app reports server errors, browser errors, sign-in and Clerk auth failures, API route 5xx responses, and the failure codes `clerk_auth_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, `account_rows_delete_failed`, and `user_email_conflict`. Nothing is sent until a DSN is set, and `next build` succeeds with these variables unset. `user_email_conflict` is logged without the email address.
 
 Set the variables in Vercel for Production and Preview. The same list is in the README under "Error reporting".
 
@@ -413,7 +414,7 @@ Set the variables in Vercel for Production and Preview. The same list is in the 
 | `SENTRY_ORG` | With the auth token | Sentry organization slug |
 | `SENTRY_PROJECT` | With the auth token | Sentry project slug |
 
-Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all set. Session replay and tracing are off. Events include the internal `users.id` and no email, cookies, request bodies, or IP address. In Sentry, create an alert on new issues and on `failure_code` `clerk_auth_failed` or `sign_in_failed`. The SDK does not email anyone by itself.
+Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all set. Session replay and tracing are off. Events include the internal `users.id` and no email, cookies, request bodies, or IP address. In Sentry, create an alert on new issues and on `failure_code` `clerk_auth_failed`, `sign_in_failed`, or `user_email_conflict`. The SDK does not email anyone by itself.
 
 ## 4. Lane A: Profile (Peter, branch `feat/profile`)
 
