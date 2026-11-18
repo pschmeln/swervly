@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import type { Instrumentation } from "next";
 import { clerkFailureDetail, isClerkPrerenderFailure } from "@/lib/clerk-failure";
+import { isAbortedRender } from "@/lib/failure-chain";
 import { isRequestControlFlow, wasReported } from "@/lib/sentry";
 import { safeFailureDetail } from "@/lib/sentry-scrub";
 
@@ -25,7 +26,14 @@ function signInPath(path: string): boolean {
 }
 
 export const onRequestError: Instrumentation.onRequestError = (error, request, context) => {
-  if (isRequestControlFlow(error) || isClerkPrerenderFailure(error) || wasReported(error)) return;
+  if (
+    isRequestControlFlow(error) ||
+    isClerkPrerenderFailure(error) ||
+    isAbortedRender(error) ||
+    wasReported(error)
+  ) {
+    return;
+  }
 
   const detail = clerkFailureDetail(error);
   const failureCode =

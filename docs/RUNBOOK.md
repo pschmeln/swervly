@@ -400,7 +400,7 @@ A user counts as onboarded when all of these are true: both consent timestamps a
 
 ### C8. Error reporting (Sentry)
 
-The app reports server errors, browser errors, sign-in and Clerk auth failures, API route 5xx responses, and the failure codes `clerk_auth_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, `account_rows_delete_failed`, and `user_email_conflict`. Nothing is sent until a DSN is set, and `next build` succeeds with these variables unset. `user_email_conflict` is logged without the email address.
+The app reports server errors, browser errors, sign-in and Clerk auth failures, API route 5xx responses, and the failure codes `clerk_auth_failed`, `user_lookup_failed`, `user_resolve_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, `account_rows_delete_failed`, and `user_email_conflict`. Nothing is sent until a DSN is set, and `next build` succeeds with these variables unset. `user_email_conflict` is logged without the email address. Sign-in resolution labels each failure by its source: `clerk_auth_failed` only for errors from Clerk, `user_lookup_failed` for a failed `users` query (detail is the SQLSTATE such as `pg_42703`, or `connect_<ErrorName>`, never the query or its parameters), and `user_resolve_failed` for anything else. A render that Next.js cancels mid-query (prefetch or prerender) is not reported.
 
 Set the variables in Vercel for Production and Preview. The same list is in the README under "Error reporting".
 
@@ -414,7 +414,7 @@ Set the variables in Vercel for Production and Preview. The same list is in the 
 | `SENTRY_ORG` | With the auth token | Sentry organization slug |
 | `SENTRY_PROJECT` | With the auth token | Sentry project slug |
 
-Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all set. Session replay and tracing are off. Events include the internal `users.id` and no email, cookies, request bodies, or IP address. In Sentry, create an alert on new issues and on `failure_code` `clerk_auth_failed`, `sign_in_failed`, or `user_email_conflict`. The SDK does not email anyone by itself.
+Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are all set. Session replay and tracing are off. Events include the internal `users.id` and no email, cookies, request bodies, or IP address. In Sentry, create an alert on new issues and on `failure_code` `clerk_auth_failed`, `user_lookup_failed`, `sign_in_failed`, or `user_email_conflict`. The SDK does not email anyone by itself.
 
 ## 4. Lane A: Profile (Peter, branch `feat/profile`)
 
