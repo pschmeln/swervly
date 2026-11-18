@@ -8,7 +8,7 @@ Branch off `main`, open a pull request, wait for the **Check / check** workflow 
 
 ## Error reporting
 
-Server errors, browser errors, Clerk auth and sign-in failures, API route 5xx responses, and the logged failure codes `clerk_auth_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, `account_rows_delete_failed`, and `user_email_conflict` are sent to [Sentry](https://sentry.io) when a DSN is set. With the DSN unset, the SDK does nothing and `next build` still succeeds.
+Server errors, browser errors, Clerk auth and sign-in failures, API route 5xx responses, and the logged failure codes `clerk_auth_failed`, `user_lookup_failed`, `user_resolve_failed`, `sign_in_failed`, `api_error`, `clerk_delete_failed`, `account_rows_delete_failed`, and `user_email_conflict` are sent to [Sentry](https://sentry.io) when a DSN is set. With the DSN unset, the SDK does nothing and `next build` still succeeds.
 
 Set these in Vercel for **Production** and **Preview**. The DSN is public (it can only submit events). `SENTRY_AUTH_TOKEN` is a secret.
 
@@ -35,4 +35,4 @@ PostHog receives `sign_up`, `quiz_finished`, `review_saved`, and `direction_view
 1. Create a Sentry organization and a project. Choose the Next.js platform. The Developer (free) plan is enough.
 2. Copy the project's DSN into `NEXT_PUBLIC_SENTRY_DSN`.
 3. Optional, for readable stack traces: create an auth token with `project:releases` and `org:read`, then set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`. Leave all three unset until the project exists.
-4. Create an alert for new issues, and one on the tag `failure_code` matching `clerk_auth_failed`, `sign_in_failed`, or `user_email_conflict`. The SDK sends events only. It does not email anyone until an alert exists.
+4. Create an alert for new issues, and one on the tag `failure_code` matching `clerk_auth_failed`, `user_lookup_failed`, `sign_in_failed`, or `user_email_conflict`. The SDK sends events only. It does not email anyone until an alert exists.

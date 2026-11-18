@@ -12,6 +12,13 @@ import { captureEvent } from "@/lib/analytics";
 import { clerkFailureDetail, isClerkPrerenderFailure } from "@/lib/clerk-failure";
 import { EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
 import { isAllowedEmail } from "@/lib/email-eligibility";
+import {
+  databaseFailureDetail,
+  errorChain,
+  innermostErrorName,
+  isAbortedRender,
+  isDatabaseError,
+} from "@/lib/failure-chain";
 import { INVITE_COOKIE, normalizeInviteId } from "@/lib/invites";
 import { markReported, reportFailure, setInternalUser } from "@/lib/sentry";
 
@@ -100,9 +107,9 @@ async function findUserByClerkId(clerkId: string): Promise<User | undefined> {
 }
 
 // Layout and page renders in one request do not share React.cache, so each
-// would otherwise report the same Clerk failure. Keyed by the platform request
-// id, not by user data.
-const clerkReports = new Map<string, number>();
+// would otherwise report the same failure. Keyed by the platform request id,
+// not by user data.
+const resolveReports = new Map<string, number>();
 
 async function readRequestId(): Promise<string | undefined> {
   try {
@@ -116,31 +123,50 @@ async function readRequestId(): Promise<string | undefined> {
   }
 }
 
-function duplicateClerkReport(requestId: string, detail: string): boolean {
+function duplicateResolveReport(requestId: string, code: string, detail: string): boolean {
   const now = Date.now();
-  if (clerkReports.size > 100) {
-    for (const [key, at] of clerkReports) {
-      if (now - at > 30_000) clerkReports.delete(key);
+  if (resolveReports.size > 100) {
+    for (const [key, at] of resolveReports) {
+      if (now - at > 30_000) resolveReports.delete(key);
     }
   }
-  const key = `${requestId}\0${detail}`;
-  const previous = clerkReports.get(key);
+  const key = `${requestId}\0${code}\0${detail}`;
+  const previous = resolveReports.get(key);
   if (previous !== undefined && now - previous < 30_000) return true;
-  clerkReports.set(key, now);
+  resolveReports.set(key, now);
   return false;
 }
 
-function reportClerkAuthFailure(requestId: string | undefined, error: unknown): void {
-  if (isClerkPrerenderFailure(error)) {
+// unstable_rethrow follows `cause` but not Neon's `sourceError`, so a render
+// that Next.js cancelled during a database query looked like a real failure.
+// Rethrow the wrapped Next.js control-flow error so Next.js handles it.
+function rethrowControlFlow(error: unknown): void {
+  for (const item of errorChain(error)) unstable_rethrow(item);
+}
+
+// resolveUser calls both Clerk and the database. Label each failure by where
+// it came from: a failed users query is not a Clerk outage.
+export function classifyResolveFailure(error: unknown): { code: string; detail: string } {
+  if (isDatabaseError(error)) {
+    return { code: "user_lookup_failed", detail: databaseFailureDetail(error) };
+  }
+  const clerkDetail = clerkFailureDetail(error);
+  if (clerkDetail !== "unknown") return { code: "clerk_auth_failed", detail: clerkDetail };
+  return { code: "user_resolve_failed", detail: innermostErrorName(error) };
+}
+
+function reportResolveFailure(requestId: string | undefined, error: unknown): void {
+  // Next.js ending a render (prefetch, prerender) is not an outage.
+  if (isClerkPrerenderFailure(error) || isAbortedRender(error)) {
     markReported(error);
     return;
   }
-  const detail = clerkFailureDetail(error);
-  if (requestId && duplicateClerkReport(requestId, detail)) {
+  const { code, detail } = classifyResolveFailure(error);
+  if (requestId && duplicateResolveReport(requestId, code, detail)) {
     markReported(error);
     return;
   }
-  reportFailure("clerk_auth_failed", detail, { error });
+  reportFailure(code, detail, { error });
 }
 
 // One in-flight resolution per request. Two requests can still overlap, so
@@ -171,11 +197,13 @@ export const resolveUser = cache(async (): Promise<GateResult> => {
     return ensured;
   } catch (error) {
     // Static prerender hits Clerk without a request. Those bailouts are not outages.
-    unstable_rethrow(error);
+    // Neon hides a cancelled render's error in sourceError, which
+    // unstable_rethrow does not follow; rethrowControlFlow does.
+    rethrowControlFlow(error);
     if (isClerkAPIResponseError(error) && error.status === 404) {
       return { status: "signed_out" };
     }
-    reportClerkAuthFailure(requestId, error);
+    reportResolveFailure(requestId, error);
     throw error;
   }
 });

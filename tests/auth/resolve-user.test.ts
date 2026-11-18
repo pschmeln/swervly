@@ -1,8 +1,10 @@
 import { ClerkAPIResponseError } from "@clerk/nextjs/errors";
+import { NeonDbError } from "@neondatabase/serverless";
 import { DrizzleQueryError } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User } from "@/db/schema";
-import { apiUser, requireUser, resolveUser } from "@/lib/auth";
+import { unstable_rethrow } from "next/navigation";
+import { apiUser, classifyResolveFailure, requireUser, resolveUser } from "@/lib/auth";
 import { EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
 
 const mocks = vi.hoisted(() => ({
@@ -277,6 +279,46 @@ describe("apiUser first sign-in", () => {
     expect(errorSpy).not.toHaveBeenCalled();
     expect(mocks.insert).not.toHaveBeenCalled();
     errorSpy.mockRestore();
+  });
+
+  it("labels a failed users query as a database failure, not a Clerk failure", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const neon = new NeonDbError('column "major_source" does not exist');
+    neon.code = "42703";
+    const failure = new DrizzleQueryError('select "id" from "users" where "clerk_id" = $1', [clerkId], neon);
+    mocks.selectLimit.mockRejectedValue(failure);
+
+    await expect(resolveUser()).rejects.toBe(failure);
+    expect(errorSpy).toHaveBeenCalledWith("user_lookup_failed", "pg_42703");
+    expect(errorSpy).not.toHaveBeenCalledWith("clerk_auth_failed", expect.anything());
+    errorSpy.mockRestore();
+  });
+
+  it("does not report a render that Next.js cancelled during a users query", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const hanging = new Error("During prerendering, fetch() rejects when the prerender is complete.");
+    Object.assign(hanging, { digest: "HANGING_PROMISE_REJECTION" });
+    const neon = new NeonDbError(`Error connecting to database: ${hanging}`);
+    neon.sourceError = hanging;
+    const failure = new DrizzleQueryError('select "id" from "users"', [clerkId], neon);
+    mocks.selectLimit.mockRejectedValue(failure);
+
+    await expect(resolveUser()).rejects.toBe(failure);
+    // The wrapped Next.js error reaches unstable_rethrow, so Next.js can handle it.
+    expect(vi.mocked(unstable_rethrow)).toHaveBeenCalledWith(hanging);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("classifies failures by where they came from", () => {
+    expect(classifyResolveFailure(new Error("Clerk: Missing secretKey."))).toEqual({
+      code: "clerk_auth_failed",
+      detail: "missing_secret_key",
+    });
+    expect(classifyResolveFailure(new TypeError("socket hang up"))).toEqual({
+      code: "user_resolve_failed",
+      detail: "TypeError",
+    });
   });
 
   it("rethrows errors that are not unique violations", async () => {
