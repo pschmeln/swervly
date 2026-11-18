@@ -182,13 +182,21 @@ export function cleanMajorName(value: string): string {
   return value.trim().replace(/\s+/g, " ");
 }
 
+/** Two-letter aliases that also name other fields. Search can show them; saving must not promote them. */
+export const AMBIGUOUS_SHORT_ALIASES = new Set(["cs", "me", "ee", "it", "hr"]);
+
+export function isAmbiguousShortAlias(value: string): boolean {
+  return AMBIGUOUS_SHORT_ALIASES.has(normalizeMajorName(value));
+}
+
 const CODE_BY_KEY = new Map<string, CatalogMajor>();
 for (const major of CATALOG) {
   const nameKey = normalizeMajorName(major.name);
   if (!CODE_BY_KEY.has(nameKey)) CODE_BY_KEY.set(nameKey, major);
   for (const alias of major.aliases) {
     const aliasKey = normalizeMajorName(alias);
-    if (aliasKey && !CODE_BY_KEY.has(aliasKey)) CODE_BY_KEY.set(aliasKey, major);
+    if (!aliasKey || isAmbiguousShortAlias(aliasKey) || CODE_BY_KEY.has(aliasKey)) continue;
+    CODE_BY_KEY.set(aliasKey, major);
   }
 }
 
@@ -203,7 +211,9 @@ export function matchCatalog(name: string, context: MajorSearchContext = {}): Ca
   const code = CODE_BY_KEY.get(key);
   if (code) return code;
 
-  const alias = (context.aliases ?? []).find((item) => item.normalizedName === key);
+  const alias = (context.aliases ?? []).find(
+    (item) => item.normalizedName === key && !isAmbiguousShortAlias(item.normalizedName),
+  );
   if (alias) {
     const fromCode = CODE_BY_KEY.get(normalizeMajorName(alias.canonicalName));
     if (fromCode) return fromCode;
@@ -215,7 +225,9 @@ export function matchCatalog(name: string, context: MajorSearchContext = {}): Ca
 
   for (const major of context.extraMajors ?? []) {
     if (normalizeMajorName(major.name) === key) return major;
-    if (major.aliases.some((item) => normalizeMajorName(item) === key)) return major;
+    if (major.aliases.some((item) => normalizeMajorName(item) === key && !isAmbiguousShortAlias(item))) {
+      return major;
+    }
   }
   return null;
 }
@@ -229,10 +241,9 @@ export function majorFamily(name: string, context: MajorSearchContext = {}): Maj
   return "unknown";
 }
 
-/** Engineering and computing keep the existing co-op role rules. Other families do not. */
+/** Engineering majors keep the legacy co-op rules. Computing majors do not, unless a named rule set includes them. */
 export function usesEngineeringDirection(name: string, context: MajorSearchContext = {}): boolean {
-  const family = majorFamily(name, context);
-  return family === "engineering" || family === "computing";
+  return majorFamily(name, context) === "engineering";
 }
 
 function scoreMajor(major: CatalogMajor, query: string): number {

@@ -1,7 +1,8 @@
--- Phase 2 majors (forward-only). Safe on a live database: no row wipes.
--- Existing users.major values are kept when they are already in the legacy
--- catalog. Any other non-null major is copied into custom_major_text and
--- cleared from users.major so an unapproved name is not a public group key.
+-- Phase 2 majors (forward-only, additive). No row wipes and no change to users.major.
+-- Exact legacy names, after trimming surrounding spaces, get major_source catalog.
+-- Any other non-null major is copied into custom_major_text and marked custom.
+-- The original users.major text stays so the previous app can still read it.
+-- The new app hides major_source custom from public pages.
 -- New columns are nullable or have defaults. No DROP of major.
 
 ALTER TABLE "users" ADD COLUMN "major_source" text;--> statement-breakpoint
@@ -10,7 +11,7 @@ ALTER TABLE "users" ADD COLUMN "major_submission_id" uuid;--> statement-breakpoi
 ALTER TABLE "users" ADD COLUMN "exploring_majors" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "dismissed_career_roles" text[] DEFAULT '{}'::text[] NOT NULL;--> statement-breakpoint
 UPDATE "users" SET "major_source" = 'catalog'
-WHERE "major_source" IS NULL AND "major" IN (
+WHERE "major_source" IS NULL AND btrim("major") IN (
   'Aerospace Engineering',
   'Architectural Engineering',
   'Biomedical Engineering',
@@ -27,7 +28,7 @@ WHERE "major_source" IS NULL AND "major" IN (
   'Engineering Technology',
   'Other'
 );--> statement-breakpoint
-UPDATE "users" SET "custom_major_text" = "major", "major_source" = 'custom', "major" = NULL
+UPDATE "users" SET "custom_major_text" = "major", "major_source" = 'custom'
 WHERE "major_source" IS NULL AND "major" IS NOT NULL;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_major_source" CHECK ("major_source" IS NULL OR "major_source" IN ('catalog', 'custom', 'undecided'));--> statement-breakpoint
 CREATE TABLE "major_catalog" (

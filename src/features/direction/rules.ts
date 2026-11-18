@@ -295,6 +295,10 @@ const FAMILY_SUGGESTIONS: Partial<
     { role: "policy_research", reason: "Research-style work is one place to explore from an interdisciplinary major. This is not a fit score." },
     { role: "writing_media", reason: "Writing is another place to explore. This is not a fit score." },
   ],
+  computing: [
+    { role: "software", reason: "Your major is in computing, so software is a place to explore. This is not a fit score." },
+    { role: "data_analytics", reason: "Data work is worth exploring from a computing major. This is not a fit score." },
+  ],
 };
 
 function asSuggestion(role: RoleType | ExtraCareerRole, reason: string): DirectionSuggestion {
@@ -311,18 +315,6 @@ function nonEngineeringSuggestions(context: DirectionContext): DirectionSuggesti
   const family = majorFamily(context.major);
   const rows = FAMILY_SUGGESTIONS[family] ?? [];
   const chosen = rows.slice(0, 3).map((row) => asSuggestion(row.role, row.reason));
-  if (
-    context.goal === "grad_school" &&
-    family !== "unknown" &&
-    !chosen.some((item) => item.roleType === "research")
-  ) {
-    chosen.unshift(
-      asSuggestion(
-        "research",
-        "You said graduate school is a goal, so research is worth exploring. This is not a fit score.",
-      ),
-    );
-  }
   if (chosen.length === 0) {
     return [
       {
@@ -339,8 +331,20 @@ function nonEngineeringSuggestions(context: DirectionContext): DirectionSuggesti
   return chosen.slice(0, 3);
 }
 
+function keepsEngineeringCoopRules(major: string): boolean {
+  return (
+    usesEngineeringDirection(major) ||
+    SOFTWARE.has(major) ||
+    DESIGN.has(major) ||
+    PROCESS.has(major) ||
+    DATA.has(major) ||
+    FIELD.has(major) ||
+    RESEARCH_MAJORS.has(major)
+  );
+}
+
 export function suggestionsFromRules(context: DirectionContext): DirectionSuggestion[] {
-  if (!usesEngineeringDirection(context.major)) return nonEngineeringSuggestions(context);
+  if (!keepsEngineeringCoopRules(context.major)) return nonEngineeringSuggestions(context);
   const scored = new Map<RoleType, { points: number; reason: string }>();
   for (const rule of RULES) {
     if (!rule.when(context)) continue;
@@ -447,7 +451,7 @@ export function buildDirection(
   reviews: readonly SimilarReview[],
 ): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
   const fromRules = suggestionsFromRules(context);
-  if (!usesEngineeringDirection(context.major)) {
+  if (!keepsEngineeringCoopRules(context.major)) {
     const concrete = fromRules.some((item) => item.roleType !== "insufficient");
     return {
       label: concrete ? DIRECTION_MAJOR_GOAL_LABEL : DIRECTION_INSUFFICIENT_LABEL,

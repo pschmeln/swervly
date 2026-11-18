@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { majorAliases, majorCatalog, majorSubmissions, users } from "@/db/schema";
+import { majorSubmissions } from "@/db/schema";
 import { ApiError } from "@/lib/api";
 import { isFounderEmail } from "@/lib/founders";
 import { APPROVED_CUSTOM_CATEGORY } from "./catalog";
@@ -57,80 +57,127 @@ export async function moderateMajor(
     throw new ApiError(400, "invalid_body", planned.message, { intoName: planned.message });
   }
 
-  const now = new Date();
-  const ownPending = and(
-    eq(majorSubmissions.id, pending.id),
-    eq(majorSubmissions.userId, pending.userId),
-    eq(majorSubmissions.status, "pending"),
-  );
-
   if (planned.plan.type === "reject") {
-    await db.update(majorSubmissions).set({ status: "rejected", updatedAt: now }).where(ownPending);
+    await claimPendingSubmission({
+      pending,
+      status: "rejected",
+      catalogId: null,
+      mergedIntoName: null,
+      mapUserTo: null,
+      insertCatalog: null,
+      alias: null,
+    });
     return { id: pending.id };
   }
 
   if (planned.plan.type === "merge") {
     const plan = planned.plan;
-    const submissionUpdate = db
-      .update(majorSubmissions)
-      .set({ status: "merged", mergedIntoName: plan.canonicalName, updatedAt: now })
-      .where(ownPending);
-    const userUpdate = db
-      .update(users)
-      .set({
-        major: plan.canonicalName,
-        majorSource: "catalog",
-        majorSubmissionId: pending.id,
-        updatedAt: now,
-      })
-      .where(and(eq(users.id, pending.userId), eq(users.majorSubmissionId, pending.id)));
-    if (plan.addAlias) {
-      await db.batch([
-        db
-          .insert(majorAliases)
-          .values({
-            normalizedName: plan.normalizedAlias,
-            canonicalName: plan.canonicalName,
-          })
-          .onConflictDoNothing(),
-        submissionUpdate,
-        userUpdate,
-      ]);
-    } else {
-      await db.batch([submissionUpdate, userUpdate]);
-    }
+    await claimPendingSubmission({
+      pending,
+      status: "merged",
+      catalogId: null,
+      mergedIntoName: plan.canonicalName,
+      mapUserTo: plan.canonicalName,
+      insertCatalog: null,
+      alias: plan.addAlias
+        ? { normalizedName: plan.normalizedAlias, canonicalName: plan.canonicalName }
+        : null,
+    });
     return { id: pending.id };
   }
 
   const plan = planned.plan;
-  const catalogId = crypto.randomUUID();
-  await db.batch([
-    db.insert(majorCatalog).values({
-      id: catalogId,
-      name: plan.name,
-      normalizedName: plan.normalizedName,
-      category: APPROVED_CUSTOM_CATEGORY,
-      aliases: [],
-      status: "approved",
-    }),
-    db
-      .update(majorSubmissions)
-      .set({
-        status: "approved",
-        catalogId,
-        mergedIntoName: plan.name,
-        updatedAt: now,
-      })
-      .where(ownPending),
-    db
-      .update(users)
-      .set({
-        major: plan.name,
-        majorSource: "catalog",
-        majorSubmissionId: pending.id,
-        updatedAt: now,
-      })
-      .where(and(eq(users.id, pending.userId), eq(users.majorSubmissionId, pending.id))),
-  ]);
+  await claimPendingSubmission({
+    pending,
+    status: "approved",
+    catalogId: crypto.randomUUID(),
+    mergedIntoName: plan.name,
+    mapUserTo: plan.name,
+    insertCatalog: { name: plan.name, normalizedName: plan.normalizedName },
+    alias: null,
+  });
   return { id: pending.id };
+}
+
+type PendingClaim = {
+  id: string;
+  userId: string;
+  normalizedName: string;
+};
+
+/**
+ * One statement so a student save cannot land between the submission change and the profile change.
+ * The submission updates only while it is still pending with the name the founder reviewed.
+ * The profile updates only when it still points at that submission.
+ */
+async function claimPendingSubmission(input: {
+  pending: PendingClaim;
+  status: "approved" | "merged" | "rejected";
+  catalogId: string | null;
+  mergedIntoName: string | null;
+  mapUserTo: string | null;
+  insertCatalog: { name: string; normalizedName: string } | null;
+  alias: { normalizedName: string; canonicalName: string } | null;
+}): Promise<void> {
+  const result = await db.execute<{ decided_count: number | string }>(sql`
+    with decided as (
+      update major_submissions
+      set status = ${input.status},
+          catalog_id = ${input.catalogId}::uuid,
+          merged_into_name = ${input.mergedIntoName},
+          updated_at = now()
+      where id = ${input.pending.id}::uuid
+        and user_id = ${input.pending.userId}::uuid
+        and status = 'pending'
+        and normalized_name = ${input.pending.normalizedName}
+      returning id, user_id
+    ),
+    added_catalog as (
+      insert into major_catalog (id, name, normalized_name, category, aliases, status)
+      select ${input.catalogId}::uuid,
+             ${input.insertCatalog?.name ?? ""},
+             ${input.insertCatalog?.normalizedName ?? ""},
+             ${APPROVED_CUSTOM_CATEGORY},
+             '{}'::text[],
+             'approved'
+      from decided
+      where ${input.insertCatalog ? sql`true` : sql`false`}
+      returning id
+    ),
+    added_alias as (
+      insert into major_aliases (normalized_name, canonical_name)
+      select ${input.alias?.normalizedName ?? ""}, ${input.alias?.canonicalName ?? ""}
+      from decided
+      where ${input.alias ? sql`true` : sql`false`}
+      on conflict (normalized_name) do nothing
+      returning normalized_name
+    ),
+    mapped as (
+      update users
+      set major = ${input.mapUserTo},
+          major_source = 'catalog',
+          major_submission_id = decided.id,
+          updated_at = now()
+      from decided
+      where users.id = decided.user_id
+        and users.major_submission_id = decided.id
+        and ${input.mapUserTo ? sql`true` : sql`false`}
+      returning users.id
+    )
+    select (select count(*)::int from decided) as decided_count,
+           (select count(*)::int from added_catalog) as catalog_count,
+           (select count(*)::int from added_alias) as alias_count,
+           (select count(*)::int from mapped) as mapped_count
+  `);
+  const decided = decidedCount(result);
+  if (decided !== 1) {
+    throw new ApiError(409, "conflict", "That item changed. Refresh and try again.");
+  }
+}
+
+function decidedCount(result: unknown): number {
+  const rows = result && typeof result === "object" && "rows" in result ? result.rows : result;
+  const row = Array.isArray(rows) ? rows[0] : undefined;
+  if (!row || typeof row !== "object" || !("decided_count" in row)) return 0;
+  return Number(row.decided_count);
 }

@@ -37,6 +37,11 @@ describe("major catalog search", () => {
 
     const cs = searchMajors("CS");
     expect(cs[0]?.name).toBe("Computer Science");
+    expect(matchCatalog("CS")).toBeNull();
+    expect(matchCatalog("ME")).toBeNull();
+    expect(matchCatalog("EE")).toBeNull();
+    expect(matchCatalog("IT")).toBeNull();
+    expect(matchCatalog("HR")).toBeNull();
     expect(matchCatalog("Comp Sci")?.name).toBe("Computer Science");
     expect(matchCatalog("comp. sci.")?.name).toBe("Computer Science");
     expect(normalizeMajorName("Industrial & Systems Engineering")).toBe("industrial and systems engineering");
@@ -49,9 +54,10 @@ describe("major catalog search", () => {
     expect(found.map((major) => major.name)).toContain("Puppetry");
   });
 
-  it("keeps engineering direction on engineering and computing majors only", () => {
+  it("keeps the legacy co-op rule family on engineering majors", () => {
     expect(usesEngineeringDirection("Mechanical Engineering")).toBe(true);
-    expect(usesEngineeringDirection("Computer Science")).toBe(true);
+    expect(usesEngineeringDirection("Computer Science")).toBe(false);
+    expect(usesEngineeringDirection("Information Technology")).toBe(false);
     expect(usesEngineeringDirection("Nursing")).toBe(false);
     expect(usesEngineeringDirection("Business Administration")).toBe(false);
     expect(usesEngineeringDirection("Other")).toBe(false);

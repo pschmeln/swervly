@@ -53,6 +53,17 @@ describe("major selection", () => {
     });
   });
 
+  it("does not promote short ambiguous aliases into the catalog", () => {
+    for (const name of ["CS", "ME", "EE", "IT", "HR"]) {
+      const resolved = resolveMajorWrite({ majorSelection: { source: "custom", name } });
+      expect(resolved.ok).toBe(true);
+      if (!resolved.ok) return;
+      expect(resolved.write.source).toBe("custom");
+      expect(resolved.write.major).toBeNull();
+      expect(resolved.write.submission?.rawName).toBe(name);
+    }
+  });
+
   it("saves a custom major privately and does not block on approval", () => {
     const resolved = resolveMajorWrite({
       majorSelection: { source: "custom", name: "  Historic Preservation  " },

@@ -94,6 +94,17 @@ export async function saveProfile(
     }
   }
 
+  const userMatch = existingPendingId
+    ? and(
+        eq(users.id, userId),
+        sql`exists (
+          select 1 from ${majorSubmissions}
+          where ${majorSubmissions.id} = ${existingPendingId}
+            and ${majorSubmissions.userId} = ${users.id}
+            and ${majorSubmissions.status} = 'pending'
+        )`,
+      )
+    : eq(users.id, userId);
   const userUpdate = db
     .update(users)
     .set({
@@ -109,7 +120,7 @@ export async function saveProfile(
       ...shareConsent,
       updatedAt: sql`now()`,
     })
-    .where(eq(users.id, userId))
+    .where(userMatch)
     .returning();
   const profileWrite = db
     .insert(profiles)
@@ -158,6 +169,9 @@ export async function saveProfile(
 
   const user = userRows[0];
   const profile = profileRows[0];
+  if (write.submission && existingPendingId && !user) {
+    throw new ApiError(409, "conflict", "Your major changed while this was saving. Reload and try again.");
+  }
   if (!user || !profile) {
     throw new Error("profile_write_missing");
   }

@@ -58,6 +58,37 @@ describe("direction outside engineering", () => {
     expectNoFitClaim(direction);
   });
 
+  it("does not give a nursing student the engineering research role for graduate school", () => {
+    const suggestions = suggestionsFromRules({
+      traits: openAndConscientious,
+      major: "Nursing",
+      goal: "grad_school",
+    });
+    expect(suggestions.map((item) => item.roleType)).toContain("healthcare_clinical");
+    expect(suggestions.map((item) => item.roleType)).not.toContain("research");
+    for (const role of ENGINEERING_ROLES) {
+      expect(suggestions.map((item) => item.roleType)).not.toContain(role);
+    }
+  });
+
+  it("suggests computing work for information technology without engineering fillers", () => {
+    const direction = buildDirection(
+      { traits: openAndConscientious, major: "Information Technology", goal: "industry" },
+      [
+        { userId: "a", traits: openAndConscientious, roleType: "manufacturing_process", enjoyment: 5 },
+        { userId: "b", traits: openAndConscientious, roleType: "manufacturing_process", enjoyment: 5 },
+        { userId: "c", traits: openAndConscientious, roleType: "manufacturing_process", enjoyment: 5 },
+      ],
+    );
+    expect(direction.basis).toBe("rules");
+    expect(direction.suggestions.map((item) => item.roleType)).toContain("software");
+    expect(direction.suggestions.map((item) => item.roleType)).not.toContain("manufacturing_process");
+    expect(direction.suggestions.map((item) => item.roleType)).not.toContain("design");
+    expect(direction.suggestions.map((item) => item.roleType)).not.toContain("test_validation");
+    expect(direction.suggestions.map((item) => item.roleType)).not.toContain("field_site");
+    expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
+  });
+
   it("does not invent roles for undecided or legacy Other", () => {
     for (const major of ["", "Other"]) {
       const direction = buildDirection(

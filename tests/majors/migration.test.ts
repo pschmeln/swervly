@@ -19,9 +19,9 @@ describe("major catalog migration", () => {
     for (const major of MAJORS) {
       expect(sql).toContain(`'${major}'`);
     }
-    const copyAt = lowered.indexOf('"custom_major_text" = "major"');
-    const clearAt = lowered.indexOf('"major" = null');
-    expect(copyAt).toBeGreaterThan(-1);
-    expect(clearAt).toBeGreaterThan(copyAt);
+    expect(lowered).toContain('btrim("major")');
+    expect(lowered).toContain('"custom_major_text" = "major"');
+    expect(lowered).not.toContain('"major" = null');
+    expect(lowered).not.toMatch(/set\s+"major"\s*=/);
   });
 });
