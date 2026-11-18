@@ -1,19 +1,23 @@
+import { eq } from "drizzle-orm";
 import { Button, Card, PageShell } from "@/components/ui";
+import { db } from "@/db";
+import { profiles } from "@/db/schema";
+import { loadDirection } from "@/features/direction/server";
 import { CareerExplore } from "@/features/explore/career-explore";
-import { prototypeModel } from "@/features/explore/view-model";
+import { buildExploreModel } from "@/features/explore/view-model";
+import { CAREER_EXPLORE_PROTOTYPE_ENABLED } from "@/features/explore/prototype";
 import { requireOnboardedUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Career exploration" };
 
 /**
- * Prototype only. Production /direction is unchanged and does not link here.
- * The route stays behind the same sign-in gate as the rest of the app.
+ * Signed-in exploration. Direction and pathways come from loadDirection.
+ * Discussions, sample experiences, and bookmarks stay on this screen only.
  */
 export default async function CareerExplorePage() {
-  await requireOnboardedUser();
-  const model = prototypeModel();
-  if (!model) {
+  const user = await requireOnboardedUser();
+  if (!CAREER_EXPLORE_PROTOTYPE_ENABLED) {
     return (
       <PageShell title="Career exploration">
         <Card>
@@ -27,6 +31,38 @@ export default async function CareerExplorePage() {
       </PageShell>
     );
   }
+
+  const [direction, profileRows] = await Promise.all([
+    loadDirection(user),
+    db
+      .select({ goal: profiles.goal })
+      .from(profiles)
+      .where(eq(profiles.userId, user.id))
+      .limit(1),
+  ]);
+  const goalValue = profileRows[0]?.goal;
+  const goal = goalValue === "industry" || goalValue === "grad_school" || goalValue === "undecided" ? goalValue : null;
+  const model = buildExploreModel({
+    stored: {
+      major: user.major,
+      majorSource: user.majorSource,
+      customMajorText: user.customMajorText,
+    },
+    goal,
+    direction: direction
+      ? {
+          label: direction.label,
+          suggestions: direction.suggestions.map((item) => ({
+            roleType: item.roleType,
+            roleLabel: item.roleLabel,
+            reason: item.reason,
+            source: item.source,
+            evidenceLabel: item.evidenceLabel,
+          })),
+        }
+      : null,
+    dismissedRoleIds: user.dismissedCareerRoles,
+  });
 
   return (
     <PageShell title="Career exploration">

@@ -28,14 +28,22 @@ function text(relative: string): string {
 }
 
 describe("community mock boundary", () => {
-  it("keeps the prototype route off the production Direction page", () => {
+  it("links Direction to explore without importing sample community data", () => {
     const direction = text("src/app/(app)/direction/page.tsx");
     expect(direction).not.toContain("community/mock");
     expect(direction).not.toContain("career-explore");
-    expect(direction).not.toContain("direction/explore");
+    expect(direction).toContain("DismissSuggestion");
+    expect(direction).toContain("loadDirection");
+    expect(direction).toContain("ROUTES.directionExplore");
+    expect(direction).toContain("ROUTES.reviews");
     expect(ROUTES.directionExplore).toBe("/direction/explore");
-    expect(text("src/app/(app)/direction/explore/page.tsx")).toContain("prototypeModel");
-    expect(text("src/app/(app)/direction/explore/page.tsx")).not.toContain("community/mock");
+    expect(ROUTES.directionDismiss).toBe("/api/direction/dismiss");
+    const explore = text("src/app/(app)/direction/explore/page.tsx");
+    expect(explore).toContain("loadDirection");
+    expect(explore).toContain("requireOnboardedUser");
+    expect(explore).toContain("profiles.userId");
+    expect(explore).not.toContain("community/mock");
+    expect(explore).not.toContain("Rowan");
   });
 
   it("lets only the view-model import sample community data", () => {

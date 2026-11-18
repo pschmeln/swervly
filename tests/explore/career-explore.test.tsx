@@ -4,13 +4,40 @@ import { PageShell } from "@/components/ui";
 import { CareerExplore } from "@/features/explore/career-explore";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/features/explore/local-state";
 import { careerPageHref } from "@/features/explore/links";
-import { PROTOTYPE_BANNER, type ExploreModel } from "@/features/explore/types";
-import { prototypeModel } from "@/features/explore/view-model";
+import {
+  DEMO_DISCUSSIONS_LABEL,
+  DEMO_FOUNDER_LABEL,
+  PROTOTYPE_BANNER,
+  SAMPLE_EXPERIENCES_LABEL,
+  type ExploreModel,
+} from "@/features/explore/types";
+import { buildExploreModel } from "@/features/explore/view-model";
 
 function model(): ExploreModel {
-  const ready = prototypeModel(true);
-  if (!ready) throw new Error("expected prototype model");
-  return ready;
+  return buildExploreModel({
+    stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+    goal: "industry",
+    dismissedRoleIds: [],
+    direction: {
+      label: "Worth exploring from your major and stated goal.",
+      suggestions: [
+        {
+          roleType: "healthcare_clinical",
+          roleLabel: "Healthcare — clinical",
+          reason: "Early hypothesis: clinical work is a place to explore.",
+          source: "rules",
+          evidenceLabel: "Early hypothesis",
+        },
+        {
+          roleType: "healthcare_admin",
+          roleLabel: "Healthcare administration",
+          reason: "Early hypothesis: administration is a place to explore.",
+          source: "rules",
+          evidenceLabel: "Early hypothesis",
+        },
+      ],
+    },
+  });
 }
 
 function visibleText(html: string): string {
@@ -34,16 +61,22 @@ describe("career exploration prototype", () => {
     expect(text).toContain("Your direction");
     expect(text).toContain("Explore career paths");
     expect(text).toContain("Student experiences");
+    expect(text).toContain(SAMPLE_EXPERIENCES_LABEL);
     expect(text).toContain("Community discussions");
+    expect(text).toContain(DEMO_DISCUSSIONS_LABEL);
+    expect(text).toContain(DEMO_FOUNDER_LABEL);
+    expect(text).toContain("Non-persistent bookmark. Nothing is stored.");
     expect(text).toContain("Companies & opportunities");
-    expect(text).toContain("Rowan Example");
+    expect(text).toContain("Nursing");
+    expect(text).toContain("Healthcare — clinical");
+    expect(text).toContain("Listed under Clinical operations, which is also one of your direction suggestions.");
     expect(text).toContain("Invented sample: the team drew the clinic schedule on a whiteboard");
     expect(text).toContain("1 sample experience marked as shared.");
     expect(text).toContain("None yet.");
     expect(text).toContain("No official careers page is on file.");
     expect(text).toContain("Sample Org With No Page On File");
     expect(text).toContain("No sample answers yet.");
-    expect(text).toContain("Founder review (concept)");
+    expect(text).toContain(DEMO_FOUNDER_LABEL);
     expect(text).toContain("Link checked 2026-11-17.");
     expect(html).toContain('aria-label="Exploration sections"');
     expect(html).toContain('href="#community"');

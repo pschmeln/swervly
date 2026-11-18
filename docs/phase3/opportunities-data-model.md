@@ -110,32 +110,14 @@ If an employer or a school offers a documented API, a future integration can:
 
 Scraping HTML for job titles is out of scope for that step too. An API that is not the employer's own (a reseller of postings) needs its own human approval and still has to pass the host rule for any link Swervly renders.
 
-## Mapping to a future direction model
+## Mapping to Direction
 
-The prototype does not call `loadDirection` and does not read majors. A later adapter can look like this once a direction model is approved, including the one already on `main` if a human wants to use it:
+`/direction/explore` calls `loadDirection` for the signed-in student. Pathways on that screen are those suggestions, including the rules versus student-evidence label. Dismissed role ids are removed again in `directionExploreCopy`. Custom and undecided majors are not a public grouping key: the major text is shown only in the profile block, and company copy does not contain it.
 
-```ts
-type DirectionSignal = {
-  focusLabels: readonly string[];
-};
+A company card names a shared directory category only for this fixed map: business operations, finance, clinical healthcare, and manufacturing. Engineering design is not treated as product design. Healthcare administration is not treated as clinical work. Software and other roles with no directory category keep the directory sentence. No card gets a percentage or a suitability rating.
 
-function whyShown(roleLabels: readonly string[], signal: DirectionSignal): string {
-  const overlap = roleLabels.filter((label) => signal.focusLabels.includes(label));
-  if (overlap.length === 0) {
-    return "Included in the directory.";
-  }
-  return `Included because the direction lists ${overlap.join(" and ")}.`;
-}
-```
-
-Rules for that adapter:
-
-- Input is plain labels. It does not import a major-alias table and it does not write catalog rows from free text.
-- A missing major, a null major, or "Other" produces no engineering labels by default. Overlap is empty, and the sentence is the directory sentence.
-- The sentence never includes a percentage or a fit score.
-- Student-experience copy stays on the consent predicate in `docs/phase3/community-schema-and-api.md`. It is a different sentence from `whyShown`.
-- Today's rule-based role types (`design`, `software`, and the rest in `src/features/review/roles.ts`) can be mapped into plain labels in that adapter later. This branch does not do that mapping, so the prototype cannot recommend an engineering role for an empty profile.
+An empty major uses the existing direction rules, which return "not enough information" instead of engineering fillers. A missing quiz leaves pathways empty and points back to the quiz.
 
 ## What the prototype does instead
 
-`CATALOG_COMPANIES` in `src/features/explore/companies.ts` holds the 12 organizations and one invented empty card. `prototypeModel()` copies them into props. Invalid URLs become "No official careers page is on file." Save, filter, and the empty list are local state or plain props. Production `/direction` is unchanged.
+`CATALOG_COMPANIES` holds the 12 organizations and one invented empty card. Invalid URLs become "No official careers page is on file." Save, filter, discussions, and sample experiences stay on the screen. `/direction` still dismisses suggestions and still links onward to explore. It does not import the mock module.

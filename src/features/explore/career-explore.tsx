@@ -23,7 +23,15 @@ import {
   toggleHelpful,
   toggleSaved,
 } from "@/features/explore/local-state";
-import { PROTOTYPE_BANNER, type CompanyCardModel, type ExploreModel, type LocalQuestion } from "@/features/explore/types";
+import {
+  DEMO_DISCUSSIONS_LABEL,
+  DEMO_FOUNDER_LABEL,
+  PROTOTYPE_BANNER,
+  SAMPLE_EXPERIENCES_LABEL,
+  type CompanyCardModel,
+  type ExploreModel,
+  type LocalQuestion,
+} from "@/features/explore/types";
 import { ROUTES } from "@/lib/constants";
 
 const focusRing =
@@ -98,27 +106,35 @@ function DirectionSection({ model }: { model: ExploreModel }) {
         Your direction
       </h2>
       <Card>
-        <h3 className="text-base font-semibold">Sample profile</h3>
-        <p className="mt-1 text-sm text-neutral-600">Invented profile. Rowan Example is not a student account.</p>
+        <h3 className="text-base font-semibold">Your profile</h3>
         <dl className="mt-3 grid gap-2">
           <div>
-            <dt className="text-sm text-neutral-600">Name</dt>
-            <dd className="break-words font-medium text-neutral-900">{model.profile.displayName}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-neutral-600">Focus</dt>
-            <dd className="break-words text-neutral-800">{model.profile.focus}</dd>
+            <dt className="text-sm text-neutral-600">Major</dt>
+            <dd className="break-words font-medium text-neutral-900">{model.profile.majorLabel}</dd>
           </div>
           <div>
             <dt className="text-sm text-neutral-600">Goal</dt>
-            <dd className="break-words text-neutral-800">{model.profile.goal}</dd>
+            <dd className="break-words text-neutral-800">{model.profile.goalLabel}</dd>
           </div>
         </dl>
+        <p className="mt-3 text-sm text-neutral-600">{model.profile.note}</p>
+        <div className="mt-4">
+          <Button href={ROUTES.profile} variant="secondary" className="w-full sm:w-auto">
+            Edit your profile
+          </Button>
+        </div>
       </Card>
       <Card>
-        <h3 className="text-base font-semibold">Sample direction</h3>
+        <h3 className="text-base font-semibold">Direction</h3>
         <p className="mt-2 break-words text-neutral-800">{model.direction.headline}</p>
         <p className="mt-2 text-sm text-neutral-600">{model.direction.note}</p>
+        {model.direction.needsQuiz ? (
+          <div className="mt-4">
+            <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
+              Take the quiz
+            </Button>
+          </div>
+        ) : null}
       </Card>
     </section>
   );
@@ -130,12 +146,14 @@ function PathsSection({ model }: { model: ExploreModel }) {
       <h2 id="career-paths-heading" className="text-lg font-semibold">
         Explore career paths
       </h2>
-      <p className="text-neutral-700">Sample paths in this prototype, listed without a rank.</p>
+      <p className="text-neutral-700">{model.pathsIntro}</p>
+      {model.pathsEmpty ? <p className="text-neutral-800">{model.pathsEmpty}</p> : null}
       <ul className="grid gap-3">
         {model.paths.map((path) => (
           <li key={path.id}>
             <Card>
               <h3 className="text-base font-semibold">{path.title}</h3>
+              {path.sourceLabel ? <p className="mt-1 text-sm text-neutral-600">{path.sourceLabel}</p> : null}
               <p className="mt-1 text-neutral-800">{path.summary}</p>
             </Card>
           </li>
@@ -152,7 +170,8 @@ function ExperiencesSection({ model }: { model: ExploreModel }) {
         Student experiences
       </h2>
       <PrototypeNote />
-      <p className="text-neutral-700">Only samples marked as shared are listed.</p>
+      <p className="font-medium text-neutral-900">{SAMPLE_EXPERIENCES_LABEL}</p>
+      <p className="text-neutral-700">Only samples marked as shared are listed. These notes are invented.</p>
       {model.experiences.length === 0 ? (
         <p className="text-neutral-800">No shared sample experiences yet.</p>
       ) : (
@@ -400,7 +419,8 @@ function CommunitySection({ model }: { model: ExploreModel }) {
         Community discussions
       </h2>
       <PrototypeNote />
-      <p className="text-neutral-700">Sample questions and answers. Nothing you type is sent.</p>
+      <p className="font-medium text-neutral-900">{DEMO_DISCUSSIONS_LABEL}</p>
+      <p className="text-neutral-700">Invented questions and answers. Nothing you type is sent.</p>
       <Field label="Browse sample questions" htmlFor="browse-questions">
         <Select
           id="browse-questions"
@@ -486,10 +506,10 @@ function CommunitySection({ model }: { model: ExploreModel }) {
         ))}
       </ul>
       <Card>
-        <h3 className="text-base font-semibold">Founder review (concept)</h3>
+        <h3 className="text-base font-semibold">{DEMO_FOUNDER_LABEL}</h3>
         <PrototypeNote />
         <p className="mt-2 text-neutral-700">
-          Concept view for a future founder review. These controls change labels on this screen only.
+          Demonstration founder actions. These controls change labels on this screen only.
         </p>
         {reports.length === 0 ? <p className="mt-3 text-neutral-800">No sample reports on this screen.</p> : null}
         <ul className="mt-3 grid gap-4">

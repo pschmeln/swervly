@@ -1,5 +1,7 @@
 import type { CareerLinkId } from "@/features/explore/links";
 
+export const DIRECTORY_WHY_SHOWN = "Included in this directory of official careers pages.";
+
 export type CatalogCompany = {
   id: string;
   name: string;
@@ -21,7 +23,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Cincinnati Children's",
     field: "Pediatric healthcare",
     roleCategories: ["Clinical operations"],
-    whyShown: "Included because the sample profile lists clinical operations.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "cchmc",
   },
   {
@@ -29,7 +31,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Mayo Clinic",
     field: "Healthcare",
     roleCategories: ["Clinical operations"],
-    whyShown: "Included because the sample profile lists clinical operations.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "mayo",
   },
   {
@@ -37,7 +39,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Teach For America",
     field: "Education",
     roleCategories: ["Community programs"],
-    whyShown: "Included because the sample profile lists community programs.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "tfa",
   },
   {
@@ -45,7 +47,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "The Nature Conservancy",
     field: "Environmental nonprofit",
     roleCategories: ["Public environmental work"],
-    whyShown: "Included in this sample set as a public environmental example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "tnc",
   },
   {
@@ -53,7 +55,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "U.S. Environmental Protection Agency",
     field: "Environmental protection",
     roleCategories: ["Public environmental work"],
-    whyShown: "Included in this sample set as a public environmental example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "epa",
   },
   {
@@ -61,7 +63,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Procter & Gamble",
     field: "Consumer products",
     roleCategories: ["Business operations"],
-    whyShown: "Included in this sample set as a business operations example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "pg",
   },
   {
@@ -69,7 +71,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Kroger",
     field: "Grocery retail",
     roleCategories: ["Business operations"],
-    whyShown: "Included in this sample set as a retail operations example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "kroger",
   },
   {
@@ -77,7 +79,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Deloitte",
     field: "Consulting",
     roleCategories: ["Consulting"],
-    whyShown: "Included in this sample set as a consulting example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "deloitte",
   },
   {
@@ -85,7 +87,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "PNC",
     field: "Banking",
     roleCategories: ["Finance"],
-    whyShown: "Included in this sample set as a banking example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "pnc",
   },
   {
@@ -93,7 +95,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "Federal Reserve Bank of Cleveland",
     field: "Public finance",
     roleCategories: ["Finance"],
-    whyShown: "Included in this sample set as a public-finance example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "cleveland-fed",
   },
   {
@@ -101,7 +103,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "IDEO",
     field: "Design",
     roleCategories: ["Product design"],
-    whyShown: "Included in this sample set as a design example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "ideo",
   },
   {
@@ -109,7 +111,7 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = [
     name: "GE Aerospace",
     field: "Aerospace manufacturing",
     roleCategories: ["Manufacturing"],
-    whyShown: "Included in this sample set as a manufacturing example.",
+    whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: "ge-aerospace",
   },
   {

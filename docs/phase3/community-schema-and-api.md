@@ -268,4 +268,4 @@ Cross-user rule: a student who is not the author gets 404 on pending, hidden, an
 
 ## What the prototype does instead
 
-`/direction/explore` renders sample questions from `src/features/community/mock/data.ts`. Ask, answer, helpful, report, and the founder concept buttons call pure functions in `src/features/explore/local-state.ts`. Those functions return notices such as "Only on this screen. Nothing was sent." They do not call `fetch`. Turning `CAREER_EXPLORE_PROTOTYPE_ENABLED` off makes the route render "This prototype is turned off."
+`/direction/explore` loads the signed-in student's direction, then renders sample questions from `src/features/community/mock/data.ts`. Ask, answer, helpful, report, and the demonstration founder actions call pure functions in `src/features/explore/local-state.ts`. Those functions return notices such as "Only on this screen. Nothing was sent." They do not call `fetch`. Turning `CAREER_EXPLORE_PROTOTYPE_ENABLED` off makes the route render "This prototype is turned off."

@@ -1,4 +1,5 @@
 import { CATALOG_COMPANIES } from "@/features/explore/companies";
+import { directionExploreCopy, type StudentExploreInput } from "@/features/explore/from-direction";
 import {
   MOCK_EXPERIENCES,
   MOCK_QUESTIONS,
@@ -7,56 +8,19 @@ import {
 } from "@/features/community/mock/data";
 import { CAREER_LINK_CHECKED_ON, careerLinkById, careerPageHref } from "@/features/explore/links";
 import { CAREER_EXPLORE_PROTOTYPE_ENABLED } from "@/features/explore/prototype";
-import type {
-  CareerPath,
-  CompanyCardModel,
-  ExploreModel,
-  SampleExperience,
-  ScopeOption,
-} from "@/features/explore/types";
+import type { CompanyCardModel, ExploreModel, SampleExperience, ScopeOption } from "@/features/explore/types";
 
-const PATHS: readonly CareerPath[] = [
-  {
-    id: "clinical-operations",
-    title: "Clinical operations",
-    summary: "A sample path about how a hospital or clinic runs day to day.",
-  },
-  {
-    id: "community-programs",
-    title: "Community programs",
-    summary: "A sample path about education and neighborhood programs.",
-  },
-  {
-    id: "public-environmental",
-    title: "Public environmental work",
-    summary: "A sample path about environmental programs in public or nonprofit settings.",
-  },
-  {
-    id: "business-operations",
-    title: "Business operations",
-    summary: "A sample path about how a consumer or retail organization runs.",
-  },
-  {
-    id: "consulting",
-    title: "Consulting",
-    summary: "A sample path about project-based client work.",
-  },
-  {
-    id: "finance",
-    title: "Finance",
-    summary: "A sample path about banking and public finance.",
-  },
-  {
-    id: "product-design",
-    title: "Product design",
-    summary: "A sample path about designing services and products with other people.",
-  },
-  {
-    id: "manufacturing",
-    title: "Manufacturing",
-    summary: "A sample path about making physical products.",
-  },
-];
+/** Demo discussion topics. These are not the signed-in student's career pathways. */
+const DISCUSSION_ROLES = [
+  { id: "clinical-operations", title: "Clinical operations" },
+  { id: "community-programs", title: "Community programs" },
+  { id: "public-environmental", title: "Public environmental work" },
+  { id: "business-operations", title: "Business operations" },
+  { id: "consulting", title: "Consulting" },
+  { id: "finance", title: "Finance" },
+  { id: "product-design", title: "Product design" },
+  { id: "manufacturing", title: "Manufacturing" },
+] as const;
 
 export const COMPANY_ROLE_FILTERS = [
   "Clinical operations",
@@ -111,7 +75,7 @@ function assembleExploreModel(): ExploreModel {
   });
 
   const scopes: ScopeOption[] = [
-    ...PATHS.map((path) => ({
+    ...DISCUSSION_ROLES.map((path) => ({
       value: `role:${path.id}`,
       label: `Role: ${path.title}`,
       shortLabel: path.title,
@@ -124,16 +88,11 @@ function assembleExploreModel(): ExploreModel {
   ];
 
   return {
-    profile: {
-      displayName: "Rowan Example",
-      focus: "Illustrated focus: clinical operations and community programs.",
-      goal: "Illustrated goal: try a care or community-program co-op.",
-    },
-    direction: {
-      headline: "Sample direction: look at clinical operations and community programs.",
-      note: "Sample copy for this prototype screen. Your quiz result stays on Direction.",
-    },
-    paths: [...PATHS],
+    profile: { majorLabel: "", goalLabel: "", note: "" },
+    direction: { headline: "", note: "", needsQuiz: true },
+    paths: [],
+    pathsIntro: "",
+    pathsEmpty: null,
     experiences,
     questions: MOCK_QUESTIONS.map((question) => ({
       ...question,
@@ -147,9 +106,30 @@ function assembleExploreModel(): ExploreModel {
   };
 }
 
+const EMPTY_STUDENT: StudentExploreInput = {
+  stored: { major: null, majorSource: null, customMajorText: null },
+  goal: null,
+  direction: null,
+  dismissedRoleIds: [],
+};
+
+export function buildExploreModel(input: StudentExploreInput = EMPTY_STUDENT): ExploreModel {
+  const shell = assembleExploreModel();
+  const copy = directionExploreCopy(input);
+  return {
+    ...shell,
+    profile: copy.profile,
+    direction: copy.direction,
+    paths: copy.paths,
+    pathsIntro: copy.pathsIntro,
+    pathsEmpty: copy.pathsEmpty,
+    companies: copy.companies(shell.companies),
+  };
+}
+
 export function prototypeModel(
   enabled: boolean = CAREER_EXPLORE_PROTOTYPE_ENABLED,
 ): ExploreModel | null {
   if (!enabled) return null;
-  return assembleExploreModel();
+  return buildExploreModel(EMPTY_STUDENT);
 }
