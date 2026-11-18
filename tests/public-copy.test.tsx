@@ -24,7 +24,11 @@ describe("public copy", () => {
     expect(text).toContain("Review your co-ops");
     expect(text).toContain("Get your direction");
     expect(text).toContain(".edu");
+    expect(html).toContain("Get started");
+    expect(html).toContain('href="/sign-up"');
     expect(html).toContain("Sign in");
+    expect(html).toContain('href="/sign-in"');
+    expect(html.match(/Sign in/g)?.length).toBe(1);
     expect(text).not.toContain("30 interest questions");
     expect(text).not.toContain("UC students");
   });

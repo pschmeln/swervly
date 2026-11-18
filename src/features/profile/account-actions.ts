@@ -3,17 +3,10 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { feedback, users, type User } from "@/db/schema";
+import { mapPasswordErrorCode } from "@/features/auth/password-messages";
 import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
-import { ApiError } from "@/lib/api";
 import type { FeedbackInput, ShareDefaultInput } from "@/features/profile/schemas";
-
-const PASSWORD_MESSAGES: Record<string, string> = {
-  form_password_pwned: "That password has appeared in a data breach. Pick a different one.",
-  form_password_length_too_short: "Use at least 8 characters.",
-  form_password_size_in_bytes_exceeded: "Use 72 characters or fewer.",
-  form_password_not_strong_enough: "Use a longer password that is harder to guess.",
-  form_password_validation_failed: "Use at least 8 characters, and avoid a password that is easy to guess.",
-};
+import { ApiError } from "@/lib/api";
 
 export async function setPassword(user: User, password: string): Promise<void> {
   try {
@@ -25,7 +18,7 @@ export async function setPassword(user: User, password: string): Promise<void> {
   } catch (error) {
     const code = isClerkAPIResponseError(error) ? error.errors[0]?.code : undefined;
     const message =
-      (typeof code === "string" ? PASSWORD_MESSAGES[code] : undefined) ??
+      mapPasswordErrorCode(typeof code === "string" ? code : undefined) ??
       "We could not set that password. Try a different one.";
     throw new ApiError(400, "password_rejected", message, { password: message });
   }

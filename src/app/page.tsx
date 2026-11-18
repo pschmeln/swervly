@@ -52,8 +52,11 @@ export function LandingPitch() {
           input. Reviews from students, and a first guess from your answers, are what you come back for.
         </p>
         <StepGraphic />
-        <div>
-          <Button href={ROUTES.signIn} className="w-full sm:w-auto">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button href={ROUTES.signUp} className="w-full sm:w-auto">
+            Get started
+          </Button>
+          <Button href={ROUTES.signIn} variant="secondary" className="w-full sm:w-auto">
             Sign in
           </Button>
         </div>
@@ -74,11 +77,6 @@ export function LandingPitch() {
           Any student with an email that ends in .edu. Swervly is free, and it is not affiliated
           with a university.
         </p>
-        <div className="mt-4">
-          <Button href={ROUTES.signIn} className="w-full sm:w-auto">
-            Sign in
-          </Button>
-        </div>
       </Card>
     </main>
   );
