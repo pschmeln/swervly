@@ -34,6 +34,13 @@ describe("personal major reasons", () => {
     expect(majorReason(link, "Nursing", low).text).toContain("stretch you");
   });
 
+  it("says each trait line once, then refers back to it", () => {
+    const list = reasons(mixed);
+    const line = "You look out for the people around you";
+    expect(list.filter((item) => item.reason.includes(line))).toHaveLength(1);
+    expect(list.find((item) => item.name === "Psychology")?.reason).toContain("same strength");
+  });
+
   it("puts majors that fit the student's traits first", () => {
     // High agreeableness, low extraversion and openness: Nursing and Psychology lead.
     expect(reasons(mixed).slice(0, 2).map((item) => item.name)).toEqual(["Nursing", "Psychology"]);

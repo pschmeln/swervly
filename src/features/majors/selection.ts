@@ -195,12 +195,23 @@ export type AcademicExploration = {
  * Personal reason for one major: the student's own result on the trait the
  * major leans on, then what the work is like. A clue, never a fit score.
  */
-export function majorReason(link: MajorTraitLink, name: string, traits: TraitScores): { text: string; score: number } {
+export function majorReason(
+  link: MajorTraitLink,
+  name: string,
+  traits: TraitScores,
+  /** True when an earlier suggestion already described this trait: refer back instead of repeating it. */
+  repeat = false,
+): { text: string; score: number } {
   const band = traitBand(traits[link.trait]);
+  const score = band === link.fits ? 2 : band === "middle" ? 1 : 0;
+  if (repeat) {
+    const tail = score === 2 ? "It leans on that same strength." : score === 1 ? "It uses that same mix." : "It would stretch you the same way.";
+    return { score, text: `${name} ${link.why}. ${tail}` };
+  }
   const headline = traitHeadline(link.trait, band);
-  if (band === link.fits) return { score: 2, text: `${headline}. ${name} ${link.why}, so it may suit you.` };
-  if (band === "middle") return { score: 1, text: `${headline}. ${name} ${link.why}, something you can grow into.` };
-  return { score: 0, text: `${headline}. ${name} ${link.why}, so it would stretch you. That can be a good thing if the subject interests you.` };
+  if (score === 2) return { score, text: `${headline}. ${name} ${link.why}, so it may suit you.` };
+  if (score === 1) return { score, text: `${headline}. ${name} ${link.why}, something you can grow into.` };
+  return { score, text: `${headline}. ${name} ${link.why}, so it would stretch you. That can be a good thing if the subject interests you.` };
 }
 
 const SUGGESTION_COUNT = 4;
@@ -227,10 +238,18 @@ function suggestionsFor(
       },
     });
   });
-  return ranked
+  const top = ranked
     .sort((left, right) => right.score - left.score || left.index - right.index)
-    .slice(0, SUGGESTION_COUNT)
-    .map((row) => row.suggestion);
+    .slice(0, SUGGESTION_COUNT);
+  if (!traits) return top.map((row) => row.suggestion);
+  // Write the text in display order, so only the first major per trait repeats the trait line.
+  const described = new Set<string>();
+  return top.map((row) => {
+    const link = links[row.index]!;
+    const text = majorReason(link, row.suggestion.name, traits, described.has(link.trait)).text;
+    described.add(link.trait);
+    return { ...row.suggestion, reason: text };
+  });
 }
 
 /**
