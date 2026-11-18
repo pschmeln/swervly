@@ -81,6 +81,7 @@ function userRow(overrides: Pick<User, "clerkId" | "email"> & Partial<User>): Us
     majorSubmissionId: null,
     exploringMajors: false,
     dismissedCareerRoles: [],
+    interestedCareerRoles: [],
     source: "early",
     createdAt: new Date("2026-11-15T00:00:00.000Z"),
     updatedAt: new Date("2026-11-15T00:00:00.000Z"),

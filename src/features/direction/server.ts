@@ -2,7 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { INSTRUMENT, TRAITS, type Trait } from "@/content/mini-ipip";
 import { db } from "@/db";
 import { assessments, profiles, reviews, rotations, users, type User } from "@/db/schema";
-import { withoutDismissedRoles } from "@/features/direction/career-roles";
+import { interestedFirst, withoutDismissedRoles } from "@/features/direction/career-roles";
 import {
   buildDirection,
   type DirectionSuggestion,
@@ -19,6 +19,8 @@ export type DirectionPayload = {
   label: string;
   basis: "rules" | "similar_students" | "mixed";
   suggestions: DirectionSuggestion[];
+  /** Careers the student marked Interested, in the order they marked them. */
+  interestedRoles: string[];
   academic: AcademicExploration;
 };
 
@@ -108,11 +110,17 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
     readings: readTraits(traits),
     label: direction.label,
     basis: direction.basis,
-    suggestions: withoutDismissedRoles(direction.suggestions, user.dismissedCareerRoles),
+    // Interested careers rank first (founder decision: Interested shapes future suggestions).
+    suggestions: interestedFirst(
+      withoutDismissedRoles(direction.suggestions, user.dismissedCareerRoles),
+      user.interestedCareerRoles,
+    ),
+    interestedRoles: [...user.interestedCareerRoles],
     academic: academicExploration({
       source: academicSource(user),
       exploringMajors: user.exploringMajors,
       goal,
+      traits,
     }),
   };
 }

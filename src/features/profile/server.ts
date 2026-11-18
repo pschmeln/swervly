@@ -267,6 +267,15 @@ export async function saveAssessment(
         updatedAt: sql`now()`,
       })
       .where(eq(profiles.userId, userId)),
+    // The end-of-quiz choice. Undecided students always see majors, so it is not stored for them.
+    ...(input.exploringMajors === undefined
+      ? []
+      : [
+          db
+            .update(users)
+            .set({ exploringMajors: input.exploringMajors, updatedAt: sql`now()` })
+            .where(and(eq(users.id, userId), sql`${users.majorSource} is distinct from 'undecided'`)),
+        ]),
     db
       .update(users)
       .set({

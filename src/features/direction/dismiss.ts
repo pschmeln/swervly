@@ -14,11 +14,21 @@ export const DismissRoleInput = z.object({
 
 export type DismissRoleInput = z.infer<typeof DismissRoleInput>;
 
-export async function dismissCareerRole(userId: string, current: readonly string[], roleType: string): Promise<void> {
+export async function dismissCareerRole(
+  userId: string,
+  current: readonly string[],
+  roleType: string,
+  interested: readonly string[] = [],
+): Promise<void> {
   if (!userId) throw new ApiError(401, "unauthorized", "Sign in required.");
   const next = [...new Set([...current, roleType])].slice(0, 30);
   await db
     .update(users)
-    .set({ dismissedCareerRoles: next, updatedAt: new Date() })
+    .set({
+      dismissedCareerRoles: next,
+      // A dismissed career is no longer Interested.
+      interestedCareerRoles: interested.filter((role) => role !== roleType),
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, userId));
 }

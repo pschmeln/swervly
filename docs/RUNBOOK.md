@@ -718,3 +718,18 @@ Hand steps outside the repo:
 - Vercel, Production and Preview: `NEXT_PUBLIC_POSTHOG_KEY` (blank disables tracking) and optional `NEXT_PUBLIC_POSTHOG_HOST` (defaults to `https://us.i.posthog.com`). Events are `sign_up`, `quiz_finished`, `review_saved`, and `direction_viewed`, keyed by `users.id`.
 - Vercel: `FOUNDER_EMAILS`, a comma-separated list of the two founder addresses. Blank hides `/founders`.
 - PostHog: create a project and copy the public project key. No server secret is required for these capture calls.
+
+## Keeping the test databases in step (since Nov 18, 2026)
+
+Vercel previews use the `dev-peter` Neon branch, and Li's machine uses `dev-li`. Neither updates itself when production gets a migration. On Nov 18 both were several migrations behind, so every preview broke at sign-in (`column "school" does not exist`).
+
+For every new migration, in this order:
+
+1. Test it on a temporary branch copied from `dev-peter` (test accounts only), then delete that branch.
+2. Apply it to `dev-peter` and `dev-li`, so the pull request's preview works.
+3. Apply it to **production**.
+4. Merge the pull request.
+
+Apply means the same thing everywhere: run the file's statements (split at `--> statement-breakpoint`) in one transaction, and insert its row into `drizzle.__drizzle_migrations` with the file's sha256 hash and the journal's `when` value. `npm run db:migrate` does exactly this. A wrong `created_at` makes a later `db:migrate` try the migration again.
+
+To check that a branch matches production, compare `information_schema.columns`, `pg_constraint` and the `created_at` list in `drizzle.__drizzle_migrations` on both.

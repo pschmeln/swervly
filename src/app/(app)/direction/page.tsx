@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button, Card, PageShell } from "@/components/ui";
 import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
+import { InterestedButton } from "@/features/direction/components/interested-button";
 import { loadDirection } from "@/features/direction/server";
 import { captureEvent } from "@/lib/analytics";
 import { requireOnboardedUser } from "@/lib/auth";
@@ -90,7 +91,15 @@ export default async function DirectionPage() {
               <p className="mt-1 text-sm text-neutral-600">{suggestion.evidenceLabel}</p>
             ) : null}
             <p className="mt-1 text-neutral-700">{suggestion.reason}</p>
-            {suggestion.roleType !== "insufficient" ? <DismissSuggestion roleType={suggestion.roleType} /> : null}
+            {suggestion.roleType !== "insufficient" ? (
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start">
+                <InterestedButton
+                  roleType={suggestion.roleType}
+                  initial={direction.interestedRoles.includes(suggestion.roleType)}
+                />
+                <DismissSuggestion roleType={suggestion.roleType} />
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>

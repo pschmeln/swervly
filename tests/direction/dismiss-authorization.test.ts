@@ -39,6 +39,7 @@ function userRow(id: string, clerkId: string, email: string): User {
     majorSubmissionId: null,
     exploringMajors: false,
     dismissedCareerRoles: [],
+    interestedCareerRoles: [],
     year: 3,
     coopTrack: null,
     consentPrivacyAt: createdAt,

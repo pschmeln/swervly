@@ -41,6 +41,16 @@ export function isCareerRoleId(id: string): boolean {
   return (ROLE_TYPE_VALUES as readonly string[]).includes(id) || (EXTRA_CAREER_ROLE_IDS as readonly string[]).includes(id);
 }
 
+/** Careers the student marked Interested come first; the rest keep their order. */
+export function interestedFirst<T extends { roleType: string }>(
+  items: readonly T[],
+  interested: readonly string[],
+): T[] {
+  if (interested.length === 0) return [...items];
+  const wanted = new Set(interested);
+  return [...items.filter((item) => wanted.has(item.roleType)), ...items.filter((item) => !wanted.has(item.roleType))];
+}
+
 export function withoutDismissedRoles<T extends { roleType: string }>(
   items: readonly T[],
   dismissed: readonly string[],
