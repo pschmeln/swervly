@@ -76,9 +76,13 @@ export type FounderReport = {
   preview: FounderPreview | null;
 };
 
+export const DEMO_PREVIEW_LABEL = "Demo preview";
+export const DEMO_PREVIEW_NOTE =
+  "Invented notes and discussions. They are not evidence for the direction above.";
 export const SAMPLE_EXPERIENCES_LABEL = "Sample student experiences";
 export const DEMO_DISCUSSIONS_LABEL = "Demo discussions";
 export const DEMO_FOUNDER_LABEL = "Demonstration founder actions";
+export const DIRECTORY_EXPERIENCE_LINE = "None yet.";
 
 export type ExploreModel = {
   profile: ExploreProfile;

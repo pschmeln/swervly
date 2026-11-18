@@ -26,6 +26,9 @@ import {
 import {
   DEMO_DISCUSSIONS_LABEL,
   DEMO_FOUNDER_LABEL,
+  DEMO_PREVIEW_LABEL,
+  DEMO_PREVIEW_NOTE,
+  DIRECTORY_EXPERIENCE_LINE,
   PROTOTYPE_BANNER,
   SAMPLE_EXPERIENCES_LABEL,
   type CompanyCardModel,
@@ -40,9 +43,8 @@ const focusRing =
 const SECTIONS = [
   { href: "#your-direction", label: "Your direction" },
   { href: "#career-paths", label: "Explore career paths" },
-  { href: "#student-experiences", label: "Student experiences" },
-  { href: "#community", label: "Community discussions" },
   { href: "#companies", label: "Companies & opportunities" },
+  { href: "#demo-preview", label: DEMO_PREVIEW_LABEL },
 ] as const;
 
 function PrototypeNote() {
@@ -67,12 +69,6 @@ function SectionNav() {
       ))}
     </nav>
   );
-}
-
-function experienceLine(count: number): string {
-  if (count === 0) return "None yet.";
-  if (count === 1) return "1 sample experience marked as shared.";
-  return `${count} sample experiences marked as shared.`;
 }
 
 function OfficialCareersLink({ url, checkedOn }: { url: string | null; checkedOn: string | null }) {
@@ -165,13 +161,11 @@ function PathsSection({ model }: { model: ExploreModel }) {
 
 function ExperiencesSection({ model }: { model: ExploreModel }) {
   return (
-    <section id="student-experiences" aria-labelledby="student-experiences-heading" className="scroll-mt-6 grid gap-3">
-      <h2 id="student-experiences-heading" className="text-lg font-semibold">
-        Student experiences
-      </h2>
-      <PrototypeNote />
-      <p className="font-medium text-neutral-900">{SAMPLE_EXPERIENCES_LABEL}</p>
-      <p className="text-neutral-700">Only samples marked as shared are listed. These notes are invented.</p>
+    <section id="student-experiences" aria-labelledby="student-experiences-heading" className="grid gap-3">
+      <h3 id="student-experiences-heading" className="text-lg font-semibold">
+        {SAMPLE_EXPERIENCES_LABEL}
+      </h3>
+      <p className="text-neutral-700">Only invented notes marked as shared are listed here.</p>
       {model.experiences.length === 0 ? (
         <p className="text-neutral-800">No shared sample experiences yet.</p>
       ) : (
@@ -414,12 +408,10 @@ function CommunitySection({ model }: { model: ExploreModel }) {
   const visible = filterQuestions(questions, browse);
 
   return (
-    <section id="community" aria-labelledby="community-heading" className="scroll-mt-6 grid gap-3">
-      <h2 id="community-heading" className="text-lg font-semibold">
-        Community discussions
-      </h2>
-      <PrototypeNote />
-      <p className="font-medium text-neutral-900">{DEMO_DISCUSSIONS_LABEL}</p>
+    <section id="community" aria-labelledby="community-heading" className="grid gap-3">
+      <h3 id="community-heading" className="text-lg font-semibold">
+        {DEMO_DISCUSSIONS_LABEL}
+      </h3>
       <p className="text-neutral-700">Invented questions and answers. Nothing you type is sent.</p>
       <Field label="Browse sample questions" htmlFor="browse-questions">
         <Select
@@ -506,7 +498,7 @@ function CommunitySection({ model }: { model: ExploreModel }) {
         ))}
       </ul>
       <Card>
-        <h3 className="text-base font-semibold">{DEMO_FOUNDER_LABEL}</h3>
+        <h4 className="text-base font-semibold">{DEMO_FOUNDER_LABEL}</h4>
         <PrototypeNote />
         <p className="mt-2 text-neutral-700">
           Demonstration founder actions. These controls change labels on this screen only.
@@ -580,9 +572,8 @@ function CompaniesSection({ model }: { model: ExploreModel }) {
       <h2 id="companies-heading" className="text-lg font-semibold">
         Companies & opportunities
       </h2>
-      <PrototypeNote />
       <p className="text-neutral-700">
-        Company cards in this sample. A careers link leaves Swervly. This screen does not list positions.
+        Official careers pages in this directory. This screen does not list positions. Student experiences on these cards are none yet.
       </p>
       <Field label="Role category" htmlFor="company-role">
         <Select
@@ -639,7 +630,7 @@ function CompanyCard({
       <h4 className="mt-3 text-sm font-medium text-neutral-900">Why this company is shown</h4>
       <p className="break-words text-neutral-800">{company.whyShown}</p>
       <h4 className="mt-3 text-sm font-medium text-neutral-900">Student experiences</h4>
-      <p className="text-neutral-800">{experienceLine(company.experienceCount)}</p>
+      <p className="text-neutral-800">{DIRECTORY_EXPERIENCE_LINE}</p>
       <h4 className="mt-3 text-sm font-medium text-neutral-900">Official careers page</h4>
       <OfficialCareersLink url={company.careersUrl} checkedOn={company.linkCheckedOn} />
       <div className="mt-3 grid gap-1">
@@ -678,8 +669,7 @@ export function CareerExplore({ model, phase }: { model: ExploreModel; phase: "l
   if (phase === "loading") {
     return (
       <div className="grid gap-4">
-        <PrototypeNote />
-        <p role="status">Loading sample exploration…</p>
+        <p role="status">Loading exploration…</p>
         <BackToDirection />
       </div>
     );
@@ -687,13 +677,23 @@ export function CareerExplore({ model, phase }: { model: ExploreModel; phase: "l
 
   return (
     <div className="grid min-w-0 gap-4">
-      <PrototypeNote />
       <SectionNav />
       <DirectionSection model={model} />
       <PathsSection model={model} />
-      <ExperiencesSection model={model} />
-      <CommunitySection model={model} />
       <CompaniesSection model={model} />
+      <section
+        id="demo-preview"
+        aria-labelledby="demo-preview-heading"
+        className="scroll-mt-6 grid gap-4 rounded-xl border-2 border-neutral-900 bg-neutral-100 p-4"
+      >
+        <h2 id="demo-preview-heading" className="text-lg font-semibold">
+          {DEMO_PREVIEW_LABEL}
+        </h2>
+        <p className="text-neutral-800">{DEMO_PREVIEW_NOTE}</p>
+        <PrototypeNote />
+        <ExperiencesSection model={model} />
+        <CommunitySection model={model} />
+      </section>
       <BackToDirection />
     </div>
   );

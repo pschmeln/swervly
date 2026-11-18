@@ -7,6 +7,9 @@ import { careerPageHref } from "@/features/explore/links";
 import {
   DEMO_DISCUSSIONS_LABEL,
   DEMO_FOUNDER_LABEL,
+  DEMO_PREVIEW_LABEL,
+  DEMO_PREVIEW_NOTE,
+  DIRECTORY_EXPERIENCE_LINE,
   PROTOTYPE_BANNER,
   SAMPLE_EXPERIENCES_LABEL,
   type ExploreModel,
@@ -60,9 +63,9 @@ describe("career exploration prototype", () => {
     expect(text).toContain(PROTOTYPE_BANNER);
     expect(text).toContain("Your direction");
     expect(text).toContain("Explore career paths");
-    expect(text).toContain("Student experiences");
+    expect(text).toContain(DEMO_PREVIEW_LABEL);
+    expect(text).toContain(DEMO_PREVIEW_NOTE);
     expect(text).toContain(SAMPLE_EXPERIENCES_LABEL);
-    expect(text).toContain("Community discussions");
     expect(text).toContain(DEMO_DISCUSSIONS_LABEL);
     expect(text).toContain(DEMO_FOUNDER_LABEL);
     expect(text).toContain("Non-persistent bookmark. Nothing is stored.");
@@ -71,15 +74,16 @@ describe("career exploration prototype", () => {
     expect(text).toContain("Healthcare — clinical");
     expect(text).toContain("Listed under Clinical operations, which is also one of your direction suggestions.");
     expect(text).toContain("Invented sample: the team drew the clinic schedule on a whiteboard");
-    expect(text).toContain("1 sample experience marked as shared.");
-    expect(text).toContain("None yet.");
+    expect(text).not.toContain("1 sample experience marked as shared.");
+    expect(text).toContain(DIRECTORY_EXPERIENCE_LINE);
     expect(text).toContain("No official careers page is on file.");
     expect(text).toContain("Sample Org With No Page On File");
     expect(text).toContain("No sample answers yet.");
     expect(text).toContain(DEMO_FOUNDER_LABEL);
     expect(text).toContain("Link checked 2026-11-17.");
     expect(html).toContain('aria-label="Exploration sections"');
-    expect(html).toContain('href="#community"');
+    expect(html).toContain('href="#demo-preview"');
+    expect(html).not.toContain('href="#student-experiences"');
     expect(html).toContain('href="/direction"');
     expect(html).toContain('aria-pressed="false"');
     expect(html).toContain("Browse sample questions");
@@ -109,8 +113,8 @@ describe("career exploration prototype", () => {
     const loading = visibleText(
       renderToStaticMarkup(<CareerExplore model={ready} phase="loading" />),
     );
-    expect(loading).toContain(PROTOTYPE_BANNER);
-    expect(loading).toContain("Loading sample exploration…");
+    expect(loading).not.toContain(PROTOTYPE_BANNER);
+    expect(loading).toContain("Loading exploration…");
     expect(loading).not.toContain("Mayo Clinic");
     expect(loading).not.toContain("Rowan Example");
 
@@ -126,6 +130,28 @@ describe("career exploration prototype", () => {
     expect(empty).toContain("No shared sample experiences yet.");
     expect(empty).toContain("No sample questions for this filter.");
     expect(empty).not.toContain("Why this company is shown");
+  });
+
+  it("keeps invented clinical notes inside Demo preview and off the direction", () => {
+    const html = renderToStaticMarkup(<CareerExplore model={model()} phase="ready" />);
+    const demoAt = html.indexOf('id="demo-preview"');
+    const directionAt = html.indexOf('id="your-direction"');
+    const pathsAt = html.indexOf('id="career-paths"');
+    const companiesAt = html.indexOf('id="companies"');
+    const note = "Invented sample: the team drew the clinic schedule on a whiteboard";
+    expect(directionAt).toBeGreaterThan(-1);
+    expect(pathsAt).toBeGreaterThan(directionAt);
+    expect(companiesAt).toBeGreaterThan(pathsAt);
+    expect(demoAt).toBeGreaterThan(companiesAt);
+    expect(html.indexOf(note)).toBeGreaterThan(demoAt);
+    expect(html.slice(0, demoAt)).not.toContain(note);
+    expect(html.slice(0, demoAt)).not.toContain(PROTOTYPE_BANNER);
+    expect(html.slice(demoAt)).toContain(DEMO_PREVIEW_NOTE);
+    expect(html.slice(demoAt)).toContain(SAMPLE_EXPERIENCES_LABEL);
+    const companiesHtml = html.slice(companiesAt, demoAt);
+    expect(companiesHtml).toContain(DIRECTORY_EXPERIENCE_LINE);
+    expect(companiesHtml).not.toContain(note);
+    expect(companiesHtml).not.toContain("sample experience marked as shared");
   });
 
   it("escapes sample text and drops an unsafe careers URL", () => {

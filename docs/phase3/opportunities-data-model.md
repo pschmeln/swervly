@@ -120,4 +120,4 @@ An empty major uses the existing direction rules, which return "not enough infor
 
 ## What the prototype does instead
 
-`CATALOG_COMPANIES` holds the 12 organizations and one invented empty card. Invalid URLs become "No official careers page is on file." Save, filter, discussions, and sample experiences stay on the screen. `/direction` still dismisses suggestions and still links onward to explore. It does not import the mock module.
+`CATALOG_COMPANIES` holds the 12 organizations and one invented empty card. Invalid URLs become "No official careers page is on file." Company cards say student experiences are none yet. Invented notes and discussions live only in the Demo preview and are not evidence for Direction. Bookmarks stay on the screen. `/direction` still dismisses suggestions and still links onward to explore. It does not import the mock module.
