@@ -239,8 +239,8 @@ export function SignUpForm() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Verify your email</h1>
           <p className="mt-2 leading-7 text-neutral-700">
-            Enter the code we sent. Creating a password does not remove future verification when Clerk
-            asks for one.
+            Enter the code we sent. You only verify your email once. After that, you sign in with your
+            email and password.
           </p>
         </div>
         <Field label="Verification code" htmlFor="signUpCode" error={localErrors.code ?? fieldCode}>
