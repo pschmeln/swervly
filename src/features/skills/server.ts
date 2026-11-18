@@ -1,11 +1,27 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 import { SKILL_CATALOG } from "@/content/skills";
 import { db } from "@/db";
 import { reviews, rotations, skills, users } from "@/db/schema";
 import { employerIsVisible } from "@/features/company/server";
+import { publicAggregateMajor } from "@/features/majors/selection";
+import { hasShareReviewsConsent, SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
 import type { SkillCreateInput } from "@/features/review/schemas";
 import { normalizeSkillName, orderSkills, type SkillChoice } from "@/features/skills/rank";
 import { ApiError } from "@/lib/api";
+
+/** Same publicity rule as company aggregates: consent, and not a private major. */
+export function skillRankEligible(
+  row: {
+    major: string | null;
+    majorSource: string | null;
+    shareReviewsConsentAt: Date | null;
+    shareReviewsConsentVersion: number | null;
+  },
+  requestedMajor: string,
+): boolean {
+  if (!hasShareReviewsConsent(row)) return false;
+  return publicAggregateMajor(row) === requestedMajor;
+}
 
 function starterChoices(): SkillChoice[] {
   return SKILL_CATALOG.map((skill) => ({
@@ -50,7 +66,14 @@ export async function listSkillChoices(
       .from(reviews)
       .innerJoin(rotations, eq(reviews.rotationId, rotations.id))
       .innerJoin(users, eq(rotations.userId, users.id))
-      .where(and(eq(rotations.employerId, employerId), eq(users.major, major)));
+      .where(and(
+        eq(rotations.employerId, employerId),
+        sql`btrim(${users.major}) = ${major}`,
+        sql`${users.majorSource} is distinct from 'custom'`,
+        sql`${users.majorSource} is distinct from 'undecided'`,
+        isNotNull(users.shareReviewsConsentAt),
+        eq(users.shareReviewsConsentVersion, SHARE_REVIEWS_CONSENT_VERSION),
+      ));
     for (const row of rows) {
       for (const name of row.skillsUsed) {
         counts[name] = (counts[name] ?? 0) + 1;

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
+import { loadMajorSearchContext } from "@/features/majors/load";
+import { selectionFromStored } from "@/features/majors/selection";
 import { OnboardingFlow } from "@/features/profile/components/onboarding-flow";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { suggestSchoolFromEmail } from "@/features/profile/school";
@@ -24,6 +26,7 @@ export default async function OnboardingPage({
 }) {
   const [user, params] = await Promise.all([requireUser(), searchParams]);
   if (user.onboardedAt && !isRetake(params.retake)) redirect(ROUTES.home);
+  const majorSearch = await loadMajorSearchContext();
 
   const [profile] = await db
     .select({
@@ -40,6 +43,7 @@ export default async function OnboardingPage({
   return (
     <PageShell title="Onboarding">
       <OnboardingFlow
+        majorSearch={majorSearch}
         initialStep={onboardingResumeStep(
           profile != null,
           user.consentPrivacyAt,
@@ -51,7 +55,8 @@ export default async function OnboardingPage({
           consentDataUse: user.consentDataUseAt != null,
           consentShareReviews: hasShareReviewsConsent(user),
           school: profile?.school?.trim() || suggestSchoolFromEmail(user.email),
-          major: user.major ?? "",
+          major: selectionFromStored(user),
+          exploringMajors: user.exploringMajors,
           year: user.year == null ? "" : String(user.year),
           coopTrack: user.coopTrack ?? "",
           goal: profile?.goal ?? "",

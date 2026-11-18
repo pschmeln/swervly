@@ -3,6 +3,7 @@ import { SKILLS } from "@/content/skills";
 import { db } from "@/db";
 import { employers, reviews, rotations, skills, users, type User } from "@/db/schema";
 import { aggregateForMajor, type PublicMajorView, type ReviewForAggregate } from "@/features/company/aggregate";
+import { publicAggregateMajor } from "@/features/majors/selection";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { employerUsableByUser } from "@/features/review/server";
 import type { CompanyPreviewInput } from "@/features/review/schemas";
@@ -10,6 +11,22 @@ import { isWouldReturn, type WouldReturn } from "@/features/review/would-return"
 import { ApiError } from "@/lib/api";
 
 type LoadedReview = ReviewForAggregate & { rotationId: string };
+
+function hiddenMajorView(): PublicMajorView {
+  return {
+    visible: false,
+    major: "",
+    reviewCount: 0,
+    contributorCount: 0,
+    headline: "",
+    maybeLine: "",
+    basisLine: "",
+    averages: null,
+    topSkills: [],
+    payRange: null,
+    sharedNotes: [],
+  };
+}
 
 function asWouldReturn(value: string): WouldReturn {
   if (isWouldReturn(value)) return value;
@@ -30,6 +47,7 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       rotationId: rotations.id,
       userId: rotations.userId,
       major: users.major,
+      majorSource: users.majorSource,
       wouldReturn: rotations.wouldReturn,
       enjoyment: reviews.enjoyment,
       learning: reviews.learning,
@@ -54,10 +72,13 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
         shareReviewsConsentVersion: row.shareReviewsConsentVersion,
       }),
     )
-    .map((row) => ({
+    .flatMap((row) => {
+      const major = publicAggregateMajor({ major: row.major, majorSource: row.majorSource });
+      if (!major) return [];
+      return [{
       rotationId: row.rotationId,
       userId: row.userId,
-      major: row.major ?? "",
+      major,
       wouldReturn: asWouldReturn(row.wouldReturn),
       enjoyment: row.enjoyment,
       learning: row.learning,
@@ -67,7 +88,8 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       payHourly: row.payHourly == null ? null : Number(row.payHourly),
       freeText: row.freeText,
       shareFreeText: row.shareFreeText,
-    }));
+    }];
+    });
 }
 
 export async function companyViewForUser(
@@ -78,12 +100,12 @@ export async function companyViewForUser(
   if (!employer || !employerUsableByUser(employer, user.id)) {
     throw new ApiError(404, "employer_not_found", "Employer not found.");
   }
+  const viewerMajor = publicAggregateMajor(user);
+  if (!viewerMajor) {
+    return { employerName: employer.name, view: hiddenMajorView() };
+  }
   const loaded = await loadEmployerReviews(employer.id);
-  const view = aggregateForMajor(
-    loaded,
-    user.major ?? "",
-    await approvedSkillNames(),
-  );
+  const view = aggregateForMajor(loaded, viewerMajor, await approvedSkillNames());
   return { employerName: employer.name, view };
 }
 
@@ -100,6 +122,11 @@ export async function previewCompany(
     throw new ApiError(404, "employer_not_found", "Employer not found.");
   }
 
+  const viewerMajor = publicAggregateMajor(user);
+  if (!viewerMajor) {
+    return { employerName: employer.name, view: hiddenMajorView() };
+  }
+
   const loaded = await loadEmployerReviews(employer.id);
   const kept = loaded.filter(
     (row) => !(input.rotationId && row.rotationId === input.rotationId && row.userId === user.id),
@@ -112,7 +139,7 @@ export async function previewCompany(
   const draft: ReviewForAggregate | null = authorized
     ? {
         userId: user.id,
-        major: user.major ?? "",
+        major: viewerMajor,
         wouldReturn: input.wouldReturn,
         enjoyment: input.enjoyment,
         learning: input.learning,
@@ -127,7 +154,7 @@ export async function previewCompany(
 
   const view = aggregateForMajor(
     draft ? [...kept, draft] : kept,
-    user.major ?? "",
+    viewerMajor,
     await approvedSkillNames(),
   );
   return { employerName: employer.name, view };

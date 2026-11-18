@@ -5,6 +5,7 @@ import { db } from "@/db";
 import {
   assessments,
   employers,
+  majorSubmissions,
   profiles,
   reviews,
   rotations,
@@ -15,10 +16,12 @@ import {
   type Rotation,
   type User,
 } from "@/db/schema";
+import { loadMajorSearchContext } from "@/features/majors/load";
+import { resolveMajorWrite, type ProfileWriteInput } from "@/features/majors/selection";
 import { ApiError } from "@/lib/api";
 import { reportFailure } from "@/lib/sentry";
 import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
-import { type AssessmentInput, type ProfileInput } from "./schemas";
+import { type AssessmentInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
 import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
 
@@ -42,7 +45,7 @@ function clerkErrorCode(error: unknown): string {
   return "unknown";
 }
 
-function profileFields(input: ProfileInput) {
+function profileFields(input: ProfileWriteInput) {
   return {
     school: input.school,
     goal: input.goal,
@@ -55,47 +58,137 @@ function profileFields(input: ProfileInput) {
 
 export async function saveProfile(
   userId: string,
-  input: ProfileInput,
+  input: ProfileWriteInput,
 ): Promise<{ user: User; profile: Profile }> {
-  const fields = profileFields(input);
-  const shareConsent =
-    input.consentShareReviews === true
-      ? {
-          shareReviewsConsentAt: sql`coalesce(${users.shareReviewsConsentAt}, now())`,
-          shareReviewsConsentVersion: sql`coalesce(${users.shareReviewsConsentVersion}, ${SHARE_REVIEWS_CONSENT_VERSION})`,
-        }
-      : {};
-  const [userRows, profileRows] = await db.batch([
-    db
-      .update(users)
-      .set({
-        major: input.major,
-        year: input.year,
-        coopTrack: input.coopTrack ?? null,
-        consentPrivacyAt: sql`coalesce(${users.consentPrivacyAt}, now())`,
-        consentDataUseAt: sql`coalesce(${users.consentDataUseAt}, now())`,
-        ...shareConsent,
-        updatedAt: sql`now()`,
-      })
-      .where(eq(users.id, userId))
-      .returning(),
-    db
-      .insert(profiles)
-      .values({ userId, ...fields })
-      .onConflictDoUpdate({
-        target: profiles.userId,
-        set: fields,
-      })
-      .returning(),
-  ]);
+  const context = await loadMajorSearchContext();
+  const resolved = resolveMajorWrite(input, context);
+  if (!resolved.ok) {
+    throw new ApiError(400, "invalid_body", "Check the fields below and try again.", {
+      majorSelection: resolved.message,
+    });
+  }
 
-  const user = userRows[0];
-  const profile = profileRows[0];
+  const write = resolved.write;
+  const fields = profileFields(input);
+  const conflict = () =>
+    new ApiError(409, "conflict", "Your major changed while this was saving. Reload and try again.");
+  const shareSql = input.consentShareReviews === true
+    ? sql`, share_reviews_consent_at = coalesce(share_reviews_consent_at, now()), share_reviews_consent_version = coalesce(share_reviews_consent_version, ${SHARE_REVIEWS_CONSENT_VERSION})`
+    : sql``;
+  const userSet = sql`
+    major = ${write.major},
+    major_source = ${write.source},
+    custom_major_text = ${write.customMajorText},
+    exploring_majors = ${write.exploringMajors},
+    year = ${input.year},
+    coop_track = ${input.coopTrack ?? null},
+    consent_privacy_at = coalesce(consent_privacy_at, now()),
+    consent_data_use_at = coalesce(consent_data_use_at, now()),
+    updated_at = now()
+    ${shareSql}
+  `;
+  // The profile write is the statement's main query, so it runs only when `changed` has a row.
+  const profileWrite = sql`
+    insert into profiles (
+      user_id, school, goal, goal_notes, location_constraint, constraints_notes, updated_at
+    )
+    select
+      ${userId}::uuid,
+      ${fields.school},
+      ${fields.goal},
+      ${fields.goalNotes},
+      ${fields.locationConstraint},
+      ${fields.constraintsNotes},
+      now()
+    from changed
+    on conflict (user_id) do update set
+      school = excluded.school,
+      goal = excluded.goal,
+      goal_notes = excluded.goal_notes,
+      location_constraint = excluded.location_constraint,
+      constraints_notes = excluded.constraints_notes,
+      updated_at = now()
+    returning user_id as id
+  `;
+
+  if (write.submission) {
+    const [existing] = await db
+      .select({ id: majorSubmissions.id })
+      .from(majorSubmissions)
+      .where(and(eq(majorSubmissions.userId, userId), eq(majorSubmissions.status, "pending")))
+      .limit(1);
+    const saved = existing
+      ? await db.execute<{ id: string }>(sql`
+          with renamed as (
+            update major_submissions
+            set raw_name = ${write.submission.rawName},
+                normalized_name = ${write.submission.normalizedName},
+                updated_at = now()
+            where id = ${existing.id}::uuid
+              and user_id = ${userId}::uuid
+              and status = 'pending'
+            returning id
+          ),
+          changed as (
+            update users
+            set ${userSet},
+                major_submission_id = ${existing.id}::uuid
+            where users.id = ${userId}::uuid
+              and exists (select 1 from renamed)
+            returning users.id
+          )
+          ${profileWrite}
+        `)
+      : await db.execute<{ id: string }>(sql`
+          with inserted as (
+            insert into major_submissions (id, user_id, raw_name, normalized_name, status)
+            values (
+              ${crypto.randomUUID()}::uuid,
+              ${userId}::uuid,
+              ${write.submission.rawName},
+              ${write.submission.normalizedName},
+              'pending'
+            )
+            on conflict (user_id) where status = 'pending' do nothing
+            returning id
+          ),
+          changed as (
+            update users
+            set ${userSet},
+                major_submission_id = (select id from inserted)
+            where users.id = ${userId}::uuid
+              and exists (select 1 from inserted)
+            returning users.id
+          )
+          ${profileWrite}
+        `);
+    if (returnedIds(saved).length === 0) throw conflict();
+  } else {
+    const saved = await db.execute<{ id: string }>(sql`
+      with changed as (
+        update users
+        set ${userSet},
+            major_submission_id = null
+        where users.id = ${userId}::uuid
+        returning users.id
+      )
+      ${profileWrite}
+    `);
+    if (returnedIds(saved).length === 0) throw new Error("profile_write_missing");
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
   if (!user || !profile) {
     throw new Error("profile_write_missing");
   }
 
   return { user, profile };
+}
+
+function returnedIds(result: unknown): unknown[] {
+  const rows = result && typeof result === "object" && "rows" in result ? result.rows : result;
+  return Array.isArray(rows) ? rows : [];
 }
 
 export function onboardingResumeStep(

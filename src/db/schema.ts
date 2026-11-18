@@ -14,7 +14,16 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   // Email domain, set when the row is created. profiles.school is what the student types.
   school: text("school"),
-  major: text("major"),                       // one of MAJORS; null until onboarding
+  major: text("major"),                       // approved catalog name; null for custom, undecided, or before onboarding
+  // catalog | custom | undecided. Null on rows that have not been backfilled.
+  majorSource: text("major_source"),
+  // Private until a founder approves or merges it. Never a public aggregate key.
+  customMajorText: text("custom_major_text"),
+  majorSubmissionId: uuid("major_submission_id").references((): AnyPgColumn => majorSubmissions.id, {
+    onDelete: "set null",
+  }),
+  exploringMajors: boolean("exploring_majors").notNull().default(false),
+  dismissedCareerRoles: text("dismissed_career_roles").array().notNull().default(sql`'{}'::text[]`),
   year: integer("year"),                      // 1-5; null until onboarding
   coopTrack: text("coop_track"),              // optional free label
   consentPrivacyAt: timestamp("consent_privacy_at", { withTimezone: true }),
@@ -30,6 +39,10 @@ export const users = pgTable("users", {
   updatedAt,
 }, (t) => [
   check("users_year_range", sql`${t.year} is null or ${t.year} between 1 and 5`),
+  check(
+    "users_major_source",
+    sql`${t.majorSource} is null or ${t.majorSource} in ('catalog', 'custom', 'undecided')`,
+  ),
 ]);
 
 export const profiles = pgTable("profiles", {
@@ -136,6 +149,42 @@ export const feedback = pgTable("feedback", {
   index("feedback_user_created_idx").on(t.userId, t.createdAt),
 ]);
 
+export const majorCatalog = pgTable("major_catalog", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  normalizedName: text("normalized_name").notNull(),
+  category: text("category").notNull(),
+  aliases: text("aliases").array().notNull().default(sql`'{}'::text[]`),
+  status: text("status").notNull().default("approved"), // 'approved' | 'retired'
+  createdAt,
+  updatedAt,
+}, (t) => [
+  uniqueIndex("major_catalog_normalized_name_uq").on(t.normalizedName),
+  check("major_catalog_status", sql`${t.status} in ('approved', 'retired')`),
+]);
+
+export const majorAliases = pgTable("major_aliases", {
+  normalizedName: text("normalized_name").primaryKey(),
+  canonicalName: text("canonical_name").notNull(),
+  createdAt,
+});
+
+export const majorSubmissions = pgTable("major_submissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rawName: text("raw_name").notNull(),
+  normalizedName: text("normalized_name").notNull(),
+  status: text("status").notNull().default("pending"), // pending | approved | merged | rejected
+  catalogId: uuid("catalog_id").references(() => majorCatalog.id, { onDelete: "set null" }),
+  mergedIntoName: text("merged_into_name"),
+  createdAt,
+  updatedAt,
+}, (t) => [
+  index("major_submissions_user_status_idx").on(t.userId, t.status),
+  uniqueIndex("major_submissions_one_pending_per_user").on(t.userId).where(sql`${t.status} = 'pending'`),
+  check("major_submissions_status", sql`${t.status} in ('pending', 'approved', 'merged', 'rejected')`),
+]);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Assessment = typeof assessments.$inferSelect;
@@ -144,3 +193,5 @@ export type Rotation = typeof rotations.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type SkillRow = typeof skills.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
+export type MajorCatalogRow = typeof majorCatalog.$inferSelect;
+export type MajorSubmission = typeof majorSubmissions.$inferSelect;

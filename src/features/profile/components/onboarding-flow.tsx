@@ -17,11 +17,14 @@ import {
   TextInput,
 } from "@/components/ui";
 import { INSTRUMENT, QUIZ_EXPLORATORY_DISCLAIMER, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
+import { MajorPicker } from "@/features/majors/components/major-picker";
+import type { MajorSearchContext } from "@/features/majors/catalog";
+import { isSelectableCatalogName, ProfileWriteInput, type MajorPickerValue } from "@/features/majors/selection";
 import { SHARE_REVIEWS_CONSENT_LABEL } from "@/features/privacy/share-consent";
-import { AssessmentInput, ProfileInput } from "@/features/profile/schemas";
+import { AssessmentInput } from "@/features/profile/schemas";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
-import { GOAL_OPTIONS, LOCATION_OPTIONS, MAJOR_OPTIONS, YEAR_OPTIONS } from "./options";
+import { GOAL_OPTIONS, LOCATION_OPTIONS, YEAR_OPTIONS } from "./options";
 
 const PAGE_SIZE = 5;
 const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
@@ -36,7 +39,9 @@ const FIELD_COPY: Record<string, string> = {
   consentDataUse:
     "Confirm that your answers and reviews can be stored as described.",
   school: "Enter your school (2–120 characters).",
-  major: "Select your major.",
+  major: "Choose a major, Undecided, or enter the one that is missing.",
+  majorSelection: "Choose a major, Undecided, or enter the one that is missing.",
+  "majorSelection.name": "Enter your major (2–120 characters).",
   year: "Select your year.",
   coopTrack: "Use 40 characters or fewer.",
   goal: "Select a goal.",
@@ -51,6 +56,9 @@ const STEP_ONE_KEYS = new Set([
   "consentShareReviews",
   "school",
   "major",
+  "majorSelection",
+  "majorSelection.name",
+  "exploringMajors",
   "year",
   "coopTrack",
 ]);
@@ -63,7 +71,8 @@ export type OnboardingDefaults = {
   consentDataUse: boolean;
   consentShareReviews: boolean;
   school: string;
-  major: string;
+  major: MajorPickerValue;
+  exploringMajors: boolean;
   year: string;
   coopTrack: string;
   goal: string;
@@ -83,10 +92,15 @@ function zodFields(error: ZodError): Record<string, string> {
   return fields;
 }
 
+function majorSelectionPayload(state: OnboardingDefaults) {
+  if (state.major.source === "undecided") return { source: "undecided" as const };
+  if (state.major.source === "custom") return { source: "custom" as const, name: state.major.name.trim() };
+  return { source: "catalog" as const, name: state.major.name };
+}
+
 function profilePayload(state: OnboardingDefaults): unknown {
   return {
     school: state.school.trim(),
-    major: state.major,
     year: Number(state.year),
     coopTrack: state.coopTrack.trim(),
     goal: state.goal,
@@ -96,17 +110,27 @@ function profilePayload(state: OnboardingDefaults): unknown {
     consentPrivacy: state.consentPrivacy,
     consentDataUse: state.consentDataUse,
     consentShareReviews: state.consentShareReviews,
+    majorSelection: majorSelectionPayload(state),
+    exploringMajors: state.major.source === "undecided" ? false : state.exploringMajors,
   };
 }
 
 /** Step-1 validation. Share-reviews consent is optional and never blocks progress. */
-export function stepOneErrors(state: OnboardingDefaults): Record<string, string> {
+export function stepOneErrors(
+  state: OnboardingDefaults,
+  context: MajorSearchContext = {},
+): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!state.consentPrivacy) errors.consentPrivacy = FIELD_COPY.consentPrivacy;
   if (!state.consentDataUse) errors.consentDataUse = FIELD_COPY.consentDataUse;
   const school = state.school.trim();
   if (school.length < 2 || school.length > 120) errors.school = FIELD_COPY.school;
-  if (!MAJOR_OPTIONS.some((option) => option.value === state.major)) errors.major = FIELD_COPY.major;
+  if (state.major.source === "custom") {
+    const name = state.major.name.trim();
+    if (name.length < 2 || name.length > 120) errors.major = FIELD_COPY["majorSelection.name"];
+  } else if (state.major.source === "catalog" && !isSelectableCatalogName(state.major.name, context)) {
+    errors.major = FIELD_COPY.major;
+  }
   if (!YEAR_OPTIONS.some((option) => option.value === state.year)) errors.year = FIELD_COPY.year;
   if (state.coopTrack.trim().length > 40) errors.coopTrack = FIELD_COPY.coopTrack;
   return errors;
@@ -148,9 +172,11 @@ function clearKey(fields: Record<string, string>, key: string): Record<string, s
 export function OnboardingFlow({
   initialStep,
   defaults,
+  majorSearch,
 }: {
   initialStep: Step;
   defaults: OnboardingDefaults;
+  majorSearch?: MajorSearchContext;
 }) {
   const router = useRouter();
   const pendingRef = useRef(false);
@@ -180,7 +206,7 @@ export function OnboardingFlow({
 
   function onConsentNext(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const errors = stepOneErrors(form);
+    const errors = stepOneErrors(form, majorSearch);
     if (Object.keys(errors).length > 0) {
       setFormError(null);
       setFieldErrors((current) => ({ ...current, ...errors }));
@@ -199,7 +225,7 @@ export function OnboardingFlow({
     event.preventDefault();
     if (pendingRef.current) return;
 
-    const parsed = ProfileInput.safeParse(profilePayload(form));
+    const parsed = ProfileWriteInput.safeParse(profilePayload(form));
     if (!parsed.success) {
       setFormError(null);
       showFields(zodFields(parsed.error));
@@ -370,16 +396,22 @@ export function OnboardingFlow({
                 onChange={(event) => update("school", event.target.value)}
               />
             </Field>
-            <Field label="Major" htmlFor="major" error={fieldErrors.major}>
-              <Select
-                id="major"
-                name="major"
-                value={form.major}
-                onChange={(value) => update("major", value)}
-                options={MAJOR_OPTIONS}
-                placeholder="Select a major"
+            <MajorPicker
+              id="major"
+              value={form.major}
+              context={majorSearch}
+              error={fieldErrors.major}
+              onChange={(value) => update("major", value)}
+            />
+            {form.major.source !== "undecided" ? (
+              <Checkbox
+                id="exploringMajors"
+                name="exploringMajors"
+                checked={form.exploringMajors}
+                onChange={(event) => update("exploringMajors", event.target.checked)}
+                label="Show suggested majors too. Career direction stays available either way."
               />
-            </Field>
+            ) : null}
             <Field label="Year" htmlFor="year" error={fieldErrors.year}>
               <Select
                 id="year"
