@@ -22,7 +22,7 @@ export const DIRECTION_INSUFFICIENT_LABEL =
 export const SIMILAR_MAX_DISTANCE = 6;
 
 /** Distinct similar students required for one role before it is evidence-backed. */
-export const MIN_DISTINCT_STUDENTS_PER_ROLE = 3;
+export const MIN_DISTINCT_STUDENTS_PER_ROLE = 2;
 
 export const RULES_REASON_PREFIX = "Early hypothesis:";
 export const EVIDENCE_REASON_PREFIX = "Worth exploring:";

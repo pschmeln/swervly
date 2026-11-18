@@ -550,7 +550,7 @@ export function ReviewForm({
       <Field
         label="Hourly pay"
         htmlFor="payHourly"
-        hint="Optional. Only ever shown as a range across three or more students, never on its own."
+        hint="Optional. Only ever shown as a range across two or more students, never on its own."
         error={fieldError(fieldErrors, "payHourly")}
       >
         <TextInput

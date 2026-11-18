@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <header className="flex flex-col gap-1 text-sm text-neutral-600">
           <p>
             <span className="font-medium text-neutral-900">Last updated:</span>{" "}
-            November 17, 2026
+            November 18, 2026
           </p>
           <p>
             <span className="font-medium text-neutral-900">Contact:</span>{" "}
@@ -77,18 +77,21 @@ export default function PrivacyPage() {
             You can see your own profile, quiz result, and reviews. Other
             signed-in students can see a company page for your major only when you
             have turned on sharing for reviews. That section stays hidden until at
-            least 3 different students in the major have authorized reviews for
+            least 2 different students in the major have authorized reviews for
             the company, so one student with several reviews cannot unlock it
             alone. Sharing is optional; you can keep reviews private and still use
             the quiz and rule-based Direction. The page shows how many co-op
             experiences were rated &quot;Would go back&quot; (counting Yes only, with
             Maybe shown separately), with a separate count of reviews and students,
             plus average ratings, top skills, and shared notes. It does not show
-            names. Pay is shown only as a range, and only when 3 different students
+            names. Pay is shown only as a range, and only when 2 different students
             in that group reported pay. A written note appears only if you ticked
             the share box for that note. The box is off until you type something. A
-            threshold of three is a minimum, not a guarantee of anonymity in a
-            small major or unusual role.
+            threshold of two is a minimum, not a guarantee of anonymity: with
+            only two students, each one may be able to work out what the other
+            wrote, especially in a small major or unusual role. If you agreed to
+            sharing before November 18, 2026, when the minimum was three, your
+            reviews stop being shared until you turn sharing on again in Settings.
           </p>
           <p>
             The two Swervly founders can see records because they operate the

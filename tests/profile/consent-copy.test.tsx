@@ -51,7 +51,8 @@ describe("data-use consent copy", () => {
     expect(DATA_USE_CONSENT_LABEL).not.toContain("company pages");
     expect(SHARE_REVIEWS_CONSENT_LABEL).toMatch(/^Optional:/);
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("anonymous company pages");
-    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("3 different students");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("2 different students");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("3 different students");
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Settings");
     expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("UC students");
     expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("in the future");

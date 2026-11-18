@@ -1,9 +1,9 @@
 import { wouldGoBackSummary, type WouldReturn } from "@/features/review/would-return";
 
 /** Minimum distinct authorized students before a major aggregate is shown. */
-export const MIN_DISTINCT_CONTRIBUTORS = 3;
+export const MIN_DISTINCT_CONTRIBUTORS = 2;
 /** Minimum distinct authorized students who reported pay before a pay range is shown. */
-export const MIN_DISTINCT_PAY_CONTRIBUTORS = 3;
+export const MIN_DISTINCT_PAY_CONTRIBUTORS = 2;
 
 /** @deprecated Use MIN_DISTINCT_CONTRIBUTORS. Kept for older imports during transition. */
 export const MIN_REVIEWS_TO_SHOW = MIN_DISTINCT_CONTRIBUTORS;
