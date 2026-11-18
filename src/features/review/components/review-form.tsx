@@ -18,7 +18,7 @@ import type { PublicMajorView } from "@/features/company/aggregate";
 import { ROLE_TYPE_OPTIONS } from "@/features/review/roles";
 import { WOULD_RETURN_OPTIONS } from "@/features/review/would-return";
 import type { SkillChoice } from "@/features/skills/rank";
-import { ROUTES } from "@/lib/constants";
+import { MAX_ROTATIONS, ROUTES } from "@/lib/constants";
 import {
   apiFormBannerMessage,
   firstFieldControlId,
@@ -46,7 +46,9 @@ const YEAR_OPTIONS = Array.from(
   },
 );
 
-const ROTATION_NUMBER_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({
+const ROTATION_NUMBERS = Array.from({ length: MAX_ROTATIONS }, (_, index) => index + 1);
+
+const ROTATION_NUMBER_OPTIONS = ROTATION_NUMBERS.map((n) => ({
   value: String(n),
   label: String(n),
 }));
@@ -112,7 +114,7 @@ type FormFields = {
 type FieldErrors = Record<string, string>;
 
 function lowestUnusedRotationNumber(used: number[]): number {
-  for (const n of [1, 2, 3, 4, 5]) {
+  for (const n of ROTATION_NUMBERS) {
     if (!used.includes(n)) return n;
   }
   return 1;
@@ -534,7 +536,7 @@ export function ReviewForm({
       <Field
         label="Co-op or internship number"
         htmlFor="rotationNumber"
-        hint="If your school numbers co-op rotations, use that number. For summer internships, number them in the order you did them. You can save up to five, and each number is used once."
+        hint="If your school numbers co-op rotations, use that number. For summer internships, number them in the order you did them. You can save up to eight, and each number is used once."
         error={fieldError(fieldErrors, "rotationNumber")}
       >
         <Select

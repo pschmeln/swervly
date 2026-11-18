@@ -100,7 +100,7 @@ export const rotations = pgTable("rotations", {
 }, (t) => [
   uniqueIndex("rotations_user_number_uq").on(t.userId, t.rotationNumber),
   index("rotations_employer_idx").on(t.employerId),
-  check("rotations_number_range", sql`${t.rotationNumber} between 1 and 5`),
+  check("rotations_number_range", sql`${t.rotationNumber} between 1 and 8`),
   check("rotations_would_return", sql`${t.wouldReturn} in ('yes', 'maybe', 'no')`),
   check(
     "rotations_role_type",

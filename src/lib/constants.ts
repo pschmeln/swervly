@@ -9,6 +9,9 @@ export const DATA_SOURCE = "early" as const;
 export const EMAIL_CONFLICT_MESSAGE =
   "This email already has a Swervly account tied to a different sign-in.";
 
+/** Most co-ops or internships one student can log. Must match rotations_number_range in src/db/schema.ts. */
+export const MAX_ROTATIONS = 8;
+
 export const ROUTES = {
   landing: "/",
   signIn: "/sign-in",
