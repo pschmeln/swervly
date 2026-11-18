@@ -76,3 +76,14 @@ describe("ProfileInput", () => {
     expect(dataUse.success).toBe(false);
   });
 });
+
+describe("AssessmentInput end-of-quiz majors choice", () => {
+  it("accepts the choice, and still accepts a quiz without it", async () => {
+    const { AssessmentInput } = await import("@/features/profile/schemas");
+    const { INSTRUMENT, QUIZ_ITEMS } = await import("@/content/mini-ipip");
+    const answers = Object.fromEntries(QUIZ_ITEMS.map((item) => [item.id, 3]));
+    expect(AssessmentInput.safeParse({ instrument: INSTRUMENT, answers, exploringMajors: true }).success).toBe(true);
+    expect(AssessmentInput.safeParse({ instrument: INSTRUMENT, answers }).success).toBe(true);
+    expect(AssessmentInput.safeParse({ instrument: INSTRUMENT, answers, exploringMajors: "yes" }).success).toBe(false);
+  });
+});

@@ -97,6 +97,11 @@ export function traitBand(score: number): TraitBand {
   return "middle";
 }
 
+/** The plain-language line for one trait at one band, e.g. "You like a plan and you follow it". */
+export function traitHeadline(trait: Trait, band: TraitBand): string {
+  return COPY[trait][band].headline;
+}
+
 export function readTraits(scores: TraitScores): TraitReading[] {
   return (Object.keys(COPY) as Trait[]).map((trait) => {
     const copy = COPY[trait][traitBand(scores[trait])];

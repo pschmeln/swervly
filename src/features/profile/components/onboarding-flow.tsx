@@ -296,6 +296,8 @@ export function OnboardingFlow({
     const parsed = AssessmentInput.safeParse({
       instrument: INSTRUMENT,
       answers,
+      // Asked at the end of the quiz. Undecided students always see majors.
+      ...(form.major.source === "undecided" ? {} : { exploringMajors: form.exploringMajors }),
     });
     if (!parsed.success) {
       setFormError(null);
@@ -403,15 +405,6 @@ export function OnboardingFlow({
               error={fieldErrors.major}
               onChange={(value) => update("major", value)}
             />
-            {form.major.source !== "undecided" ? (
-              <Checkbox
-                id="exploringMajors"
-                name="exploringMajors"
-                checked={form.exploringMajors}
-                onChange={(event) => update("exploringMajors", event.target.checked)}
-                label="Show suggested majors too. Career direction stays available either way."
-              />
-            ) : null}
             <Field label="Year" htmlFor="year" error={fieldErrors.year}>
               <Select
                 id="year"
@@ -554,6 +547,17 @@ export function OnboardingFlow({
               })}
             </div>
             {fieldErrors.answers ? <ErrorNote>{fieldErrors.answers}</ErrorNote> : null}
+            {questionPage === PAGE_COUNT - 1 && form.major.source !== "undecided" ? (
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2">
+                <Checkbox
+                  id="exploringMajors"
+                  name="exploringMajors"
+                  checked={form.exploringMajors}
+                  onChange={(event) => update("exploringMajors", event.target.checked)}
+                  label="Also suggest similar majors to explore. Career direction stays either way."
+                />
+              </div>
+            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button
                 type="button"

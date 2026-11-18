@@ -136,6 +136,6 @@ describe("major selection", () => {
     const noGoal = academicExploration({ source: "undecided", exploringMajors: false, goal: "undecided" });
     expect(noGoal.visible).toBe(true);
     expect(noGoal.suggestions).toEqual([]);
-    expect(noGoal.note.toLowerCase()).toContain("quiz");
+    expect(noGoal.note.toLowerCase()).toContain("pick a goal");
   });
 });

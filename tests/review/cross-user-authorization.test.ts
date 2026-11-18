@@ -67,6 +67,7 @@ function userRow(id: string, clerkId: string, email: string, onboardedAt: Date |
     majorSubmissionId: null,
     exploringMajors: false,
     dismissedCareerRoles: [],
+    interestedCareerRoles: [],
     source: "early",
     createdAt,
     updatedAt: createdAt,

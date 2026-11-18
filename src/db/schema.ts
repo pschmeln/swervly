@@ -24,6 +24,7 @@ export const users = pgTable("users", {
   }),
   exploringMajors: boolean("exploring_majors").notNull().default(false),
   dismissedCareerRoles: text("dismissed_career_roles").array().notNull().default(sql`'{}'::text[]`),
+  interestedCareerRoles: text("interested_career_roles").array().notNull().default(sql`'{}'::text[]`),
   year: integer("year"),                      // 1-5; null until onboarding
   coopTrack: text("coop_track"),              // optional free label
   consentPrivacyAt: timestamp("consent_privacy_at", { withTimezone: true }),

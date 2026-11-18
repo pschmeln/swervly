@@ -36,6 +36,7 @@ export const ROUTES = {
   privacy: "/privacy",
   direction: "/direction",
   directionDismiss: "/api/direction/dismiss",
+  directionInterest: "/api/direction/interest",
   directionExplore: "/direction/explore",
   feedback: "/feedback",
   feedbackApi: "/api/feedback",

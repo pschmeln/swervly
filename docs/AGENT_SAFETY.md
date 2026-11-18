@@ -180,6 +180,7 @@ A change to any of these is always yellow, even if it's small. `scripts/prefligh
 - **Safe on a live table:** add columns as nullable or with a default; backfill; tighten constraints afterwards.
 - Say in the SQL file's header what it does to existing rows, like `0003_release_hardening.sql` does.
 - The human runs `drizzle-kit generate` (if needed) and every `migrate`. Your pull request says exactly which command to run, against which branch, in which order.
+- Every migration goes to the test databases too: `dev-peter` (used by Vercel previews) and `dev-li`, before production, or previews break at sign-in. Order and method: `docs/RUNBOOK.md`, "Keeping the test databases in step".
 
 ---
 

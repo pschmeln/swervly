@@ -25,6 +25,8 @@ export type ProfileInput = z.infer<typeof ProfileInput>;
 export const AssessmentInput = z.object({
   instrument: z.literal(INSTRUMENT),
   answers: z.record(z.enum(quizItemIds), z.int().min(1).max(5)),
+  /** Asked at the end of the quiz: also suggest majors to explore. Ignored for undecided majors. */
+  exploringMajors: z.boolean().optional(),
 });
 
 export type AssessmentInput = z.infer<typeof AssessmentInput>;

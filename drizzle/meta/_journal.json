@@ -43,6 +43,13 @@
       "when": 1795300000000,
       "tag": "0005_rotation_number_max_8",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795400000000,
+      "tag": "0006_interested_career_roles",
+      "breakpoints": true
     }
   ]
 }

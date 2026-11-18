@@ -1,3 +1,6 @@
+import { GRAD_MAJORS, INDUSTRY_MAJORS, type MajorTraitLink } from "@/content/major-traits";
+import { traitBand, traitHeadline } from "@/features/profile/traits";
+import type { TraitScores } from "@/features/profile/scoring";
 import { z } from "zod";
 import { ProfileInput } from "@/features/profile/schemas";
 import {
@@ -188,40 +191,84 @@ export type AcademicExploration = {
   suggestions: MajorSuggestion[];
 };
 
-const INDUSTRY_EXPLORATIONS = ["Business Administration", "Nursing", "Computer Science", "Psychology"] as const;
-const GRAD_EXPLORATIONS = ["Biology", "Psychology", "Economics", "Mathematics"] as const;
+/**
+ * Personal reason for one major: the student's own result on the trait the
+ * major leans on, then what the work is like. A clue, never a fit score.
+ */
+export function majorReason(
+  link: MajorTraitLink,
+  name: string,
+  traits: TraitScores,
+  /** True when an earlier suggestion already described this trait: refer back instead of repeating it. */
+  repeat = false,
+): { text: string; score: number } {
+  const band = traitBand(traits[link.trait]);
+  const score = band === link.fits ? 2 : band === "middle" ? 1 : 0;
+  if (repeat) {
+    const tail = score === 2 ? "It leans on that same strength." : score === 1 ? "It uses that same mix." : "It would stretch you the same way.";
+    return { score, text: `${name} ${link.why}. ${tail}` };
+  }
+  const headline = traitHeadline(link.trait, band);
+  if (score === 2) return { score, text: `${headline}. ${name} ${link.why}, so it may suit you.` };
+  if (score === 1) return { score, text: `${headline}. ${name} ${link.why}, something you can grow into.` };
+  return { score, text: `${headline}. ${name} ${link.why}, so it would stretch you. That can be a good thing if the subject interests you.` };
+}
 
-function suggestionsFor(names: readonly string[], goal: "industry" | "grad_school"): MajorSuggestion[] {
+const SUGGESTION_COUNT = 4;
+
+function suggestionsFor(
+  links: readonly MajorTraitLink[],
+  goal: "industry" | "grad_school",
+  traits: TraitScores | null,
+): MajorSuggestion[] {
   const because =
     goal === "industry" ? "you said your goal is industry work" : "you said your goal is graduate school";
-  const suggestions: MajorSuggestion[] = [];
-  for (const name of names) {
-    const match = matchCatalog(name);
-    if (!match || match.legacy) continue;
-    suggestions.push({
-      name: match.name,
-      category: match.category,
-      reason: `Worth exploring because ${because}. ${match.name} is one place to look. This is not a fit score.`,
+  const ranked: { suggestion: MajorSuggestion; score: number; index: number }[] = [];
+  links.forEach((link, index) => {
+    const match = matchCatalog(link.name);
+    if (!match || match.legacy) return;
+    const personal = traits ? majorReason(link, match.name, traits) : null;
+    ranked.push({
+      index,
+      score: personal?.score ?? 0,
+      suggestion: {
+        name: match.name,
+        category: match.category,
+        reason: personal?.text ?? `Worth exploring because ${because}. ${match.name} is one place to look. This is not a fit score.`,
+      },
     });
-  }
-  return suggestions;
+  });
+  const top = ranked
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .slice(0, SUGGESTION_COUNT);
+  if (!traits) return top.map((row) => row.suggestion);
+  // Write the text in display order, so only the first major per trait repeats the trait line.
+  const described = new Set<string>();
+  return top.map((row) => {
+    const link = links[row.index]!;
+    const text = majorReason(link, row.suggestion.name, traits, described.has(link.trait)).text;
+    described.add(link.trait);
+    return { ...row.suggestion, reason: text };
+  });
 }
 
 /**
- * Suggested majors follow the student's stated goal. Quiz traits are not an input.
- * Confirmed majors stay hidden until the student opts in.
+ * Suggested majors follow the student's stated goal, ordered and described by
+ * their quiz traits (founder decision, Nov 18, 2026). Confirmed majors stay
+ * hidden until the student opts in.
  */
 export function academicExploration(input: {
   source: AcademicSource;
   exploringMajors: boolean;
   goal: "industry" | "grad_school" | "undecided";
+  traits?: TraitScores | null;
 }): AcademicExploration {
   const confirmed = input.source === "catalog" || input.source === "custom";
   const visible = input.source === "undecided" || (confirmed && input.exploringMajors);
   if (!visible) {
     return {
       visible: false,
-      note: "Suggested majors stay hidden because you already chose a major. You can explore other majors from your profile. Career direction stays available.",
+      note: "Suggested majors stay hidden because you already chose a major. You can turn them on at the end of the quiz or on your profile. Career direction stays available.",
       suggestions: [],
     };
   }
@@ -229,15 +276,17 @@ export function academicExploration(input: {
   if (input.goal === "undecided") {
     return {
       visible: true,
-      note: "Not enough information to suggest majors. Quiz results are not used as a major-fit score.",
+      note: "Pick a goal on your profile and we'll suggest majors to explore.",
       suggestions: [],
     };
   }
 
   return {
     visible: true,
-    note: "These are places to look from the goal you stated. They are not a fit score, and the quiz is not used here.",
-    suggestions: suggestionsFor(input.goal === "industry" ? INDUSTRY_EXPLORATIONS : GRAD_EXPLORATIONS, input.goal),
+    note: input.traits
+      ? "Picked from your goal and described using your quiz. Personality is one clue, not a fit score."
+      : "These are places to look from the goal you stated. They are not a fit score.",
+    suggestions: suggestionsFor(input.goal === "industry" ? INDUSTRY_MAJORS : GRAD_MAJORS, input.goal, input.traits ?? null),
   };
 }
 

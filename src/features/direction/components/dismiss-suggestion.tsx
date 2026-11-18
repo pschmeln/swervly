@@ -25,7 +25,7 @@ export function DismissSuggestion({ roleType }: { roleType: string }) {
   }
 
   return (
-    <Button type="button" variant="secondary" className="mt-3 w-full sm:w-auto" disabled={pending} onClick={() => void dismiss()}>
+    <Button type="button" variant="secondary" className="w-full sm:w-auto" disabled={pending} onClick={() => void dismiss()}>
       {pending ? "Saving…" : "Not for me"}
     </Button>
   );
