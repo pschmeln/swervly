@@ -16,6 +16,8 @@ import { isRoleType } from "@/features/review/roles";
 
 export type DirectionPayload = {
   readings: TraitReading[];
+  /** Raw quiz scores, 4 to 20 per trait. */
+  traits: TraitScores;
   label: string;
   basis: "rules" | "similar_students" | "mixed";
   suggestions: DirectionSuggestion[];
@@ -108,6 +110,7 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
 
   return {
     readings: readTraits(traits),
+    traits,
     label: direction.label,
     basis: direction.basis,
     // Interested careers rank first (founder decision: Interested shapes future suggestions).

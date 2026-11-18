@@ -35,12 +35,12 @@ export function InterestedButton({ roleType, initial }: { roleType: string; init
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex shrink-0 flex-col gap-1">
       <Button
         type="button"
         variant={interested ? "primary" : "secondary"}
         aria-pressed={interested}
-        className="w-full sm:w-auto"
+        className="w-full whitespace-nowrap sm:w-auto"
         disabled={pending}
         onClick={() => void toggle()}
       >
