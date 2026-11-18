@@ -10,44 +10,18 @@ import { schoolDomainFromEmail } from "@/features/profile/school";
 import { ApiError } from "@/lib/api";
 import { captureEvent } from "@/lib/analytics";
 import { clerkFailureDetail, isClerkPrerenderFailure } from "@/lib/clerk-failure";
-import { ALLOWED_EMAIL_DOMAINS, EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
+import { EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
+import { isAllowedEmail } from "@/lib/email-eligibility";
 import { INVITE_COOKIE, normalizeInviteId } from "@/lib/invites";
 import { markReported, reportFailure, setInternalUser } from "@/lib/sentry";
+
+export { isAllowedEmail } from "@/lib/email-eligibility";
 
 type GateResult =
   | { status: "ok"; user: User }
   | { status: "signed_out" }
   | { status: "not_eligible" }
   | { status: "email_conflict" };
-
-function emailDomain(email: string): string {
-  const normalized = email.trim().toLowerCase();
-  const at = normalized.indexOf("@");
-  if (at <= 0 || at !== normalized.lastIndexOf("@") || at === normalized.length - 1) {
-    return "";
-  }
-  return normalized.slice(at + 1);
-}
-
-// Last DNS label must be "edu". includes(".edu") would accept x.edu.evil.com.
-function isEduDomain(domain: string): boolean {
-  if (domain.length === 0 || domain.length > 253 || /[\s@/\\]/.test(domain)) return false;
-  const labels = domain.split(".");
-  if (labels.length < 2) return false;
-  if (labels.some((label) => label.length === 0 || label.length > 63)) return false;
-  return labels[labels.length - 1] === "edu";
-}
-
-export function isAllowedEmail(
-  email: string,
-  allowedDomains: readonly string[] = ALLOWED_EMAIL_DOMAINS,
-): boolean {
-  const domain = emailDomain(email);
-  if (!domain) return false;
-  const extras = allowedDomains.map((item) => item.trim().toLowerCase());
-  if (extras.includes(domain)) return true;
-  return isEduDomain(domain);
-}
 
 // Postgres puts the email in the unique-violation detail. Recognize the
 // error by SQLSTATE only, and never log the driver error.
