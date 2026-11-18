@@ -8,12 +8,15 @@ import type {
   TextareaHTMLAttributes,
 } from "react";
 
-const controlClass =
-  "min-h-12 w-full rounded-lg border border-neutral-300 bg-white px-3 text-base text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+/** Shared focus ring: blue, offset, visible on white and on the sky band. */
+export const focusRing =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
+
+const controlClass = `min-h-12 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-base text-ink shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-ink-3 hover:border-neutral-300 ${focusRing} disabled:cursor-not-allowed disabled:opacity-60`;
 
 const buttonVariants = {
-  primary: "bg-neutral-900 text-white hover:bg-neutral-700",
-  secondary: "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50",
+  primary: "bg-ink text-white shadow-[0_8px_20px_rgba(11,18,32,0.18)] hover:bg-[#1f2937]",
+  secondary: "border border-neutral-200 bg-white text-ink shadow-[0_1px_2px_rgba(15,23,42,0.06)] hover:bg-neutral-50",
 } as const;
 
 type ButtonProps = {
@@ -31,7 +34,7 @@ export function Button({
   type = "button",
   ...props
 }: ButtonProps) {
-  const classes = `inline-flex min-h-12 items-center justify-center rounded-lg px-4 text-base font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${buttonVariants[variant]} ${className}`;
+  const classes = `inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-base font-semibold transition-colors ${focusRing} disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none ${buttonVariants[variant]} ${className}`;
   if (href && !disabled) {
     return (
       <Link href={href} className={classes}>
@@ -69,11 +72,11 @@ export function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-neutral-900">
+      <label htmlFor={htmlFor} className="text-sm font-semibold text-ink">
         {label}
       </label>
       {children}
-      {hint ? <p className="text-sm text-neutral-600">{hint}</p> : null}
+      {hint ? <p className="text-sm text-ink-2">{hint}</p> : null}
       {error ? <ErrorNote>{error}</ErrorNote> : null}
     </div>
   );
@@ -149,11 +152,11 @@ type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> 
 
 export function Checkbox({ id, label, ...props }: CheckboxProps) {
   return (
-    <label htmlFor={id} className="flex min-h-12 items-center gap-3 text-base text-neutral-900">
+    <label htmlFor={id} className="flex min-h-12 items-center gap-3 text-base text-ink">
       <input
         id={id}
         type="checkbox"
-        className="size-5 rounded border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+        className={`size-5 shrink-0 rounded-md border-neutral-300 accent-[var(--accent)] ${focusRing}`}
         {...props}
       />
       <span>{label}</span>
@@ -190,7 +193,7 @@ export function LikertScale({ name, value, onChange, labels }: LikertScaleProps)
             />
             <label
               htmlFor={id}
-              className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-lg border border-neutral-300 bg-white text-base font-medium text-neutral-900 peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-neutral-900 peer-focus-visible:ring-offset-2"
+              className="flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-neutral-200 bg-white text-base font-semibold text-ink shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-neutral-300 peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2"
             >
               <span className="sr-only">{label}</span>
               <span aria-hidden="true">{score}</span>
@@ -199,8 +202,8 @@ export function LikertScale({ name, value, onChange, labels }: LikertScaleProps)
               aria-hidden="true"
               className={
                 end
-                  ? "text-center text-xs leading-snug text-neutral-600"
-                  : "hidden text-center text-xs leading-snug text-neutral-600 sm:block"
+                  ? "text-center text-xs leading-snug text-ink-2"
+                  : "hidden text-center text-xs leading-snug text-ink-2 sm:block"
               }
             >
               {label}

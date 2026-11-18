@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PageShell } from "@/components/ui";
+import { Card, PageShell } from "@/components/ui";
 import { requireOnboardedUser } from "@/lib/auth";
 import { ReviewForm } from "@/features/review/components/review-form";
 import { skillsForMajor } from "@/features/review/major-skills";
@@ -25,13 +25,15 @@ export default async function EditReviewPage({
 
   return (
     <PageShell title="Edit co-op">
-      <ReviewForm
-        mode="edit"
-        rotation={rotation}
-        usedRotationNumbers={usedRotationNumbers}
-        shareFreeTextDefault={user.shareFreeTextDefault}
-        majorSkills={skillsForMajor(user)}
-      />
+      <Card>
+        <ReviewForm
+          mode="edit"
+          rotation={rotation}
+          usedRotationNumbers={usedRotationNumbers}
+          shareFreeTextDefault={user.shareFreeTextDefault}
+          majorSkills={skillsForMajor(user)}
+        />
+      </Card>
     </PageShell>
   );
 }

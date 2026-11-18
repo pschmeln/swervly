@@ -1,4 +1,4 @@
-import { PageShell } from "@/components/ui";
+import { Card, PageShell } from "@/components/ui";
 import { requireOnboardedUser } from "@/lib/auth";
 import { ReviewForm } from "@/features/review/components/review-form";
 import { skillsForMajor } from "@/features/review/major-skills";
@@ -11,12 +11,14 @@ export default async function NewReviewPage() {
 
   return (
     <PageShell title="Log a co-op">
-      <ReviewForm
-        mode="create"
-        usedRotationNumbers={usedRotationNumbers}
-        shareFreeTextDefault={user.shareFreeTextDefault}
-        majorSkills={skillsForMajor(user)}
-      />
+      <Card>
+        <ReviewForm
+          mode="create"
+          usedRotationNumbers={usedRotationNumbers}
+          shareFreeTextDefault={user.shareFreeTextDefault}
+          majorSkills={skillsForMajor(user)}
+        />
+      </Card>
     </PageShell>
   );
 }

@@ -143,7 +143,7 @@ export function EmployerAutocomplete({
         <ul
           id={listId}
           role="listbox"
-          className="max-h-48 overflow-auto rounded-lg border border-neutral-300 bg-white"
+          className="max-h-48 overflow-auto rounded-xl border border-neutral-300 bg-white"
         >
           {visibleSuggestions.map((item) => (
             <li key={item.id}>
@@ -151,7 +151,7 @@ export function EmployerAutocomplete({
                 type="button"
                 role="option"
                 aria-selected={value?.id === item.id}
-                className="flex min-h-12 w-full items-center px-3 text-left text-base text-neutral-900 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-inset"
+                className="flex min-h-12 w-full items-center px-3 text-left text-base text-neutral-900 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
                 onClick={() => {
                   requestIdRef.current += 1;
                   onSelect(item);
@@ -173,7 +173,7 @@ export function EmployerAutocomplete({
       {showAdd ? (
         <button
           type="button"
-          className="min-h-12 rounded-lg border border-dashed border-neutral-300 px-3 text-left text-base text-neutral-900 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-12 rounded-xl border border-dashed border-neutral-300 px-3 text-left text-base text-neutral-900 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={disabled || adding}
           onClick={() => void addEmployer()}
         >

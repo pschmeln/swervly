@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 export default function SignInPage() {
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-10">
+    <main className="sky-page flex flex-1 items-start justify-center px-4 pb-10 pt-12 sm:pt-20">
       <Suspense>
         <SignIn />
       </Suspense>

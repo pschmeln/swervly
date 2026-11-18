@@ -662,7 +662,7 @@ export function ReviewForm({
         id="skills-used"
         tabIndex={-1}
         aria-label="Skills used"
-        className="flex flex-col gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+        className="flex flex-col gap-1.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         <p className="text-sm font-medium text-neutral-900">Skills used</p>
         <p className="text-sm text-neutral-600">
@@ -677,10 +677,10 @@ export function ReviewForm({
                 type="button"
                 disabled={saving || (!selected && form.skillsUsed.length >= 10)}
                 aria-pressed={selected}
-                className={`min-h-12 max-w-full rounded-lg border px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`min-h-12 max-w-full rounded-full border px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                   selected
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50"
+                    ? "border-ink bg-ink text-white"
+                    : "border-neutral-200 bg-white text-ink shadow-[0_1px_2px_rgba(15,23,42,0.05)] hover:bg-neutral-50"
                 }`}
                 onClick={() => toggleSkill(skill.name)}
               >
@@ -693,7 +693,7 @@ export function ReviewForm({
         {skillGroups.rest.length > 0 ? (
           <button
             type="button"
-            className="min-h-12 self-start rounded-lg px-1 text-base font-medium text-neutral-900 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            className="min-h-12 self-start rounded-xl px-1 text-base font-medium text-neutral-900 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             aria-expanded={showAllSkills}
             aria-controls="skills-used"
             onClick={() => setShowAllSkills((value) => !value)}
@@ -781,7 +781,7 @@ export function ReviewForm({
         <div
           ref={saveErrorRef}
           tabIndex={-1}
-          className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+          className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           <ErrorNote>{formError}</ErrorNote>
         </div>

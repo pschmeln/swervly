@@ -64,7 +64,7 @@ const STEP_ONE_KEYS = new Set([
 ]);
 
 const textLinkClass =
-  "inline-flex min-h-12 items-center font-medium underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
+  "inline-flex min-h-12 items-center font-medium underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
 
 export type OnboardingDefaults = {
   consentPrivacy: boolean;

@@ -17,7 +17,7 @@ type Option =
   | { kind: "catalog"; key: string; label: string; detail: string; name: string };
 
 const controlClass =
-  "min-h-12 w-full rounded-lg border border-neutral-300 bg-white px-3 text-left text-base text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
+  "min-h-12 w-full rounded-xl border border-neutral-300 bg-white px-3 text-left text-base text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
 
 export function MajorPicker({
   id,
@@ -103,7 +103,7 @@ export function MajorPicker({
         />
       </Field>
       {open && !disabled ? (
-        <ul id={listId} role="listbox" className="max-h-64 overflow-y-auto rounded-lg border border-neutral-300 bg-white">
+        <ul id={listId} role="listbox" className="max-h-64 overflow-y-auto rounded-xl border border-neutral-300 bg-white">
           {options.length === 0 ? (
             <li className="px-3 py-3 text-sm text-neutral-600">No matches. You can enter your major below.</li>
           ) : null}

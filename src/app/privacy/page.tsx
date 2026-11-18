@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           <p>
             <span className="font-medium text-neutral-900">Contact:</span>{" "}
             <a
-              className="underline underline-offset-2 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              className="underline underline-offset-2 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               href="mailto:support@swervly.com"
             >
               support@swervly.com
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
             You choose whether to provide pay and free text. You can leave the
             free-text sharing checkbox off. On the{" "}
             <Link
-              className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               href={ROUTES.settings}
             >
               Settings
@@ -146,7 +146,7 @@ export default function PrivacyPage() {
             We may update this policy as Swervly changes. Questions and privacy
             requests go to{" "}
             <a
-              className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
               href="mailto:support@swervly.com"
             >
               support@swervly.com

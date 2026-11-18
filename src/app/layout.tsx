@@ -1,19 +1,22 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Inter } from "next/font/google";
 import { Suspense } from "react";
 import { FeedbackLink } from "@/components/feedback-link";
 import { ROUTES } from "@/lib/constants";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Page titles only. Regular and italic, as in mockup v3.
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -26,18 +29,29 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <ClerkProvider>
+        <ClerkProvider
+          appearance={{
+            // Match the Swervly look (mockup v3): ink buttons, Inter, rounded corners.
+            variables: {
+              colorPrimary: "#0b1220",
+              colorPrimaryForeground: "#ffffff",
+              colorForeground: "#0b1220",
+              fontFamily: "var(--font-inter), ui-sans-serif, system-ui, sans-serif",
+              borderRadius: "0.75rem",
+            },
+          }}
+        >
           <div className="flex min-h-full flex-1 flex-col">
             <div className="flex-1">{children}</div>
-            <footer className="mx-auto w-full max-w-3xl px-4 py-4">
+            <footer className="mx-auto w-full max-w-5xl px-4 py-6">
               <Suspense
                 fallback={
                   <a
                     href={ROUTES.feedback}
-                    className="inline-flex min-h-12 items-center text-base font-medium underline underline-offset-2"
+                    className="inline-flex min-h-12 items-center text-sm font-medium text-ink-2 underline underline-offset-4 hover:text-ink"
                   >
                     Feedback
                   </a>

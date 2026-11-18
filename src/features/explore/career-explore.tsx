@@ -38,7 +38,7 @@ import {
 import { ROUTES } from "@/lib/constants";
 
 const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
 
 const SECTIONS = [
   { href: "#your-direction", label: "Your direction" },
@@ -49,7 +49,7 @@ const SECTIONS = [
 
 function PrototypeNote() {
   return (
-    <p role="note" className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-900">
+    <p role="note" className="rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-900">
       {PROTOTYPE_BANNER}
     </p>
   );
@@ -62,7 +62,7 @@ function SectionNav() {
         <a
           key={item.href}
           href={item.href}
-          className={`inline-flex min-h-12 items-center rounded-lg px-3 text-base font-medium text-neutral-900 ${focusRing}`}
+          className={`inline-flex min-h-12 items-center rounded-xl px-3 text-base font-medium text-neutral-900 ${focusRing}`}
         >
           {item.label}
         </a>
