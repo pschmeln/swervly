@@ -1,7 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 import { Button, Card } from "@/components/ui";
+import { focusRing } from "@/components/ui/controls";
+import { ProductDemo } from "@/features/landing/demo";
 import { ROUTES } from "@/lib/constants";
 
 export default function Page() {
@@ -12,75 +15,70 @@ export default function Page() {
   );
 }
 
-function StepGraphic() {
-  const steps = ["Quiz", "Reviews", "Direction"];
-  return (
-    <svg
-      viewBox="0 0 320 88"
-      role="img"
-      aria-label="Three steps: take the quiz, review your co-ops, get your direction"
-      className="h-auto w-full max-w-sm"
-    >
-      {steps.map((label, index) => {
-        const x = 16 + index * 104;
-        return (
-          <g key={label}>
-            <rect x={x} y="8" width="88" height="72" rx="12" fill="#171717" />
-            <text x={x + 44} y="36" textAnchor="middle" fill="#ffffff" fontSize="20" fontFamily="sans-serif">
-              {index + 1}
-            </text>
-            <text x={x + 44} y="58" textAnchor="middle" fill="#ffffff" fontSize="12" fontFamily="sans-serif">
-              {label}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 export function LandingPitch() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8 sm:py-12">
-      <header className="flex flex-col gap-4">
-        <h1 className="text-4xl font-semibold tracking-tight">Swervly</h1>
-        <p className="text-lg leading-7 text-neutral-800">
-          Most students pick co-ops with almost no information about what they&apos;ll actually enjoy.
-        </p>
-        <p className="leading-7 text-neutral-700">
-          Swervly learns how you work, then points you toward co-ops that fit. The quiz is the
-          input. Reviews from students, and a first guess from your answers, are what you come back for.
-        </p>
-        <StepGraphic />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button href={ROUTES.signUp} className="w-full sm:w-auto">
-            Get started
-          </Button>
-          <Button href={ROUTES.signIn} variant="secondary" className="w-full sm:w-auto">
-            Sign in
-          </Button>
+    <main className="flex w-full flex-1 flex-col">
+      <div className="sky-band">
+        <div className="mx-auto w-full max-w-5xl px-4 pb-40 pt-5">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 text-lg font-bold tracking-tight text-white">
+              <span aria-hidden="true" className="size-5 rounded-md bg-gradient-to-br from-white to-[#cdd9ff]" />
+              Swervly
+            </span>
+          </div>
+          <div className="mx-auto mt-12 max-w-2xl text-center sm:mt-16">
+            <h1 className="font-serif text-5xl font-normal leading-[0.95] tracking-[-0.01em] text-white sm:text-7xl">
+              Know yourself.
+              <br />
+              <em>Find your direction.</em>
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white">
+              Most students pick co-ops with almost no information about what they&apos;ll actually enjoy. Swervly
+              learns how you work, then points you toward co-ops that fit.
+            </p>
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button href={ROUTES.signUp} variant="secondary" className="w-full sm:w-auto">
+                Get started
+              </Button>
+              <Link
+                href={ROUTES.signIn}
+                className={`inline-flex min-h-12 w-full items-center justify-center rounded-full border border-white/70 px-5 text-base font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto ${focusRing}`}
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
         </div>
-      </header>
+      </div>
 
-      <Card>
-        <h2 className="text-lg font-semibold">Three steps</h2>
-        <ol className="mt-2 list-decimal space-y-2 pl-5 leading-7 text-neutral-700">
-          <li>Take the quiz</li>
-          <li>Review your co-ops</li>
-          <li>Get your direction</li>
-        </ol>
-      </Card>
+      <div className="relative mx-auto -mt-28 w-full max-w-4xl px-4">
+        <ProductDemo />
+      </div>
 
-      <Card>
-        <h2 className="text-lg font-semibold">Who it&apos;s for</h2>
-        <p className="mt-2 leading-7 text-neutral-700">
-          Any student with an email that ends in .edu. Swervly is free, and it is not affiliated
-          with a university.
-        </p>
-      </Card>
+      <div className="mx-auto grid w-full max-w-5xl gap-5 px-4 pb-12 pt-14 md:grid-cols-3">
+        {STEPS.map((step, index) => (
+          <Card key={step.title}>
+            <p className="text-sm font-semibold text-accent">Step {index + 1}</p>
+            <h2 className="mt-1 text-lg font-semibold">{step.title}</h2>
+            <p className="mt-2 leading-7 text-ink-2">{step.body}</p>
+          </Card>
+        ))}
+        <Card className="md:col-span-3">
+          <h2 className="text-lg font-semibold">Who it&apos;s for</h2>
+          <p className="mt-2 leading-7 text-ink-2">
+            Any student with an email that ends in .edu. Swervly is free, and it is not affiliated with a university.
+          </p>
+        </Card>
+      </div>
     </main>
   );
 }
+
+const STEPS = [
+  { title: "Take the quiz", body: "A minute of quick statements about how you like to work. There are no right answers." },
+  { title: "Review your co-ops", body: "Rate what you enjoyed and learned. Your reviews help other students and sharpen your own Direction." },
+  { title: "Get your direction", body: "Careers and majors to explore, as a best guess that improves as more students review." },
+] as const;
 
 async function Landing() {
   const { userId } = await auth();
