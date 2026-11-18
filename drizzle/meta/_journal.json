@@ -36,6 +36,13 @@
       "when": 1795200000000,
       "tag": "0004_major_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795300000000,
+      "tag": "0005_rotation_number_max_8",
+      "breakpoints": true
     }
   ]
 }

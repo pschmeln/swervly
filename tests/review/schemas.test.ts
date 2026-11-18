@@ -41,13 +41,16 @@ describe("RotationInput", () => {
     ).toBe(false);
   });
 
-  it("rejects rotationNumber 6", () => {
-    expect(
-      RotationInput.safeParse({
-        ...validBase,
-        rotationNumber: 6,
-      }).success,
-    ).toBe(false);
+  it("accepts rotation numbers 6 through 8", () => {
+    for (const rotationNumber of [6, 7, 8]) {
+      expect(RotationInput.safeParse({ ...validBase, rotationNumber }).success).toBe(true);
+    }
+  });
+
+  it("rejects rotationNumber 9 and 0", () => {
+    for (const rotationNumber of [9, 0]) {
+      expect(RotationInput.safeParse({ ...validBase, rotationNumber }).success).toBe(false);
+    }
   });
 
   it("saves an empty note with sharing forced off", () => {

@@ -18,7 +18,8 @@ import type { PublicMajorView } from "@/features/company/aggregate";
 import { ROLE_TYPE_OPTIONS } from "@/features/review/roles";
 import { WOULD_RETURN_OPTIONS } from "@/features/review/would-return";
 import type { SkillChoice } from "@/features/skills/rank";
-import { ROUTES } from "@/lib/constants";
+import { splitSkillChoices } from "@/features/review/major-skills";
+import { MAX_ROTATIONS, ROUTES } from "@/lib/constants";
 import {
   apiFormBannerMessage,
   firstFieldControlId,
@@ -46,7 +47,9 @@ const YEAR_OPTIONS = Array.from(
   },
 );
 
-const ROTATION_NUMBER_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({
+const ROTATION_NUMBERS = Array.from({ length: MAX_ROTATIONS }, (_, index) => index + 1);
+
+const ROTATION_NUMBER_OPTIONS = ROTATION_NUMBERS.map((n) => ({
   value: String(n),
   label: String(n),
 }));
@@ -112,7 +115,7 @@ type FormFields = {
 type FieldErrors = Record<string, string>;
 
 function lowestUnusedRotationNumber(used: number[]): number {
-  for (const n of [1, 2, 3, 4, 5]) {
+  for (const n of ROTATION_NUMBERS) {
     if (!used.includes(n)) return n;
   }
   return 1;
@@ -178,11 +181,14 @@ export function ReviewForm({
   rotation,
   usedRotationNumbers = [],
   shareFreeTextDefault = false,
+  majorSkills = [],
 }: {
   mode: "create" | "edit";
   rotation?: RotationListItem;
   usedRotationNumbers?: number[];
   shareFreeTextDefault?: boolean;
+  /** Skills for the student's major, shown first. Empty shows every skill. */
+  majorSkills?: readonly string[];
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormFields>(() =>
@@ -197,6 +203,7 @@ export function ReviewForm({
   const [newSkill, setNewSkill] = useState("");
   const [newSkillKind, setNewSkillKind] = useState("technical");
   const [skillMessage, setSkillMessage] = useState<string | null>(null);
+  const [showAllSkills, setShowAllSkills] = useState(false);
   const [preview, setPreview] = useState<{ employerName: string; view: PublicMajorView } | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const saveErrorRef = useRef<HTMLDivElement>(null);
@@ -300,6 +307,9 @@ export function ReviewForm({
       setSkillMessage("Could not add that skill.");
     }
   }
+
+  const skillGroups = splitSkillChoices(skillChoices, majorSkills, form.skillsUsed);
+  const visibleSkills = showAllSkills ? [...skillGroups.primary, ...skillGroups.rest] : skillGroups.primary;
 
   function toggleSkill(skill: string) {
     setForm((prev) => {
@@ -534,7 +544,7 @@ export function ReviewForm({
       <Field
         label="Co-op or internship number"
         htmlFor="rotationNumber"
-        hint="If your school numbers co-op rotations, use that number. For summer internships, number them in the order you did them. You can save up to five, and each number is used once."
+        hint="If your school numbers co-op rotations, use that number. For summer internships, number them in the order you did them. You can save up to eight, and each number is used once."
         error={fieldError(fieldErrors, "rotationNumber")}
       >
         <Select
@@ -655,9 +665,11 @@ export function ReviewForm({
         className="flex flex-col gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
       >
         <p className="text-sm font-medium text-neutral-900">Skills used</p>
-        <p className="text-sm text-neutral-600">Pick up to 10.</p>
+        <p className="text-sm text-neutral-600">
+          Pick up to 10.{majorSkills.length > 0 ? " Skills for your major come first." : ""}
+        </p>
         <div className="flex flex-wrap gap-2">
-          {skillChoices.map((skill) => {
+          {visibleSkills.map((skill) => {
             const selected = form.skillsUsed.includes(skill.name);
             return (
               <button
@@ -678,6 +690,17 @@ export function ReviewForm({
             );
           })}
         </div>
+        {skillGroups.rest.length > 0 ? (
+          <button
+            type="button"
+            className="min-h-12 self-start rounded-lg px-1 text-base font-medium text-neutral-900 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            aria-expanded={showAllSkills}
+            aria-controls="skills-used"
+            onClick={() => setShowAllSkills((value) => !value)}
+          >
+            {showAllSkills ? "Show fewer skills" : `Show all skills (${skillGroups.rest.length} more)`}
+          </button>
+        ) : null}
         <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <TextInput
             id="newSkill"

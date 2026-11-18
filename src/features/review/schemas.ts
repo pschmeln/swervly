@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { ROLE_TYPE_VALUES } from "@/features/review/roles";
 import { WOULD_RETURN_VALUES } from "@/features/review/would-return";
+import { MAX_ROTATIONS } from "@/lib/constants";
 
 const currentYear = new Date().getFullYear();
 
@@ -48,7 +49,7 @@ export const RotationInput = z
     roleType: z.enum(ROLE_TYPE_VALUES, { error: "Choose a role type." }),
     termSeason: z.enum(["spring", "summer", "fall"], { error: "Choose a term." }),
     termYear: z.number().int().min(2015).max(currentYear, { error: "Choose a year that has already started." }),
-    rotationNumber: z.number().int().min(1).max(5, { error: "Choose a number from 1 to 5." }),
+    rotationNumber: z.number().int().min(1).max(MAX_ROTATIONS, { error: `Choose a number from 1 to ${MAX_ROTATIONS}.` }),
     payHourly: z
       .number()
       .min(0, { error: "Enter an hourly pay from 0 to 200." })
