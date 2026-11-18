@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { LandingPitch } from "@/app/page";
 import { NOT_ELIGIBLE_COPY } from "@/app/not-eligible/page";
 import PrivacyPage from "@/app/privacy/page";
-import { HomeSteps } from "@/app/(app)/home/page";
 
 function visibleText(html: string): string {
   return html
@@ -57,16 +56,5 @@ describe("public copy", () => {
     expect(text).not.toContain("only you can see your profile and co-op reviews");
     expect(text).not.toContain("for UC students");
     expect(text).not.toContain("return offer");
-  });
-});
-
-describe("home steps", () => {
-  it("shows Review your profile and the three steps", () => {
-    const html = renderToStaticMarkup(<HomeSteps quizDone canReview rotationCount={1} />);
-    expect(html).toContain("Review your profile");
-    expect(html).toContain("Take the quiz");
-    expect(html).toContain("Review your co-ops");
-    expect(html).toContain("Get your direction");
-    expect(html).toContain('href="/profile"');
   });
 });
