@@ -11,7 +11,7 @@ export default function AccountConflictPage() {
         Sign out, then sign in with the account that first used this email. If you
         still can&apos;t get in, email{" "}
         <a
-          className="underline underline-offset-2 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+          className="underline underline-offset-2 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           href="mailto:support@swervly.com"
         >
           support@swervly.com

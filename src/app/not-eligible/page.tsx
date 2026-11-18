@@ -16,7 +16,7 @@ export default function NotEligiblePage() {
         <SignOutButton>
           <button
             type="button"
-            className="inline-flex min-h-12 items-center justify-center rounded-lg bg-neutral-900 px-4 text-base font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            className="inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-5 text-base font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Sign out
           </button>

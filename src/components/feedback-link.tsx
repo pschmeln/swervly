@@ -10,7 +10,7 @@ export function FeedbackLink() {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-12 items-center text-base font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+      className="inline-flex min-h-12 items-center text-base font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
     >
       Feedback
     </Link>

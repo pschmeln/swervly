@@ -216,7 +216,7 @@ export function SignUpForm() {
     return (
       <div className="grid w-full max-w-md gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Finishing sign-up</h1>
+          <h1 className="font-serif text-4xl font-normal leading-none tracking-[-0.01em]">Finishing sign-up</h1>
           <p className="mt-2 leading-7 text-neutral-700">
             Your email is verified. Activating your session before opening Swervly.
           </p>
@@ -237,7 +237,7 @@ export function SignUpForm() {
     return (
       <form className="grid w-full max-w-md gap-4" onSubmit={(event) => void onVerify(event)}>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Verify your email</h1>
+          <h1 className="font-serif text-4xl font-normal leading-none tracking-[-0.01em]">Verify your email</h1>
           <p className="mt-2 leading-7 text-neutral-700">
             Enter the code we sent. You only verify your email once. After that, you sign in with your
             email and password.
@@ -287,7 +287,7 @@ export function SignUpForm() {
   return (
     <form className="grid w-full max-w-md gap-4" onSubmit={(event) => void onSubmitCredentials(event)}>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
+        <h1 className="font-serif text-4xl font-normal leading-none tracking-[-0.01em]">Create your account</h1>
         <p className="mt-2 leading-7 text-neutral-700">
           Use a university email ending in .edu, choose a password, then verify your email.
         </p>

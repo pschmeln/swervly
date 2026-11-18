@@ -60,7 +60,7 @@ export function RotationCard({ rotation }: { rotation: RotationListItem }) {
           <h2 className="text-lg font-semibold text-neutral-900">
             <Link
               href={ROUTES.company.replace("[id]", rotation.employer.id)}
-              className="underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              className="underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               {rotation.employer.name}
             </Link>
