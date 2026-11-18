@@ -1,6 +1,7 @@
 import { PageShell } from "@/components/ui";
 import { requireOnboardedUser } from "@/lib/auth";
 import { ReviewForm } from "@/features/review/components/review-form";
+import { skillsForMajor } from "@/features/review/major-skills";
 import { listRotations } from "@/features/review/server";
 
 export default async function NewReviewPage() {
@@ -14,6 +15,7 @@ export default async function NewReviewPage() {
         mode="create"
         usedRotationNumbers={usedRotationNumbers}
         shareFreeTextDefault={user.shareFreeTextDefault}
+        majorSkills={skillsForMajor(user)}
       />
     </PageShell>
   );
