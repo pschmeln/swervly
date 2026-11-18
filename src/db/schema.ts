@@ -181,6 +181,7 @@ export const majorSubmissions = pgTable("major_submissions", {
   updatedAt,
 }, (t) => [
   index("major_submissions_user_status_idx").on(t.userId, t.status),
+  uniqueIndex("major_submissions_one_pending_per_user").on(t.userId).where(sql`${t.status} = 'pending'`),
   check("major_submissions_status", sql`${t.status} in ('pending', 'approved', 'merged', 'rejected')`),
 ]);
 

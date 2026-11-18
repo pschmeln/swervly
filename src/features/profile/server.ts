@@ -70,113 +70,125 @@ export async function saveProfile(
 
   const write = resolved.write;
   const fields = profileFields(input);
-  const shareConsent =
-    input.consentShareReviews === true
-      ? {
-          shareReviewsConsentAt: sql`coalesce(${users.shareReviewsConsentAt}, now())`,
-          shareReviewsConsentVersion: sql`coalesce(${users.shareReviewsConsentVersion}, ${SHARE_REVIEWS_CONSENT_VERSION})`,
-        }
-      : {};
+  const conflict = () =>
+    new ApiError(409, "conflict", "Your major changed while this was saving. Reload and try again.");
+  const shareSql = input.consentShareReviews === true
+    ? sql`, share_reviews_consent_at = coalesce(share_reviews_consent_at, now()), share_reviews_consent_version = coalesce(share_reviews_consent_version, ${SHARE_REVIEWS_CONSENT_VERSION})`
+    : sql``;
+  const userSet = sql`
+    major = ${write.major},
+    major_source = ${write.source},
+    custom_major_text = ${write.customMajorText},
+    exploring_majors = ${write.exploringMajors},
+    year = ${input.year},
+    coop_track = ${input.coopTrack ?? null},
+    consent_privacy_at = coalesce(consent_privacy_at, now()),
+    consent_data_use_at = coalesce(consent_data_use_at, now()),
+    updated_at = now()
+    ${shareSql}
+  `;
+  // The profile write is the statement's main query, so it runs only when `changed` has a row.
+  const profileWrite = sql`
+    insert into profiles (
+      user_id, school, goal, goal_notes, location_constraint, constraints_notes, updated_at
+    )
+    select
+      ${userId}::uuid,
+      ${fields.school},
+      ${fields.goal},
+      ${fields.goalNotes},
+      ${fields.locationConstraint},
+      ${fields.constraintsNotes},
+      now()
+    from changed
+    on conflict (user_id) do update set
+      school = excluded.school,
+      goal = excluded.goal,
+      goal_notes = excluded.goal_notes,
+      location_constraint = excluded.location_constraint,
+      constraints_notes = excluded.constraints_notes,
+      updated_at = now()
+    returning user_id as id
+  `;
 
-  let submissionId: string | null = null;
-  let existingPendingId: string | null = null;
   if (write.submission) {
     const [existing] = await db
       .select({ id: majorSubmissions.id })
       .from(majorSubmissions)
       .where(and(eq(majorSubmissions.userId, userId), eq(majorSubmissions.status, "pending")))
       .limit(1);
-    if (existing) {
-      submissionId = existing.id;
-      existingPendingId = existing.id;
-    } else {
-      submissionId = crypto.randomUUID();
-    }
-  }
-
-  const userMatch = existingPendingId
-    ? and(
-        eq(users.id, userId),
-        sql`exists (
-          select 1 from ${majorSubmissions}
-          where ${majorSubmissions.id} = ${existingPendingId}
-            and ${majorSubmissions.userId} = ${users.id}
-            and ${majorSubmissions.status} = 'pending'
-        )`,
+    const saved = existing
+      ? await db.execute<{ id: string }>(sql`
+          with renamed as (
+            update major_submissions
+            set raw_name = ${write.submission.rawName},
+                normalized_name = ${write.submission.normalizedName},
+                updated_at = now()
+            where id = ${existing.id}::uuid
+              and user_id = ${userId}::uuid
+              and status = 'pending'
+            returning id
+          ),
+          changed as (
+            update users
+            set ${userSet},
+                major_submission_id = ${existing.id}::uuid
+            where users.id = ${userId}::uuid
+              and exists (select 1 from renamed)
+            returning users.id
+          )
+          ${profileWrite}
+        `)
+      : await db.execute<{ id: string }>(sql`
+          with inserted as (
+            insert into major_submissions (id, user_id, raw_name, normalized_name, status)
+            values (
+              ${crypto.randomUUID()}::uuid,
+              ${userId}::uuid,
+              ${write.submission.rawName},
+              ${write.submission.normalizedName},
+              'pending'
+            )
+            on conflict (user_id) where status = 'pending' do nothing
+            returning id
+          ),
+          changed as (
+            update users
+            set ${userSet},
+                major_submission_id = (select id from inserted)
+            where users.id = ${userId}::uuid
+              and exists (select 1 from inserted)
+            returning users.id
+          )
+          ${profileWrite}
+        `);
+    if (returnedIds(saved).length === 0) throw conflict();
+  } else {
+    const saved = await db.execute<{ id: string }>(sql`
+      with changed as (
+        update users
+        set ${userSet},
+            major_submission_id = null
+        where users.id = ${userId}::uuid
+        returning users.id
       )
-    : eq(users.id, userId);
-  const userUpdate = db
-    .update(users)
-    .set({
-      major: write.major,
-      majorSource: write.source,
-      customMajorText: write.customMajorText,
-      majorSubmissionId: submissionId,
-      exploringMajors: write.exploringMajors,
-      year: input.year,
-      coopTrack: input.coopTrack ?? null,
-      consentPrivacyAt: sql`coalesce(${users.consentPrivacyAt}, now())`,
-      consentDataUseAt: sql`coalesce(${users.consentDataUseAt}, now())`,
-      ...shareConsent,
-      updatedAt: sql`now()`,
-    })
-    .where(userMatch)
-    .returning();
-  const profileWrite = db
-    .insert(profiles)
-    .values({ userId, ...fields })
-    .onConflictDoUpdate({
-      target: profiles.userId,
-      set: fields,
-    })
-    .returning();
-
-  const results = write.submission
-    ? existingPendingId
-      ? await db.batch([
-          db
-            .update(majorSubmissions)
-            .set({
-              rawName: write.submission.rawName,
-              normalizedName: write.submission.normalizedName,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(majorSubmissions.id, existingPendingId),
-                eq(majorSubmissions.userId, userId),
-                eq(majorSubmissions.status, "pending"),
-              ),
-            ),
-          userUpdate,
-          profileWrite,
-        ])
-      : await db.batch([
-          db.insert(majorSubmissions).values({
-            id: submissionId ?? crypto.randomUUID(),
-            userId,
-            rawName: write.submission.rawName,
-            normalizedName: write.submission.normalizedName,
-            status: "pending",
-          }),
-          userUpdate,
-          profileWrite,
-        ])
-    : await db.batch([userUpdate, profileWrite]);
-
-  const userRows = results[results.length - 2] as User[];
-  const profileRows = results[results.length - 1] as Profile[];
-
-  const user = userRows[0];
-  const profile = profileRows[0];
-  if (write.submission && existingPendingId && !user) {
-    throw new ApiError(409, "conflict", "Your major changed while this was saving. Reload and try again.");
+      ${profileWrite}
+    `);
+    if (returnedIds(saved).length === 0) throw new Error("profile_write_missing");
   }
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
   if (!user || !profile) {
     throw new Error("profile_write_missing");
   }
 
   return { user, profile };
+}
+
+function returnedIds(result: unknown): unknown[] {
+  const rows = result && typeof result === "object" && "rows" in result ? result.rows : result;
+  return Array.isArray(rows) ? rows : [];
 }
 
 export function onboardingResumeStep(

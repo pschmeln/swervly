@@ -11,7 +11,11 @@ describe("major moderation and profile saves", () => {
     expect(moderation).toContain("and users.major_submission_id = decided.id");
   });
 
-  it("does not let a stale custom save overwrite a submission that is no longer pending", () => {
-    expect(profile).toContain("and ${majorSubmissions.status} = 'pending'");
+  it("saves a custom major and the profile in one statement, and rejects a second pending row", () => {
+    expect(profile).toContain("and exists (select 1 from renamed)");
+    expect(profile).toContain("on conflict (user_id) where status = 'pending' do nothing");
+    expect(profile).toContain("insert into profiles");
+    expect(profile).toContain("from changed");
+    expect(profile).toContain("if (returnedIds(saved).length === 0) throw conflict()");
   });
 });

@@ -63,4 +63,5 @@ CREATE TABLE "major_submissions" (
 ALTER TABLE "major_submissions" ADD CONSTRAINT "major_submissions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "major_submissions" ADD CONSTRAINT "major_submissions_catalog_id_major_catalog_id_fk" FOREIGN KEY ("catalog_id") REFERENCES "public"."major_catalog"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "major_submissions_user_status_idx" ON "major_submissions" USING btree ("user_id","status");--> statement-breakpoint
+CREATE UNIQUE INDEX "major_submissions_one_pending_per_user" ON "major_submissions" ("user_id") WHERE "status" = 'pending';--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_major_submission_id_major_submissions_id_fk" FOREIGN KEY ("major_submission_id") REFERENCES "public"."major_submissions"("id") ON DELETE set null ON UPDATE no action;

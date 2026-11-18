@@ -21,6 +21,8 @@ describe("major catalog migration", () => {
     }
     expect(lowered).toContain('btrim("major")');
     expect(lowered).toContain('"custom_major_text" = "major"');
+    expect(lowered).toContain("major_submissions_one_pending_per_user");
+    expect(lowered).toContain("where \"status\" = 'pending'");
     expect(lowered).not.toContain('"major" = null');
     expect(lowered).not.toMatch(/set\s+"major"\s*=/);
   });
