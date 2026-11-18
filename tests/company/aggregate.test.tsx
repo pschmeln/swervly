@@ -22,7 +22,7 @@ function review(overrides: Partial<ReviewForAggregate> = {}): ReviewForAggregate
 }
 
 describe("aggregateForMajor", () => {
-  it("hides a major until 3 distinct students contribute", () => {
+  it("hides a major until 2 distinct students contribute", () => {
     const oneStudentThreeReviews = aggregateForMajor(
       [
         review({ userId: "solo", wouldReturn: "yes" }),
@@ -36,6 +36,16 @@ describe("aggregateForMajor", () => {
     expect(oneStudentThreeReviews.contributorCount).toBe(1);
     expect(oneStudentThreeReviews.payRange).toBeNull();
     expect(oneStudentThreeReviews.sharedNotes).toEqual([]);
+
+    const twoStudents = aggregateForMajor(
+      [review({ userId: "a", payHourly: null }), review({ userId: "b", payHourly: 30 })],
+      "Electrical Engineering",
+      SKILLS,
+    );
+    expect(twoStudents.visible).toBe(true);
+    expect(twoStudents.contributorCount).toBe(2);
+    // Only one student reported pay, so no range.
+    expect(twoStudents.payRange).toBeNull();
 
     const threeStudents = aggregateForMajor(
       [
@@ -58,7 +68,8 @@ describe("aggregateForMajor", () => {
     );
     expect(threeStudents.maybeLine).toBe("1 said maybe.");
     expect(threeStudents.basisLine).toBe("Based on 3 reviews from 3 students.");
-    expect(threeStudents.payRange).toBeNull();
+    // Two different students reported pay (b and c), which meets the 2-student pay minimum.
+    expect(threeStudents.payRange).toEqual({ low: 25, high: 30 });
     expect(threeStudents.topSkills).toEqual(["CAD"]);
     expect(threeStudents.sharedNotes).toEqual(["Bring boots."]);
     expect(JSON.stringify(threeStudents)).not.toContain("@");
@@ -88,7 +99,7 @@ describe("aggregateForMajor", () => {
     const hiddenPay = aggregateForMajor(
       [
         review({ userId: "a", payHourly: 20 }),
-        review({ userId: "b", payHourly: 22 }),
+        review({ userId: "b", payHourly: null }),
         review({ userId: "c", payHourly: null }),
         review({ userId: "a", payHourly: 40 }),
       ],
@@ -97,6 +108,13 @@ describe("aggregateForMajor", () => {
     );
     expect(hiddenPay.visible).toBe(true);
     expect(hiddenPay.payRange).toBeNull();
+
+    const twoPayStudents = aggregateForMajor(
+      [review({ userId: "a", payHourly: 20 }), review({ userId: "b", payHourly: 22.5 })],
+      "Electrical Engineering",
+      SKILLS,
+    );
+    expect(twoPayStudents.payRange).toEqual({ low: 20, high: 23 });
   });
 });
 

@@ -52,11 +52,22 @@ describe("direction rules", () => {
         { userId: "a", traits: balanced, roleType: "design", enjoyment: 5 },
         { userId: "a", traits: balanced, roleType: "design", enjoyment: 4 },
         { userId: "a", traits: balanced, roleType: "design", enjoyment: 5 },
+      ],
+    );
+    // Three reviews, one student: below the 2-student minimum.
+    expect(direction.basis).toBe("rules");
+    expect(MIN_DISTINCT_STUDENTS_PER_ROLE).toBe(2);
+  });
+
+  it("uses evidence once 2 different similar students reviewed a role", () => {
+    const direction = buildDirection(
+      { traits: balanced, major: "Mechanical Engineering", goal: "industry" },
+      [
+        { userId: "a", traits: balanced, roleType: "design", enjoyment: 5 },
         { userId: "b", traits: balanced, roleType: "design", enjoyment: 5 },
       ],
     );
-    expect(direction.basis).toBe("rules");
-    expect(MIN_DISTINCT_STUDENTS_PER_ROLE).toBe(3);
+    expect(direction.suggestions[0]).toMatchObject({ roleType: "design", source: "similar_students", sampleSize: 2 });
   });
 
   it("marks a role evidence-backed only with enough distinct similar students", () => {

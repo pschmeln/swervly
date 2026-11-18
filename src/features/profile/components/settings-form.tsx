@@ -14,12 +14,15 @@ const CONFIRM = "DELETE";
 export function SettingsForm({
   shareFreeTextDefault,
   shareReviewsConsent,
+  shareReviewsConsentOutdated = false,
   inviteHref,
   inviteCount,
   founder,
 }: {
   shareFreeTextDefault: boolean;
   shareReviewsConsent: boolean;
+  /** Agreed to older sharing terms; sharing is off until they agree again. */
+  shareReviewsConsentOutdated?: boolean;
   inviteHref: string;
   inviteCount: number;
   founder: boolean;
@@ -152,9 +155,15 @@ export function SettingsForm({
         <h2 className="text-lg font-semibold">Anonymous company pages</h2>
         <p className="mt-1 text-neutral-700">
           When this is on, your reviews can count toward anonymous company pages and Direction for
-          other signed-in students. Pages stay hidden until at least 3 different students in a major
+          other signed-in students. Pages stay hidden until at least 2 different students in a major
           contribute. Turn it off to keep your reviews private.
         </p>
+        {shareReviewsConsentOutdated && !shareReviews ? (
+          <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            We changed this rule from 3 students to 2, so sharing is paused for your reviews. Turn it on
+            again if you agree to the new rule.
+          </p>
+        ) : null}
         <div className="mt-4">
           <Checkbox
             id="shareReviewsConsent"

@@ -56,6 +56,16 @@ function profileFields(input: ProfileWriteInput) {
   };
 }
 
+/**
+ * SET fragment for turning on review sharing from onboarding or the profile.
+ * Keeps the original time only for consent to the current terms; consent to
+ * older terms (a lower version) is replaced with now() and the current version.
+ */
+export function shareReviewsConsentSql(consenting: boolean) {
+  if (!consenting) return sql``;
+  return sql`, share_reviews_consent_at = case when share_reviews_consent_version = ${SHARE_REVIEWS_CONSENT_VERSION} then coalesce(share_reviews_consent_at, now()) else now() end, share_reviews_consent_version = ${SHARE_REVIEWS_CONSENT_VERSION}`;
+}
+
 export async function saveProfile(
   userId: string,
   input: ProfileWriteInput,
@@ -72,9 +82,7 @@ export async function saveProfile(
   const fields = profileFields(input);
   const conflict = () =>
     new ApiError(409, "conflict", "Your major changed while this was saving. Reload and try again.");
-  const shareSql = input.consentShareReviews === true
-    ? sql`, share_reviews_consent_at = coalesce(share_reviews_consent_at, now()), share_reviews_consent_version = coalesce(share_reviews_consent_version, ${SHARE_REVIEWS_CONSENT_VERSION})`
-    : sql``;
+  const shareSql = shareReviewsConsentSql(input.consentShareReviews === true);
   const userSet = sql`
     major = ${write.major},
     major_source = ${write.source},

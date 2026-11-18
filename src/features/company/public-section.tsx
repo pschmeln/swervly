@@ -19,7 +19,7 @@ export function PublicMajorSection({
         <h2 className="text-lg font-semibold">What other students see</h2>
         {employerName ? <p className="mt-1 text-neutral-700">{employerName}</p> : null}
         <p className="mt-2 text-neutral-700">
-          This stays hidden until at least 3 different students in your major review this company.
+          This stays hidden until at least 2 different students in your major review this company.
           Multiple reviews from one student do not unlock it. Nothing from a smaller group is shown.
         </p>
       </Card>
@@ -81,7 +81,7 @@ export function PublicMajorSection({
           </p>
         ) : (
           <p className="mt-1 text-sm text-neutral-600">
-            Pay stays hidden until 3 different students in this group report it.
+            Pay stays hidden until 2 different students in this group report it.
           </p>
         )}
       </div>
