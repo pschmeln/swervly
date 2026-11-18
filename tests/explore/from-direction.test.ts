@@ -1,0 +1,148 @@
+import { describe, expect, it } from "vitest";
+import { buildDirection } from "@/features/direction/rules";
+import { DIRECTORY_WHY_SHOWN } from "@/features/explore/companies";
+import { directionExploreCopy } from "@/features/explore/from-direction";
+import { buildExploreModel } from "@/features/explore/view-model";
+import type { TraitScores } from "@/features/profile/scoring";
+
+const traits: TraitScores = {
+  extraversion: 12,
+  agreeableness: 12,
+  conscientiousness: 12,
+  neuroticism: 12,
+  openness: 12,
+};
+
+const PRIVATE_MAJOR = "Zq-Private-Major-9f3";
+
+function companyWhy(id: string, model: ReturnType<typeof buildExploreModel>): string {
+  return model.companies.find((company) => company.id === id)?.whyShown ?? "";
+}
+
+describe("direction explore integration", () => {
+  it("keeps a custom major on the profile and out of pathways and companies", () => {
+    const model = buildExploreModel({
+      stored: { major: null, majorSource: "custom", customMajorText: PRIVATE_MAJOR },
+      goal: "industry",
+      dismissedRoleIds: [],
+      direction: buildDirection({ traits, major: "", goal: "industry" }, []),
+    });
+    expect(model.profile.majorLabel).toBe(PRIVATE_MAJOR);
+    expect(model.profile.note).not.toContain(PRIVATE_MAJOR);
+    expect(model.paths.map((path) => path.id)).toEqual(["insufficient"]);
+    expect(JSON.stringify({ paths: model.paths, companies: model.companies, questions: model.questions })).not.toContain(
+      PRIVATE_MAJOR,
+    );
+    expect(model.companies.every((company) => company.whyShown === DIRECTORY_WHY_SHOWN || company.id === "sample-empty")).toBe(
+      true,
+    );
+    expect(model.paths.every((path) => path.id !== "software")).toBe(true);
+  });
+
+  it("treats undecided and a missing quiz as empty of invented pathways", () => {
+    const undecided = buildExploreModel({
+      stored: { major: null, majorSource: "undecided", customMajorText: null },
+      goal: "undecided",
+      dismissedRoleIds: [],
+      direction: buildDirection({ traits, major: "", goal: "undecided" }, []),
+    });
+    expect(undecided.profile.majorLabel).toBe("Undecided / Not sure");
+    expect(undecided.profile.goalLabel).toBe("Undecided");
+    expect(undecided.paths.map((path) => path.id)).toEqual(["insufficient"]);
+    expect(undecided.direction.needsQuiz).toBe(false);
+    expect(companyWhy("cchmc", undecided)).toBe(DIRECTORY_WHY_SHOWN);
+
+    const missingQuiz = buildExploreModel({
+      stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+      goal: null,
+      dismissedRoleIds: [],
+      direction: null,
+    });
+    expect(missingQuiz.direction.needsQuiz).toBe(true);
+    expect(missingQuiz.paths).toEqual([]);
+    expect(missingQuiz.pathsEmpty).toContain("quiz");
+    expect(missingQuiz.profile.goalLabel).toBe("Not on your profile yet");
+    expect(missingQuiz.profile.majorLabel).toBe("Nursing");
+    expect(companyWhy("mayo", missingQuiz)).toBe(DIRECTORY_WHY_SHOWN);
+  });
+
+  it("drops dismissed suggestions and does not treat admin or software as clinical", () => {
+    const model = buildExploreModel({
+      stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+      goal: "industry",
+      dismissedRoleIds: ["healthcare_clinical"],
+      direction: {
+        label: "Worth exploring from your major and stated goal.",
+        suggestions: [
+          {
+            roleType: "healthcare_clinical",
+            roleLabel: "Healthcare — clinical",
+            reason: "Clinical work is a place to explore.",
+            source: "rules",
+            evidenceLabel: "Early hypothesis",
+          },
+          {
+            roleType: "healthcare_admin",
+            roleLabel: "Healthcare administration",
+            reason: "Administration is a place to explore.",
+            source: "rules",
+            evidenceLabel: "Early hypothesis",
+          },
+          {
+            roleType: "software",
+            roleLabel: "Software",
+            reason: "Software is a place to explore.",
+            source: "rules",
+            evidenceLabel: "Early hypothesis",
+          },
+        ],
+      },
+    });
+    expect(model.paths.map((path) => path.id)).toEqual(["healthcare_admin", "software"]);
+    expect(companyWhy("cchmc", model)).toBe(DIRECTORY_WHY_SHOWN);
+    expect(companyWhy("mayo", model)).toBe(DIRECTORY_WHY_SHOWN);
+    expect(JSON.stringify(model.companies)).not.toContain("%");
+  });
+
+  it("keeps student evidence separate and only overlaps the matching directory category", () => {
+    const model = buildExploreModel({
+      stored: { major: "Finance", majorSource: "catalog", customMajorText: null },
+      goal: "industry",
+      dismissedRoleIds: [],
+      direction: {
+        label: "Worth exploring.",
+        suggestions: [
+          {
+            roleType: "finance",
+            roleLabel: "Finance",
+            reason: "Worth exploring: 3 students with profiles near yours rated this role highly.",
+            source: "similar_students",
+            evidenceLabel: "Student evidence · n=3",
+          },
+          {
+            roleType: "business_operations",
+            roleLabel: "Business operations",
+            reason: "Early hypothesis: operations is a place to explore.",
+            source: "rules",
+            evidenceLabel: "Early hypothesis",
+          },
+        ],
+      },
+    });
+    expect(model.paths.map((path) => path.sourceLabel)).toEqual(["Student evidence · n=3", "Early hypothesis"]);
+    expect(companyWhy("pnc", model)).toContain("Listed under Finance");
+    expect(companyWhy("cleveland-fed", model)).toContain("Listed under Finance");
+    expect(companyWhy("pg", model)).toContain("Listed under Business operations");
+    expect(companyWhy("ge-aerospace", model)).toBe(DIRECTORY_WHY_SHOWN);
+    expect(companyWhy("ideo", model)).toBe(DIRECTORY_WHY_SHOWN);
+
+    const copy = directionExploreCopy({
+      stored: { major: null, majorSource: null, customMajorText: null },
+      goal: null,
+      dismissedRoleIds: ["finance"],
+      direction: { label: "Worth exploring.", suggestions: [] },
+    });
+    expect(copy.paths).toEqual([]);
+    expect(copy.direction.note).toContain("dismissed");
+  });
+});

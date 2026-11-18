@@ -18,8 +18,11 @@ export default async function DirectionPage() {
         <Card>
           <p className="text-neutral-700">Take the quiz first. Direction is a guess from those answers.</p>
           <p className="mt-2 text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
             <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">Take the quiz</Button>
+            <Button href={ROUTES.directionExplore} variant="secondary" className="w-full sm:w-auto">
+              Explore pathways and companies
+            </Button>
           </div>
         </Card>
       </PageShell>
@@ -91,7 +94,8 @@ export default async function DirectionPage() {
           </Card>
         ))}
       </div>
-      <div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button href={ROUTES.directionExplore} className="w-full sm:w-auto">Explore pathways and companies</Button>
         <Button href={ROUTES.reviews} variant="secondary" className="w-full sm:w-auto">Review a co-op</Button>
       </div>
     </PageShell>

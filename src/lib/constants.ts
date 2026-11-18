@@ -33,6 +33,7 @@ export const ROUTES = {
   privacy: "/privacy",
   direction: "/direction",
   directionDismiss: "/api/direction/dismiss",
+  directionExplore: "/direction/explore",
   feedback: "/feedback",
   feedbackApi: "/api/feedback",
   company: "/companies/[id]",
