@@ -67,10 +67,8 @@ export function SetPasswordForm() {
     <Card>
       <h2 className="text-lg font-semibold">Set a password</h2>
       <p className="mt-1 text-neutral-700">
-        After you set a password, you can sign in with your email and password. On a new device,
-        Clerk may still email a code once. That is Device Trust, also called Client Trust, and it
-        protects a leaked password. Setting a password here does not remove verification when Clerk
-        asks for one.
+        After you set a password, you can sign in with your email and password on any device, without
+        waiting for an emailed code.
       </p>
       {saved ? <p className="mt-3 text-neutral-800">A password is set. You can replace it below.</p> : null}
       <form className="mt-4 grid gap-4" onSubmit={(event) => void onSubmit(event)}>
