@@ -1,3 +1,4 @@
+import { ONET_DETAILS } from "@/content/atlas/onet-details";
 import { familiesForRole } from "@/features/atlas/compat";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { childrenOf, familiesBlockedByRoles, pathsTo, visibilityOf, type AtlasGraph } from "@/features/atlas/graph";
@@ -12,6 +13,9 @@ export const CLOSEST_LABEL = "No official occupation matches well. These are the
 export const MARK_NOTE = "Marked on this screen. Not saved.";
 export const OCCUPATION_PENDING =
   "Swervly hasn't added the O*NET description, tasks and skills for this occupation yet.";
+export const TASKS_NOTE = "Up to five tasks from O*NET, chosen by Swervly. Core tasks first.";
+export const SOFTWARE_NOTE = "Software O*NET flags as in demand in job postings for this occupation. Swervly leaves out common office tools.";
+export const NO_SOFTWARE_NOTE = "O*NET doesn't flag any software as in demand for this occupation.";
 
 export type Marks = {
   interested: readonly AtlasNodeId[];
@@ -41,6 +45,8 @@ export type NodeModel = {
   summary: string | null;
   badge: string;
   onetCode: string | null;
+  /** Verbatim O*NET content; null for editorial nodes or when not imported. */
+  details: { description: string; tasks: readonly string[]; software: readonly string[] } | null;
   closestOnly: boolean;
   children: CardModel[];
   hiddenChildren: CardModel[];
@@ -185,7 +191,8 @@ export function nodeModel(
     "Which kinds of work you prefer, like building, modeling or working with people. Short questions are coming.",
     "Whether you've tried this work in a co-op, class or project.",
   ];
-  if (node.level === "occupation") unknowns.unshift(OCCUPATION_PENDING);
+  const details = occupation ? (ONET_DETAILS[occupation.onetCode] ?? null) : null;
+  if (node.level === "occupation" && !details) unknowns.unshift(OCCUPATION_PENDING);
 
   return {
     id,
@@ -194,6 +201,7 @@ export function nodeModel(
     summary: summaryOf(graph, id),
     badge: badgeOf(node.level),
     onetCode: occupation?.onetCode ?? null,
+    details,
     closestOnly: spec?.closestOnly === true,
     children,
     hiddenChildren,

@@ -67,7 +67,9 @@ describe("Atlas drill-down", () => {
     const labels = view?.alsoUnder.map((item) => item.label) ?? [];
     expect(labels.some((label) => label.includes("Structural simulation"))).toBe(true);
     expect(labels.some((label) => label.endsWith("CFD simulation"))).toBe(false);
-    expect(view?.unknowns[0]).toContain("hasn't added the O*NET description");
+    expect(view?.details?.description).toContain("designing tools, engines, machines");
+    expect(view?.details?.software).toContain("Dassault Systemes SolidWorks");
+    expect(view?.unknowns.join(" ")).not.toContain("hasn't added the O*NET description");
   });
 
   it("moves children of a dismissed Direction role into the hidden list", () => {
@@ -82,10 +84,12 @@ describe("Atlas drill-down", () => {
     expect(view?.closestOnly).toBe(true);
   });
 
-  it("never says fit score, match percentage or hiring anywhere", () => {
+  it("never says fit score, match percentage or hiring in Swervly's own wording", () => {
     const screens: unknown[] = [rootModel(graph, me, none), rootModel(graph, undecided, none)];
     for (const node of graph.nodes.values()) {
-      screens.push(nodeModel(graph, me, node.id, defaultTrail(graph, node.id), none, ["design"]));
+      const view = nodeModel(graph, me, node.id, defaultTrail(graph, node.id), none, ["design"]);
+      // Verbatim O*NET text is quoted, not claimed by Swervly (e.g. "published materials" for Technical Writers).
+      screens.push(view ? { ...view, details: null } : view);
     }
     const text = allText(screens);
     expect(text).not.toMatch(FORBIDDEN_PROTOTYPE_CLAIM);

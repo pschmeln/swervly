@@ -32,5 +32,7 @@ describe("AtlasExplorer", () => {
     expect(html).toContain("Registered Nurses");
     expect(html).toContain('href="https://www.onetonline.org/link/summary/29-1141.00"');
     expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain("Typical tasks");
+    expect(html).toContain("doesn&#x27;t flag any software as in demand");
   });
 });

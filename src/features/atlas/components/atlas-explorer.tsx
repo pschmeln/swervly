@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
-import { ONET_CHECKED_ON, ONET_CREDIT } from "@/content/atlas/occupations";
+import { ONET_CREDIT } from "@/content/atlas/occupations";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import type { AtlasNodeId } from "@/features/atlas/types";
@@ -11,10 +11,13 @@ import {
   CLOSEST_LABEL,
   defaultTrail,
   MARK_NOTE,
+  NO_SOFTWARE_NOTE,
   nodeModel,
   onetOnlineHref,
   rootModel,
   searchAtlas,
+  SOFTWARE_NOTE,
+  TASKS_NOTE,
   type CardModel,
   type Marks,
 } from "@/features/atlas/view";
@@ -172,6 +175,7 @@ export function AtlasExplorer({
             </div>
             <h2 className="mt-2 text-xl font-semibold">{view.title}</h2>
             {view.summary ? <p className="mt-1 text-neutral-700">{view.summary}</p> : null}
+            {view.details ? <p className="mt-2 text-neutral-800">{view.details.description}</p> : null}
             {view.closestOnly ? <p className="mt-2 text-sm text-neutral-600">{CLOSEST_LABEL}</p> : null}
             {view.onetCode && onetOnlineHref(view.onetCode) ? (
               <p className="mt-3 text-sm">
@@ -193,6 +197,29 @@ export function AtlasExplorer({
             ) : null}
             {notice ? <p className="mt-2 text-sm text-neutral-600" role="status">{notice}</p> : null}
           </Card>
+
+          {view.details ? (
+            <Card>
+              <h2 className="text-lg font-semibold">Typical tasks</h2>
+              <p className="mt-1 text-sm text-neutral-600">{TASKS_NOTE}</p>
+              <ul className="mt-2 list-disc pl-5 text-neutral-800">
+                {view.details.tasks.map((task) => <li key={task} className="mt-1">{task}</li>)}
+              </ul>
+              <h2 className="mt-5 text-lg font-semibold">Software in demand</h2>
+              {view.details.software.length > 0 ? (
+                <>
+                  <p className="mt-1 text-sm text-neutral-600">{SOFTWARE_NOTE}</p>
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {view.details.software.map((name) => (
+                      <li key={name} className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-800">{name}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-neutral-600">{NO_SOFTWARE_NOTE}</p>
+              )}
+            </Card>
+          ) : null}
 
           {view.childrenHeading ? (
             <section aria-label={view.childrenHeading} className="flex flex-col gap-2">
@@ -249,7 +276,7 @@ export function AtlasExplorer({
       )}
 
       <p className="text-xs text-neutral-500">
-        Areas, families and specializations are Swervly&apos;s own grouping. {ONET_CREDIT} Codes checked {ONET_CHECKED_ON}.
+        Areas, families and specializations are Swervly&apos;s own grouping. {ONET_CREDIT}
       </p>
     </div>
   );
