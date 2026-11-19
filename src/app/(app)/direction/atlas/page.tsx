@@ -3,6 +3,7 @@ import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
+import { loadAtlasState } from "@/features/atlas/server";
 import { loadDirection } from "@/features/direction/server";
 import { isAtlasNodeId } from "@/features/atlas/view";
 import { requireOnboardedUser } from "@/lib/auth";
@@ -13,7 +14,8 @@ export const metadata = { title: "Career map" };
 /**
  * Career Atlas prototype. Reads only the student's catalog major, major source
  * and Direction role marks (dismissed / Interested). Custom major text is never passed in.
- * Interested / Not interested marks stay in the browser and are not saved.
+ * Marks, answers and the chosen direction are saved per student once
+ * migration 0007 is applied; before that they stay on screen only.
  */
 export default async function CareerAtlasPage({
   searchParams,
@@ -57,6 +59,8 @@ export default async function CareerAtlasPage({
   } catch {
     // Atlas still works without Direction; it just has fewer signals.
   }
+  // Saved choices for this student only. Unavailable (on-screen only) until migration 0007 is applied.
+  const saved = await loadAtlasState(user.id);
 
   return (
     <PageShell title="Career map" description="Browse careers from your major outward, or anywhere you like.">
@@ -66,6 +70,7 @@ export default async function CareerAtlasPage({
         interestedRoles={[...user.interestedCareerRoles]}
         directionSuggested={directionSuggested}
         evidence={evidence}
+        saved={saved}
         initialFocus={initialFocus}
       />
     </PageShell>

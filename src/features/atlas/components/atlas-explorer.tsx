@@ -8,6 +8,7 @@ import { ANSWER_LABELS, type QuestionAnswer } from "@/content/atlas/questions";
 import { hasSignals, nextQuestion, questionPool, rankSpecializations, topPicks, type Answers, type Ranked } from "@/features/atlas/rank";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
+import { ROUTES } from "@/lib/constants";
 import type { AtlasNodeId } from "@/features/atlas/types";
 import {
   ATLAS_BANNER,
@@ -74,6 +75,30 @@ function PickCard({ item, onOpen }: { item: Ranked; onOpen: () => void }) {
 }
 
 export const ANSWERS_NOTE = "Your answers stay on this screen. They are not saved, and they only reorder what you see first.";
+export const ANSWERS_SAVED_NOTE = "Your answers are saved to your account. They only reorder what you see first, and you can clear them any time.";
+export const SAVED_NOTE = "Saved.";
+export const SAVE_FAILED_NOTE = "Couldn't save that. It stays on this screen for now.";
+
+export type InitialSaved = {
+  available: boolean;
+  interested: AtlasNodeId[];
+  dismissed: AtlasNodeId[];
+  pursuing: AtlasNodeId | null;
+  answers: Answers;
+};
+
+async function send(url: string, method: "PUT" | "DELETE", body?: unknown): Promise<boolean> {
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 export function AtlasExplorer({
   entry,
@@ -84,6 +109,7 @@ export function AtlasExplorer({
   initialFocus,
   initialAnswers = {},
   initialCompare = [],
+  saved,
 }: {
   entry: AtlasEntry;
   /** Direction role ids the student dismissed. Read only. */
@@ -98,14 +124,18 @@ export function AtlasExplorer({
   /** For tests and previews only. */
   initialAnswers?: Answers;
   initialCompare?: AtlasNodeId[];
+  /** Choices saved to the account. When absent or unavailable, nothing is saved. */
+  saved?: InitialSaved;
 }) {
+  const persist = saved?.available === true;
   const graph = atlasGraph();
   const [trail, setTrail] = useState<AtlasNodeId[]>(() => (initialFocus ? defaultTrail(graph, initialFocus) : []));
-  const [marks, setMarks] = useState<Marks>({ interested: [], dismissed: [] });
+  const [marks, setMarks] = useState<Marks>({ interested: saved?.interested ?? [], dismissed: saved?.dismissed ?? [] });
+  const [pursuing, setPursuing] = useState<AtlasNodeId | null>(saved?.pursuing ?? null);
   const [query, setQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Answers>(initialAnswers);
+  const [answers, setAnswers] = useState<Answers>(saved?.available ? saved.answers : initialAnswers);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [compare, setCompare] = useState<AtlasNodeId[]>(initialCompare);
   const answeredAny = Object.values(answers).some((value) => value !== "unsure");
@@ -149,6 +179,13 @@ export function AtlasExplorer({
 
   function answer(id: string, value: QuestionAnswer) {
     setAnswers((previous) => ({ ...previous, [id]: value }));
+    if (persist) void send(ROUTES.atlasAnswers, "PUT", { questionId: id, answer: value }).then((ok) => { if (!ok) setNotice(SAVE_FAILED_NOTE); });
+  }
+
+  function clearAll() {
+    setAnswers({});
+    setSkipped([]);
+    if (persist) void send(ROUTES.atlasAnswers, "DELETE").then((ok) => { if (!ok) setNotice(SAVE_FAILED_NOTE); });
   }
 
   function go(next: AtlasNodeId[]) {
@@ -165,17 +202,35 @@ export function AtlasExplorer({
     go(defaultTrail(graph, id));
   }
 
+  async function saveOrNote(ok: Promise<boolean> | null) {
+    if (!ok) {
+      setNotice(MARK_NOTE);
+      return;
+    }
+    setNotice((await ok) ? SAVED_NOTE : SAVE_FAILED_NOTE);
+  }
+
   function mark(kind: "interested" | "dismissed", id: AtlasNodeId) {
-    setMarks((previous) => {
-      const on = previous[kind].includes(id);
-      const other = kind === "interested" ? "dismissed" : "interested";
-      return {
-        ...previous,
-        [kind]: on ? previous[kind].filter((item) => item !== id) : [...previous[kind], id],
-        [other]: on ? previous[other] : previous[other].filter((item) => item !== id),
-      };
+    const on = marks[kind].includes(id);
+    const other = kind === "interested" ? "dismissed" : "interested";
+    setMarks({
+      ...marks,
+      [kind]: on ? marks[kind].filter((item) => item !== id) : [...marks[kind], id],
+      [other]: on ? marks[other] : marks[other].filter((item) => item !== id),
     });
-    setNotice(MARK_NOTE);
+    if (pursuing === id) setPursuing(null);
+    void saveOrNote(persist ? send(ROUTES.atlasMarks, "PUT", { nodeId: id, mark: on ? null : kind }) : null);
+  }
+
+  function choose(id: AtlasNodeId) {
+    const clearing = pursuing === id;
+    setPursuing(clearing ? null : id);
+    setMarks({
+      interested: marks.interested.includes(id) ? marks.interested : [...marks.interested, id],
+      dismissed: marks.dismissed.filter((item) => item !== id),
+    });
+    // Clearing a direction keeps the career as Interested.
+    void saveOrNote(persist ? send(ROUTES.atlasMarks, "PUT", { nodeId: id, mark: clearing ? "interested" : "pursuing" }) : null);
   }
 
   const crumbs = [{ id: null as AtlasNodeId | null, label: "Start", depth: 0 }].concat(
@@ -233,11 +288,22 @@ export function AtlasExplorer({
               )
             ) : null}
           </Card>
+          {pursuing ? (
+            <Card>
+              <p className="text-sm text-neutral-600">Your direction</p>
+              <h2 className="text-lg font-semibold">{graph.nodes.get(pursuing)?.title}</h2>
+              <p className="mt-1 text-sm text-neutral-600">You chose this. You can change it any time; nothing else is hidden because of it.</p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Button onClick={() => openFromRoot(pursuing)} className="w-full sm:w-auto">Open</Button>
+                <Button variant="secondary" onClick={() => choose(pursuing)} className="w-full sm:w-auto">Stop pursuing this</Button>
+              </div>
+            </Card>
+          ) : null}
           {question ? (
             <Card>
               <fieldset>
                 <legend className="text-lg font-semibold">{question.prompt}</legend>
-                <p className="mt-1 text-sm text-neutral-600">{ANSWERS_NOTE}</p>
+                <p className="mt-1 text-sm text-neutral-600">{persist ? ANSWERS_SAVED_NOTE : ANSWERS_NOTE}</p>
                 <div className="mt-3 grid gap-2">
                   {([
                     ["a", question.a.label],
@@ -272,7 +338,7 @@ export function AtlasExplorer({
                 </>
               ) : null}
               {Object.keys(answers).length > 0 ? (
-                <button type="button" onClick={() => { setAnswers({}); setSkipped([]); }} className={`min-h-12 self-start rounded px-1 text-sm text-sky-800 underline ${focusRing}`}>
+                <button type="button" onClick={clearAll} className={`min-h-12 self-start rounded px-1 text-sm text-sky-800 underline ${focusRing}`}>
                   Clear my answers
                 </button>
               ) : null}
@@ -316,6 +382,11 @@ export function AtlasExplorer({
                 <Button variant="secondary" aria-pressed={marks.dismissed.includes(view.id)} onClick={() => mark("dismissed", view.id)} className="w-full sm:w-auto">
                   {marks.dismissed.includes(view.id) ? "Undo not interested" : "Not interested"}
                 </Button>
+                {view.level === "specialization" || view.level === "occupation" ? (
+                  <Button variant={pursuing === view.id ? "primary" : "secondary"} aria-pressed={pursuing === view.id} onClick={() => choose(view.id)} className="w-full sm:w-auto">
+                    {pursuing === view.id ? "My direction ✓" : "Make this my direction"}
+                  </Button>
+                ) : null}
                 {view.level === "occupation" ? (
                   <Button variant="secondary" aria-pressed={compare.includes(view.id)} onClick={() => toggleCompare(view.id)} className="w-full sm:w-auto">
                     {compare.includes(view.id) ? "Remove from compare" : "Compare"}

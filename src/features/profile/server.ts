@@ -3,6 +3,10 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  careerAtlasAnswers,
+  careerAtlasMarks,
+  type CareerAtlasAnswer,
+  type CareerAtlasMark,
   assessments,
   employers,
   majorSubmissions,
@@ -316,7 +320,22 @@ export type AccountExport = {
   profile: Profile | null;
   assessments: Assessment[];
   rotations: AccountExportRotation[];
+  /** Career Atlas marks and answers. Empty when the tables don't exist yet on this database. */
+  careerAtlas: { marks: CareerAtlasMark[]; answers: CareerAtlasAnswer[] };
 };
+
+async function exportCareerAtlas(userId: string): Promise<AccountExport["careerAtlas"]> {
+  try {
+    const [marks, answers] = await db.batch([
+      db.select().from(careerAtlasMarks).where(eq(careerAtlasMarks.userId, userId)).orderBy(asc(careerAtlasMarks.nodeId)),
+      db.select().from(careerAtlasAnswers).where(eq(careerAtlasAnswers.userId, userId)).orderBy(asc(careerAtlasAnswers.questionId)),
+    ]);
+    return { marks, answers };
+  } catch {
+    // Kept separate from the main export so a database without migration 0007 still exports everything else.
+    return { marks: [], answers: [] };
+  }
+}
 
 export async function exportAccount(userId: string): Promise<AccountExport> {
   const [userRows, profileRows, assessmentRows, rotationRows] = await db.batch([
@@ -348,6 +367,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
   return {
     user,
     profile: profileRows[0] ?? null,
+    careerAtlas: await exportCareerAtlas(userId),
     assessments: assessmentRows,
     rotations: rotationRows.map((row) => ({
       ...row.rotation,
