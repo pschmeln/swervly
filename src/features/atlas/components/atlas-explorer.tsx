@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ONET_CREDIT } from "@/content/atlas/occupations";
+import { ANSWER_LABELS, type QuestionAnswer } from "@/content/atlas/questions";
+import { hasSignals, nextQuestion, questionPool, rankSpecializations, topPicks, type Answers, type Ranked } from "@/features/atlas/rank";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import type { AtlasNodeId } from "@/features/atlas/types";
@@ -51,15 +53,40 @@ function NodeCard({ item, onOpen }: { item: CardModel; onOpen: () => void }) {
   );
 }
 
+function PickCard({ item, onOpen }: { item: Ranked; onOpen: () => void }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onOpen}
+        className={`flex min-h-12 w-full flex-col items-start gap-1 rounded-2xl border border-neutral-200 bg-white p-4 text-left transition-colors hover:bg-neutral-50 ${focusRing}`}
+      >
+        <span className="font-medium text-neutral-900">{item.title}</span>
+        <ul className="list-disc pl-5 text-sm text-neutral-600">
+          {item.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+        </ul>
+      </button>
+    </li>
+  );
+}
+
+export const ANSWERS_NOTE = "Your answers stay on this screen. They are not saved, and they only reorder what you see first.";
+
 export function AtlasExplorer({
   entry,
   dismissedRoles,
+  interestedRoles = [],
   initialFocus,
+  initialAnswers = {},
 }: {
   entry: AtlasEntry;
   /** Direction role ids the student dismissed. Read only. */
   dismissedRoles: readonly string[];
+  /** Direction role ids the student marked Interested. Read only. */
+  interestedRoles?: readonly string[];
   initialFocus: AtlasNodeId | null;
+  /** For tests and previews only. */
+  initialAnswers?: Answers;
 }) {
   const graph = atlasGraph();
   const [trail, setTrail] = useState<AtlasNodeId[]>(() => (initialFocus ? defaultTrail(graph, initialFocus) : []));
@@ -67,14 +94,32 @@ export function AtlasExplorer({
   const [query, setQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Answers>(initialAnswers);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const answeredAny = Object.values(answers).some((value) => value !== "unsure");
 
   const current = trail.at(-1) ?? null;
   const root = useMemo(() => rootModel(graph, entry, marks, dismissedRoles), [graph, entry, marks, dismissedRoles]);
   const view = useMemo(
-    () => (current ? nodeModel(graph, entry, current, trail, marks, dismissedRoles) : null),
-    [graph, entry, current, trail, marks, dismissedRoles],
+    () => (current ? nodeModel(graph, entry, current, trail, marks, dismissedRoles, answeredAny) : null),
+    [graph, entry, current, trail, marks, dismissedRoles, answeredAny],
   );
   const results = useMemo(() => searchAtlas(graph, query), [graph, query]);
+  const signals = useMemo(
+    () => ({ answers, interested: marks.interested, dismissed: marks.dismissed, directionInterested: interestedRoles, directionDismissed: dismissedRoles }),
+    [answers, marks, interestedRoles, dismissedRoles],
+  );
+  const ranked = useMemo(() => rankSpecializations(graph, entry, signals), [graph, entry, signals]);
+  const picks = useMemo(() => topPicks(ranked, entry), [ranked, entry]);
+  const question = useMemo(
+    () => nextQuestion(graph, questionPool(ranked, picks, signals), answers, skipped),
+    [graph, ranked, picks, signals, answers, skipped],
+  );
+  const showPicks = hasSignals(signals) && picks.length > 0;
+
+  function answer(id: string, value: QuestionAnswer) {
+    setAnswers((previous) => ({ ...previous, [id]: value }));
+  }
 
   function go(next: AtlasNodeId[]) {
     setTrail(next);
@@ -158,6 +203,51 @@ export function AtlasExplorer({
               )
             ) : null}
           </Card>
+          {question ? (
+            <Card>
+              <fieldset>
+                <legend className="text-lg font-semibold">{question.prompt}</legend>
+                <p className="mt-1 text-sm text-neutral-600">{ANSWERS_NOTE}</p>
+                <div className="mt-3 grid gap-2">
+                  {([
+                    ["a", question.a.label],
+                    ["b", question.b.label],
+                    ["both", ANSWER_LABELS.both],
+                    ["unsure", ANSWER_LABELS.unsure],
+                  ] as const).map(([value, label]) => (
+                    <Button key={value} variant="secondary" onClick={() => answer(question.id, value)} className="w-full justify-start text-left">
+                      {label}
+                    </Button>
+                  ))}
+                  <button type="button" onClick={() => setSkipped((list) => [...list, question.id])} className={`min-h-12 self-start rounded px-1 text-sm text-sky-800 underline ${focusRing}`}>
+                    Skip this question
+                  </button>
+                </div>
+              </fieldset>
+            </Card>
+          ) : null}
+          {showPicks ? (
+            <section aria-label="Start here" className="flex flex-col gap-2">
+              <h2 className="text-lg font-semibold">Start here</h2>
+              <p className="text-sm text-neutral-600">Ordered by what you told Swervly on this screen. A starting point, not a prediction.</p>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {picks.slice(0, 3).map((item) => <PickCard key={item.id} item={item} onOpen={() => openFromRoot(item.id)} />)}
+              </ul>
+              {picks.length > 3 ? (
+                <>
+                  <h2 className="mt-2 text-lg font-semibold">Also worth a look</h2>
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {picks.slice(3).map((item) => <PickCard key={item.id} item={item} onOpen={() => openFromRoot(item.id)} />)}
+                  </ul>
+                </>
+              ) : null}
+              {Object.keys(answers).length > 0 ? (
+                <button type="button" onClick={() => { setAnswers({}); setSkipped([]); }} className={`min-h-12 self-start rounded px-1 text-sm text-sky-800 underline ${focusRing}`}>
+                  Clear my answers
+                </button>
+              ) : null}
+            </section>
+          ) : null}
           {root.groups.map((group) => (
             <section key={group.title} aria-label={group.title} className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">{group.title}</h2>

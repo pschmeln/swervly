@@ -31,6 +31,8 @@ Edges are many-to-many and always point one level down, so the graph cannot cycl
 | `src/features/atlas/entry.ts` | Cold-start entry from a stored major |
 | `src/features/atlas/compat.ts` | Existing Direction role → families |
 | `src/features/atlas/validate.ts` | Structural checks run by the tests |
+| `src/content/atlas/questions.ts` | Preference questions (editorial; ids stable) |
+| `src/features/atlas/rank.ts` | Deterministic exploration priorities and next-question choice |
 | `tests/atlas/*` | Data integrity, multi-parent paths, dismissal, privacy, cold start, compat |
 
 ## Rules
@@ -40,8 +42,12 @@ Edges are many-to-many and always point one level down, so the graph cannot cycl
 - **Undecided and unset** get every domain, alphabetical, unranked. Never engineering by default.
 - **Dismissal.** A dismissed node is hidden. A family is blocked when every Direction role mapping to it was dismissed. A node is dimmed when every path to it passes through a dismissed or blocked node, so a career reachable another way stays visible. An explicit Interested always wins. Atlas never writes to `dismissed_career_roles` or `interested_career_roles`; new Atlas ids are prefixed, so they cannot collide with role ids.
 - **No fit scores.** Atlas output never shows a percentage, "fit score" or "match".
+- **Ranking (Stage C1).** Specializations get small integer points, each with its own reason sentence: +2/+1 for the major's common/sometimes families, +1 per chosen activity (max +3), +1 for an area marked Interested on Direction, +3 for an Interested mark in Atlas. Missing information never subtracts; ties break by id. Top picks take at most 2 per family, and for a major entry the last slot goes outside the major. "Start here" appears only after the student says something beyond their major. Answers and marks stay on screen; nothing is saved.
+- **Questions.** The next question is the unanswered one whose smaller side covers the most current options (before any answer: everything the major leads to), so either answer reorders a lot. "Not sure yet" changes nothing; every question can be skipped. Known limit: questions cover kinds of work (build, model, code, data, people, organize, test, field), not topics (robots, vehicles, health); a topic gets in through search and Interested.
 
 ## Next
 
 1. Done in B2: `/direction/atlas` drill-down behind a prototype flag, occupation detail, browser-only marks, a "See careers in this area" link from Direction.
-3. Stage C (separate approval): deterministic ranking and preference questions; persistent marks need a migration.
+3. Saving answers and marks across visits needs a table and a migration (separate approval).
+4. Topic questions or tags (robots, vehicles, health, energy) so a topic can be asked, not only searched.
+5. Co-op evidence at family level once enough consenting reviews exist.

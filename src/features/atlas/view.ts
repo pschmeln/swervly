@@ -165,6 +165,7 @@ export function nodeModel(
   trail: readonly AtlasNodeId[],
   marks: Marks,
   dismissedRoles: readonly string[],
+  answeredAny = false,
 ): NodeModel | null {
   const node = graph.nodes.get(id);
   if (!node) return null;
@@ -198,7 +199,7 @@ export function nodeModel(
   const spec = graph.data.specializations.find((item) => item.id === id);
   const occupation = graph.data.occupations.find((item) => item.id === id);
   const unknowns = [
-    "Which kinds of work you prefer, like building, modeling or working with people. Short questions are coming.",
+    ...(answeredAny ? [] : ["Which kinds of work you prefer, like building, modeling or working with people. The questions on the first screen help."]),
     "Whether you've tried this work in a co-op, class or project.",
   ];
   const record = occupation ? (ONET_DETAILS[occupation.onetCode] ?? null) : null;
