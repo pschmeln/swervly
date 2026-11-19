@@ -33,6 +33,7 @@ Edges are many-to-many and always point one level down, so the graph cannot cycl
 | `src/features/atlas/validate.ts` | Structural checks run by the tests |
 | `src/content/atlas/questions.ts` | Preference questions (editorial; ids stable) |
 | `src/features/atlas/rank.ts` | Deterministic exploration priorities and next-question choice |
+| `src/content/atlas/company-links.ts` | Directory organization → families (editorial; never a hiring claim) |
 | `tests/atlas/*` | Data integrity, multi-parent paths, dismissal, privacy, cold start, compat |
 
 ## Rules
@@ -43,6 +44,9 @@ Edges are many-to-many and always point one level down, so the graph cannot cycl
 - **Dismissal.** A dismissed node is hidden. A family is blocked when every Direction role mapping to it was dismissed. A node is dimmed when every path to it passes through a dismissed or blocked node, so a career reachable another way stays visible. An explicit Interested always wins. Atlas never writes to `dismissed_career_roles` or `interested_career_roles`; new Atlas ids are prefixed, so they cannot collide with role ids.
 - **No fit scores.** Atlas output never shows a percentage, "fit score" or "match".
 - **Ranking (Stage C1).** Specializations get small integer points, each with its own reason sentence: +2/+1 for the major's common/sometimes families, +1 per chosen activity (max +3), +1 for an area marked Interested on Direction, +3 for an Interested mark in Atlas. Missing information never subtracts; ties break by id. Top picks take at most 2 per family, and for a major entry the last slot goes outside the major. "Start here" appears only after the student says something beyond their major. Answers and marks stay on screen; nothing is saved.
+- **Direction signals (Stage C).** The Atlas page reuses Direction's own output: +1 for an area Direction currently suggests (or that the student marked Interested there; one point, not both) and +1 where Direction has student evidence (at least 2 consenting students with nearby quiz profiles rated that role highly). Evidence is shown at the role level it was measured at, never pushed down to a specialization. Atlas reads no reviews itself.
+- **Organizations (Stage C).** Family, specialization and occupation pages list directory organizations whose editorial families overlap, with careers links only from the existing verified allowlist, and say plainly that a listing doesn't mean they're hiring.
+- **Compare (Stage C).** Any two occupations side by side: description, top 3 tasks, standout skills, in-demand software, preparation, areas, and what they share.
 - **Questions.** The next question is the unanswered one whose smaller side covers the most current options (before any answer: everything the major leads to), so either answer reorders a lot. "Not sure yet" changes nothing; every question can be skipped. Known limit: questions cover kinds of work (build, model, code, data, people, organize, test, field), not topics (robots, vehicles, health); a topic gets in through search and Interested.
 
 ## Next

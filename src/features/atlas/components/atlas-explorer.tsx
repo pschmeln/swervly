@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ONET_CREDIT } from "@/content/atlas/occupations";
+import { COMPANY_NOTE } from "@/content/atlas/company-links";
 import { ANSWER_LABELS, type QuestionAnswer } from "@/content/atlas/questions";
 import { hasSignals, nextQuestion, questionPool, rankSpecializations, topPicks, type Answers, type Ranked } from "@/features/atlas/rank";
 import type { AtlasEntry } from "@/features/atlas/entry";
@@ -11,6 +12,8 @@ import type { AtlasNodeId } from "@/features/atlas/types";
 import {
   ATLAS_BANNER,
   CLOSEST_LABEL,
+  companiesFor,
+  compareModel,
   defaultTrail,
   MARK_NOTE,
   NO_SKILLS_NOTE,
@@ -76,17 +79,25 @@ export function AtlasExplorer({
   entry,
   dismissedRoles,
   interestedRoles = [],
+  directionSuggested = [],
+  evidence = [],
   initialFocus,
   initialAnswers = {},
+  initialCompare = [],
 }: {
   entry: AtlasEntry;
   /** Direction role ids the student dismissed. Read only. */
   dismissedRoles: readonly string[];
   /** Direction role ids the student marked Interested. Read only. */
   interestedRoles?: readonly string[];
+  /** Roles Direction currently suggests. Read only. */
+  directionSuggested?: readonly string[];
+  /** Direction's consented student evidence (n >= 2), reused as-is. */
+  evidence?: readonly { role: string; roleLabel: string; sampleSize: number }[];
   initialFocus: AtlasNodeId | null;
   /** For tests and previews only. */
   initialAnswers?: Answers;
+  initialCompare?: AtlasNodeId[];
 }) {
   const graph = atlasGraph();
   const [trail, setTrail] = useState<AtlasNodeId[]>(() => (initialFocus ? defaultTrail(graph, initialFocus) : []));
@@ -96,6 +107,7 @@ export function AtlasExplorer({
   const [notice, setNotice] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [compare, setCompare] = useState<AtlasNodeId[]>(initialCompare);
   const answeredAny = Object.values(answers).some((value) => value !== "unsure");
 
   const current = trail.at(-1) ?? null;
@@ -106,8 +118,16 @@ export function AtlasExplorer({
   );
   const results = useMemo(() => searchAtlas(graph, query), [graph, query]);
   const signals = useMemo(
-    () => ({ answers, interested: marks.interested, dismissed: marks.dismissed, directionInterested: interestedRoles, directionDismissed: dismissedRoles }),
-    [answers, marks, interestedRoles, dismissedRoles],
+    () => ({
+      answers,
+      interested: marks.interested,
+      dismissed: marks.dismissed,
+      directionInterested: interestedRoles,
+      directionDismissed: dismissedRoles,
+      directionSuggested,
+      evidence,
+    }),
+    [answers, marks, interestedRoles, dismissedRoles, directionSuggested, evidence],
   );
   const ranked = useMemo(() => rankSpecializations(graph, entry, signals), [graph, entry, signals]);
   const picks = useMemo(() => topPicks(ranked, entry), [ranked, entry]);
@@ -116,6 +136,16 @@ export function AtlasExplorer({
     [graph, ranked, picks, signals, answers, skipped],
   );
   const showPicks = hasSignals(signals) && picks.length > 0;
+
+  const comparison = useMemo(
+    () => (compare.length === 2 ? compareModel(graph, compare[0], compare[1]) : null),
+    [graph, compare],
+  );
+  const companies = useMemo(() => (current ? companiesFor(graph, current) : []), [graph, current]);
+
+  function toggleCompare(id: AtlasNodeId) {
+    setCompare((list) => (list.includes(id) ? list.filter((item) => item !== id) : [...list, id].slice(-2)));
+  }
 
   function answer(id: string, value: QuestionAnswer) {
     setAnswers((previous) => ({ ...previous, [id]: value }));
@@ -286,6 +316,11 @@ export function AtlasExplorer({
                 <Button variant="secondary" aria-pressed={marks.dismissed.includes(view.id)} onClick={() => mark("dismissed", view.id)} className="w-full sm:w-auto">
                   {marks.dismissed.includes(view.id) ? "Undo not interested" : "Not interested"}
                 </Button>
+                {view.level === "occupation" ? (
+                  <Button variant="secondary" aria-pressed={compare.includes(view.id)} onClick={() => toggleCompare(view.id)} className="w-full sm:w-auto">
+                    {compare.includes(view.id) ? "Remove from compare" : "Compare"}
+                  </Button>
+                ) : null}
               </div>
             ) : null}
             {notice ? <p className="mt-2 text-sm text-neutral-600" role="status">{notice}</p> : null}
@@ -380,6 +415,29 @@ export function AtlasExplorer({
             </section>
           ) : null}
 
+          {companies.length > 0 ? (
+            <Card>
+              <h2 className="text-lg font-semibold">Organizations in this area</h2>
+              <p className="mt-1 text-sm text-neutral-600">{COMPANY_NOTE}</p>
+              <ul className="mt-3 grid gap-2">
+                {companies.map((company) => (
+                  <li key={company.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                    <p className="font-medium text-neutral-900">{company.name}</p>
+                    <p className="text-sm text-neutral-600">{company.field} · Listed under {company.areas.join(" and ")}</p>
+                    {company.careersUrl ? (
+                      <p className="mt-1 text-sm">
+                        <a href={company.careersUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-sky-800 underline">
+                          Official careers page
+                        </a>{" "}
+                        <span className="text-neutral-600">(External)</span>
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+
           {view.alsoUnder.length > 0 ? (
             <Card>
               <h2 className="text-lg font-semibold">Also found under</h2>
@@ -407,6 +465,51 @@ export function AtlasExplorer({
           </Card>
         </>
       )}
+
+      {compare.length > 0 ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Compare occupations</h2>
+          {comparison === null ? (
+            <p className="mt-1 text-sm text-neutral-600">
+              {graph.nodes.get(compare[0])?.title} is picked. Open another occupation and choose Compare to see them side by side.
+            </p>
+          ) : (
+            <>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                {[comparison.left, comparison.right].map((side) => (
+                  <section key={side.id} aria-label={side.title} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h3 className="font-semibold text-neutral-900">{side.title}</h3>
+                    <p className="text-xs text-neutral-600">O*NET-SOC {side.onetCode}</p>
+                    {side.description ? <p className="mt-2 text-sm text-neutral-800">{side.description}</p> : null}
+                    <h4 className="mt-3 text-sm font-semibold">Top tasks</h4>
+                    <ul className="mt-1 list-disc pl-5 text-sm text-neutral-800">{side.tasks.map((task) => <li key={task}>{task}</li>)}</ul>
+                    <h4 className="mt-3 text-sm font-semibold">Skills that stand out</h4>
+                    <p className="text-sm text-neutral-800">{side.skills.length > 0 ? side.skills.join(", ") : "No usable O*NET ratings."}</p>
+                    <h4 className="mt-3 text-sm font-semibold">Software in demand</h4>
+                    <p className="text-sm text-neutral-800">{side.software.length > 0 ? side.software.join(", ") : "None flagged by O*NET."}</p>
+                    {side.preparation ? (
+                      <>
+                        <h4 className="mt-3 text-sm font-semibold">Preparation</h4>
+                        <p className="text-sm text-neutral-800">{side.preparation}</p>
+                      </>
+                    ) : null}
+                    <h4 className="mt-3 text-sm font-semibold">Areas in this map</h4>
+                    <p className="text-sm text-neutral-800">{side.areas.join(", ")}</p>
+                  </section>
+                ))}
+              </div>
+              <ul className="mt-3 list-disc pl-5 text-sm text-neutral-700">
+                <li>{comparison.sharedSkills.length > 0 ? `Both stand out for: ${comparison.sharedSkills.join(", ")}.` : "No standout skills in common."}</li>
+                <li>{comparison.sharedSoftware.length > 0 ? `Software in both: ${comparison.sharedSoftware.join(", ")}.` : "No in-demand software in common."}</li>
+                {comparison.sharedAreas.length > 0 ? <li>{`Both sit under: ${comparison.sharedAreas.join(", ")}.`}</li> : null}
+              </ul>
+            </>
+          )}
+          <button type="button" onClick={() => setCompare([])} className={`mt-2 min-h-12 rounded px-1 text-sm text-sky-800 underline ${focusRing}`}>
+            Clear compare
+          </button>
+        </Card>
+      ) : null}
 
       <p className="text-xs text-neutral-500">
         Areas, families and specializations are Swervly&apos;s own grouping. {ONET_CREDIT}
