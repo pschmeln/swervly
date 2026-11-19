@@ -24,6 +24,13 @@ export const SIMILAR_MAX_DISTANCE = 6;
 /** Distinct similar students required for one role before it is evidence-backed. */
 export const MIN_DISTINCT_STUDENTS_PER_ROLE = 2;
 
+/**
+ * Average enjoyment (1-5) the similar students must give a role before it counts as
+ * evidence. The student-facing text says they "rated this role highly", so a role
+ * below this is never shown as evidence, however many students reviewed it.
+ */
+export const MIN_MEAN_ENJOYMENT = 4;
+
 export const RULES_REASON_PREFIX = "Early hypothesis:";
 export const EVIDENCE_REASON_PREFIX = "Worth exploring:";
 
@@ -394,7 +401,8 @@ type RoleEvidence = {
 
 /**
  * Evidence-backed roles only. A role qualifies when at least
- * MIN_DISTINCT_STUDENTS_PER_ROLE distinct similar students reviewed that role.
+ * MIN_DISTINCT_STUDENTS_PER_ROLE distinct similar students reviewed that role
+ * and their average enjoyment is at least MIN_MEAN_ENJOYMENT.
  * Multiple reviews from one student count once for that role.
  */
 export function evidenceBackedRoles(
@@ -422,6 +430,7 @@ export function evidenceBackedRoles(
     if (students.size < MIN_DISTINCT_STUDENTS_PER_ROLE) continue;
     const values = [...students.values()];
     const meanEnjoyment = values.reduce((sum, value) => sum + value, 0) / values.length;
+    if (meanEnjoyment < MIN_MEAN_ENJOYMENT) continue;
     qualified.push({ roleType, sampleSize: students.size, meanEnjoyment });
   }
 

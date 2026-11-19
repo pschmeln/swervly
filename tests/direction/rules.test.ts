@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDirection,
+  evidenceBackedRoles,
   MIN_DISTINCT_STUDENTS_PER_ROLE,
+  MIN_MEAN_ENJOYMENT,
   suggestionsFromRules,
   traitDistance,
 } from "@/features/direction/rules";
@@ -68,6 +70,28 @@ describe("direction rules", () => {
       ],
     );
     expect(direction.suggestions[0]).toMatchObject({ roleType: "design", source: "similar_students", sampleSize: 2 });
+  });
+
+  it("never shows a role as evidence when similar students rated it low", () => {
+    const reviews = [
+      { userId: "a", traits: balanced, roleType: "software" as const, enjoyment: 1 },
+      { userId: "b", traits: balanced, roleType: "software" as const, enjoyment: 1 },
+    ];
+    expect(evidenceBackedRoles(balanced, reviews)).toEqual([]);
+    const direction = buildDirection({ traits: balanced, major: "Electrical Engineering", goal: "industry" }, reviews);
+    expect(direction.suggestions.some((item) => item.source === "similar_students")).toBe(false);
+    expect(direction.basis).toBe("rules");
+  });
+
+  it("needs an average of at least MIN_MEAN_ENJOYMENT, not every rating", () => {
+    expect(MIN_MEAN_ENJOYMENT).toBe(4);
+    const at = (left: number, right: number) =>
+      evidenceBackedRoles(balanced, [
+        { userId: "a", traits: balanced, roleType: "design", enjoyment: left },
+        { userId: "b", traits: balanced, roleType: "design", enjoyment: right },
+      ]);
+    expect(at(5, 3)).toHaveLength(1); // average 4
+    expect(at(4, 3)).toHaveLength(0); // average 3.5
   });
 
   it("marks a role evidence-backed only with enough distinct similar students", () => {
