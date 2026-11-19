@@ -1,8 +1,14 @@
 /**
- * Career Atlas prototype switch.
- * On locally and on Vercel preview deployments; off in production until the
- * founders have reviewed the editorial grouping and approved the launch.
+ * Career Atlas switch.
+ * Turned on in production by the founders on 2026-11-18. To turn the map and
+ * the Direction links back off in production, set ATLAS_LIVE to false: it then
+ * stays on only locally and on Vercel previews.
  */
-export function atlasPrototypeEnabled(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
-  return env.VERCEL_ENV !== "production";
+export const ATLAS_LIVE = true;
+
+export function atlasPrototypeEnabled(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  live: boolean = ATLAS_LIVE,
+): boolean {
+  return live || env.VERCEL_ENV !== "production";
 }
