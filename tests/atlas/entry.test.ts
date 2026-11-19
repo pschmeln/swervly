@@ -61,6 +61,20 @@ describe("Atlas entry point (cold start)", () => {
     expect(entry).toMatchObject({ kind: "open", reason: "unmapped" });
   });
 
+  it("links majors added in the coverage pass to families that exist", () => {
+    for (const major of ["International Business", "Entrepreneurship", "Neuroscience", "Geology", "Environmental Studies", "Cognitive Science", "History", "World Languages", "Public Relations", "Media Studies", "Digital Media"]) {
+      const entry = atlasEntry(graph, { major, majorSource: "catalog" });
+      expect(entry.kind).toBe("major");
+      if (entry.kind === "major") for (const link of entry.families) expect(graph.nodes.get(link.family)?.level).toBe("family");
+    }
+  });
+
+  it("keeps majors without an honest family on the open entry", () => {
+    for (const major of ["Pre-Medicine", "Pharmacy", "Social Work", "Special Education", "Political Science"]) {
+      expect(atlasEntry(graph, { major, majorSource: "catalog" })).toMatchObject({ kind: "open", reason: "unmapped" });
+    }
+  });
+
   it("opens finance for business students and clinical care for nursing students", () => {
     const finance = atlasEntry(graph, { major: "Finance", majorSource: "catalog" });
     const nursing = atlasEntry(graph, { major: "Nursing", majorSource: "catalog" });

@@ -62,4 +62,18 @@ export const MAJOR_LINKS: Readonly<Record<string, readonly MajorFamilyLink[]>> =
   Journalism: [c("fam:writing-communication"), s("fam:marketing")],
   Communication: [c("fam:writing-communication"), s("fam:marketing")],
   "Graphic Design": [c("fam:industrial-design"), s("fam:marketing")],
+  // Added Nov 19, 2026 (Atlas audit F5): only where an existing family is a common path.
+  // Majors still missing here (pre-med, pharmacy, social work, policy and others) need
+  // occupations the map doesn't have yet, and get the open entry until then.
+  "International Business": [c("fam:business-operations"), s("fam:finance"), s("fam:marketing")],
+  Entrepreneurship: [c("fam:business-operations"), s("fam:product-management"), s("fam:marketing")],
+  Neuroscience: [c("fam:laboratory-science"), s("fam:health-administration")],
+  Geology: [c("fam:environmental")],
+  "Environmental Studies": [c("fam:environmental")],
+  "Cognitive Science": [c("fam:data-analytics"), s("fam:laboratory-science"), s("fam:software-engineering")],
+  History: [c("fam:teaching-advising"), s("fam:writing-communication")],
+  "World Languages": [c("fam:teaching-advising"), s("fam:writing-communication")],
+  "Public Relations": [c("fam:marketing"), s("fam:writing-communication")],
+  "Media Studies": [c("fam:writing-communication"), s("fam:marketing")],
+  "Digital Media": [c("fam:marketing"), s("fam:industrial-design"), s("fam:writing-communication")],
 };
