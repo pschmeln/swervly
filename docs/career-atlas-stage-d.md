@@ -60,7 +60,7 @@ The credit line takes the release number from the generated file, so it can't dr
 
 ## 4. Full occupational coverage (designed, not built)
 
-O*NET 31.0 has 1,016 occupations; the map has 54. Importing all of them blindly would bury students and break the editorial layer (every occupation must sit under a specialization a person wrote). Plan:
+O*NET 31.0 has 1,016 occupations; the map has 110 (54 at launch, 56 added in coverage batch 1, Nov 19, 2026). Importing all of them blindly would bury students and break the editorial layer (every occupation must sit under a specialization a person wrote). Plan:
 
 1. **Coverage report.** Extend the import script with `--report`: for each catalog major, list O*NET occupations whose Job Zone is 4–5 and whose related occupations already include a mapped occupation, ranked by how many mapped neighbors they have. This finds the next most useful 50, not the next alphabetical 50.
 2. **Batches of 25–50**, each a PR: add rows to `occupations.ts`, attach each to an existing or new specialization in `taxonomy.ts`, re-run the import. The validator already refuses an orphan.

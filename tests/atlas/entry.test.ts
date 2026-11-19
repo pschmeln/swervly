@@ -57,7 +57,7 @@ describe("Atlas entry point (cold start)", () => {
   });
 
   it("falls back to the open entry for a catalog major with no links yet", () => {
-    const entry = atlasEntry(graph, { major: "Philosophy", majorSource: "catalog" });
+    const entry = atlasEntry(graph, { major: "Liberal Studies", majorSource: "catalog" });
     expect(entry).toMatchObject({ kind: "open", reason: "unmapped" });
   });
 
@@ -69,8 +69,27 @@ describe("Atlas entry point (cold start)", () => {
     }
   });
 
-  it("keeps majors without an honest family on the open entry", () => {
-    for (const major of ["Pre-Medicine", "Pharmacy", "Social Work", "Special Education", "Political Science"]) {
+  it("opens the coverage batch 1 families for majors that had none", () => {
+    const expected: Record<string, string> = {
+      "Pre-Medicine": "fam:medicine-pharmacy",
+      Pharmacy: "fam:medicine-pharmacy",
+      "Social Work": "fam:social-services",
+      "Special Education": "fam:teaching-advising",
+      "Political Science": "fam:social-science",
+      "Criminal Justice": "fam:law-justice",
+      Kinesiology: "fam:rehab-wellness",
+      "Human Resource Management": "fam:human-resources",
+      Music: "fam:visual-performing-arts",
+    };
+    for (const [major, family] of Object.entries(expected)) {
+      const entry = atlasEntry(graph, { major, majorSource: "catalog" });
+      expect(entry.kind).toBe("major");
+      if (entry.kind === "major") expect(entry.families[0]?.family).toBe(family);
+    }
+  });
+
+  it("keeps the broad interdisciplinary majors on the open entry on purpose", () => {
+    for (const major of ["Interdisciplinary Studies", "Liberal Studies"]) {
       expect(atlasEntry(graph, { major, majorSource: "catalog" })).toMatchObject({ kind: "open", reason: "unmapped" });
     }
   });
