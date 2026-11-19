@@ -1,4 +1,4 @@
-import { ONET_DETAILS } from "@/content/atlas/onet-details";
+import { ONET_DETAILS, ONET_JOB_ZONES, type OnetJobZone } from "@/content/atlas/onet-details";
 import { familiesForRole } from "@/features/atlas/compat";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { childrenOf, familiesBlockedByRoles, pathsTo, visibilityOf, type AtlasGraph } from "@/features/atlas/graph";
@@ -13,7 +13,10 @@ export const CLOSEST_LABEL = "No official occupation matches well. These are the
 export const MARK_NOTE = "Marked on this screen. Not saved.";
 export const OCCUPATION_PENDING =
   "Swervly hasn't added the O*NET description, tasks and skills for this occupation yet.";
-export const TASKS_NOTE = "Up to five tasks from O*NET, chosen by Swervly. Core tasks first.";
+export const TASKS_NOTE = "The five tasks O*NET rates most important for this occupation.";
+export const SKILLS_NOTE = "Skills O*NET rates important here and more important than in the average job.";
+export const NO_SKILLS_NOTE = "O*NET doesn't have usable skill ratings for this occupation.";
+export const RELATED_NOTE = "Occupations O*NET lists as most closely related. Ones in this map open here.";
 export const SOFTWARE_NOTE = "Software O*NET flags as in demand in job postings for this occupation. Swervly leaves out common office tools.";
 export const NO_SOFTWARE_NOTE = "O*NET doesn't flag any software as in demand for this occupation.";
 
@@ -46,7 +49,14 @@ export type NodeModel = {
   badge: string;
   onetCode: string | null;
   /** Verbatim O*NET content; null for editorial nodes or when not imported. */
-  details: { description: string; tasks: readonly string[]; software: readonly string[] } | null;
+  details: {
+    description: string;
+    tasks: readonly string[];
+    skills: readonly string[];
+    software: readonly string[];
+    jobZone: (OnetJobZone & { zone: number }) | null;
+    related: readonly { title: string; id: AtlasNodeId | null }[];
+  } | null;
   closestOnly: boolean;
   children: CardModel[];
   hiddenChildren: CardModel[];
@@ -191,7 +201,20 @@ export function nodeModel(
     "Which kinds of work you prefer, like building, modeling or working with people. Short questions are coming.",
     "Whether you've tried this work in a co-op, class or project.",
   ];
-  const details = occupation ? (ONET_DETAILS[occupation.onetCode] ?? null) : null;
+  const record = occupation ? (ONET_DETAILS[occupation.onetCode] ?? null) : null;
+  const details = record
+    ? {
+        description: record.description,
+        tasks: record.tasks,
+        skills: record.skills,
+        software: record.software,
+        jobZone: record.jobZone !== null && ONET_JOB_ZONES[record.jobZone] ? { zone: record.jobZone, ...ONET_JOB_ZONES[record.jobZone] } : null,
+        related: record.related.map((item) => {
+          const relatedId = `occ:onet:${item.onetCode}` as AtlasNodeId;
+          return { title: item.title, id: graph.nodes.has(relatedId) ? relatedId : null };
+        }),
+      }
+    : null;
   if (node.level === "occupation" && !details) unknowns.unshift(OCCUPATION_PENDING);
 
   return {

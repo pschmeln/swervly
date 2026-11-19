@@ -11,11 +11,14 @@ import {
   CLOSEST_LABEL,
   defaultTrail,
   MARK_NOTE,
+  NO_SKILLS_NOTE,
   NO_SOFTWARE_NOTE,
   nodeModel,
   onetOnlineHref,
   rootModel,
   searchAtlas,
+  RELATED_NOTE,
+  SKILLS_NOTE,
   SOFTWARE_NOTE,
   TASKS_NOTE,
   type CardModel,
@@ -205,6 +208,19 @@ export function AtlasExplorer({
               <ul className="mt-2 list-disc pl-5 text-neutral-800">
                 {view.details.tasks.map((task) => <li key={task} className="mt-1">{task}</li>)}
               </ul>
+              <h2 className="mt-5 text-lg font-semibold">Skills that stand out</h2>
+              {view.details.skills.length > 0 ? (
+                <>
+                  <p className="mt-1 text-sm text-neutral-600">{SKILLS_NOTE}</p>
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {view.details.skills.map((name) => (
+                      <li key={name} className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-800">{name}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-neutral-600">{NO_SKILLS_NOTE}</p>
+              )}
               <h2 className="mt-5 text-lg font-semibold">Software in demand</h2>
               {view.details.software.length > 0 ? (
                 <>
@@ -218,6 +234,33 @@ export function AtlasExplorer({
               ) : (
                 <p className="mt-1 text-sm text-neutral-600">{NO_SOFTWARE_NOTE}</p>
               )}
+              {view.details.jobZone ? (
+                <>
+                  <h2 className="mt-5 text-lg font-semibold">Preparation usually needed</h2>
+                  <p className="mt-1 font-medium text-neutral-900">{view.details.jobZone.name}</p>
+                  <p className="mt-1 text-neutral-800">{view.details.jobZone.education}</p>
+                </>
+              ) : null}
+            </Card>
+          ) : null}
+
+          {view.details && view.details.related.length > 0 ? (
+            <Card>
+              <h2 className="text-lg font-semibold">Related occupations</h2>
+              <p className="mt-1 text-sm text-neutral-600">{RELATED_NOTE}</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {view.details.related.map((item) => (
+                  <li key={item.title}>
+                    {item.id ? (
+                      <button type="button" onClick={() => item.id && go(defaultTrail(graph, item.id))} className={`min-h-12 rounded-full border border-neutral-200 bg-white px-4 text-left text-sm text-sky-800 underline hover:bg-neutral-50 ${focusRing}`}>
+                        {item.title}
+                      </button>
+                    ) : (
+                      <span className="inline-flex min-h-12 items-center rounded-full bg-neutral-100 px-4 text-sm text-neutral-800">{item.title}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </Card>
           ) : null}
 

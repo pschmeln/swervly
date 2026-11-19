@@ -6,13 +6,15 @@
  *      npx tsx scripts/atlas-import-onet.ts <folder with the CSVs> <release, e.g. 30.3>
  * 3. Review the diff of src/content/atlas/onet-details.ts and commit it.
  *
- * Reads only occupation_data.csv, task_statements.csv and software_skills.csv.
+ * Reads only: occupation_data, task_statements, task_ratings, essential_skills,
+ * transferable_skills, software_skills, job_zones, job_zone_reference and
+ * related_occupations (.csv).
  * Writes only src/content/atlas/onet-details.ts. Nothing is sent anywhere.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { OCCUPATIONS } from "../src/content/atlas/occupations";
-import { buildDetails, renderDetailsModule } from "../src/features/atlas/onet-import";
+import { buildDetails, buildJobZones, renderDetailsModule } from "../src/features/atlas/onet-import";
 
 const [folder, release] = process.argv.slice(2);
 if (!folder || !release || !/^\d+\.\d+$/.test(release)) {
@@ -26,7 +28,12 @@ const { details, missing } = buildDetails(
   {
     occupationData: read("occupation_data.csv"),
     taskStatements: read("task_statements.csv"),
+    taskRatings: read("task_ratings.csv"),
+    essentialSkills: read("essential_skills.csv"),
+    transferableSkills: read("transferable_skills.csv"),
     softwareSkills: read("software_skills.csv"),
+    jobZones: read("job_zones.csv"),
+    relatedOccupations: read("related_occupations.csv"),
   },
 );
 
@@ -36,5 +43,5 @@ if (missing.length > 0) {
 }
 
 const out = path.join(process.cwd(), "src/content/atlas/onet-details.ts");
-writeFileSync(out, renderDetailsModule(details, release));
+writeFileSync(out, renderDetailsModule(details, buildJobZones(read("job_zone_reference.csv")), release));
 console.log(`Wrote ${details.length} occupations from O*NET ${release} to ${path.relative(process.cwd(), out)}.`);

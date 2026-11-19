@@ -69,6 +69,11 @@ describe("Atlas drill-down", () => {
     expect(labels.some((label) => label.endsWith("CFD simulation"))).toBe(false);
     expect(view?.details?.description).toContain("designing tools, engines, machines");
     expect(view?.details?.software).toContain("Dassault Systemes SolidWorks");
+    expect(view?.details?.skills).toContain("Technology Design");
+    expect(view?.details?.jobZone?.education).toContain("bachelor's degree");
+    const related = view?.details?.related ?? [];
+    expect(related.find((item) => item.title === "Mechatronics Engineers")?.id).toBe("occ:onet:17-2199.05");
+    expect(related.find((item) => item.title === "Mechanical Engineering Technologists and Technicians")?.id).toBeNull();
     expect(view?.unknowns.join(" ")).not.toContain("hasn't added the O*NET description");
   });
 
