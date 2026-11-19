@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PREFERENCE_QUESTIONS } from "@/content/atlas/questions";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph, buildGraph, ATLAS_DATA } from "@/features/atlas/graph";
-import { hasSignals, MAX_PER_FAMILY, nextQuestion, rankSpecializations, topPicks, type Signals } from "@/features/atlas/rank";
+import { hasSignals, MAX_PER_FAMILY, nextQuestion, questionPool, rankSpecializations, topPicks, type Signals } from "@/features/atlas/rank";
 
 const graph = atlasGraph();
 const me = atlasEntry(graph, { major: "Mechanical Engineering", majorSource: "catalog" });
@@ -102,5 +102,18 @@ describe("next question", () => {
     const touchesA = picks.some((item) => tags(item.id).some((tag) => question?.a.tags.includes(tag)));
     const touchesB = picks.some((item) => tags(item.id).some((tag) => question?.b.tags.includes(tag)));
     expect(touchesA || touchesB).toBe(true);
+  });
+
+  it("opens each major with a question that divides its options, not one picked by alphabetical ties", () => {
+    const first = (major: string | null, source: string) => {
+      const entry = atlasEntry(graph, { major, majorSource: source });
+      const ranked = rankSpecializations(graph, entry, quiet);
+      return nextQuestion(graph, questionPool(ranked, topPicks(ranked, entry), quiet), {}, [])?.id;
+    };
+    expect(first("Mechanical Engineering", "catalog")).toBe("build-vs-model");
+    expect(first("Electrical Engineering", "catalog")).toBe("hardware-vs-software");
+    expect(first("Computer Science", "catalog")).toBe("code-vs-data");
+    expect(first("Nursing", "catalog")).toBe("people-vs-organize");
+    expect(first(null, "undecided")).not.toBeUndefined();
   });
 });

@@ -158,9 +158,21 @@ export function topPicks(ranked: readonly Ranked[], entry: AtlasEntry, size = TO
 }
 
 /**
- * The next question: the unanswered one whose two sides split the current top
- * picks most evenly, so its answer changes the most. Ties go to the earlier
- * question. Null when everything is answered or skipped.
+ * What the next question is chosen against. Before the student says anything,
+ * the top picks are only ties in id order, so use everything the entry reaches,
+ * or the whole map when the entry reaches nothing in particular.
+ */
+export function questionPool(ranked: readonly Ranked[], picks: readonly Ranked[], signals: Signals): readonly Ranked[] {
+  if (hasSignals(signals)) return picks;
+  const reached = ranked.filter((item) => item.points > 0);
+  // Nothing scores yet (undecided, custom, unmapped): choose against the whole map.
+  return reached.length > 0 ? reached : ranked;
+}
+
+/**
+ * The next question: the unanswered one whose smaller side covers the most of
+ * the current options, so either answer reorders a lot. Then the more even
+ * split, then the earlier question. Null when everything is answered or skipped.
  */
 export function nextQuestion(
   graph: AtlasGraph,
@@ -174,8 +186,9 @@ export function nextQuestion(
   const keyed = open.map((question, index) => {
     const a = picks.filter((item) => tagsOf(item.id).some((tag) => question.a.tags.includes(tag))).length;
     const b = picks.filter((item) => tagsOf(item.id).some((tag) => question.b.tags.includes(tag))).length;
-    // Sort key: touches the current picks at all, then the most even split, then question order.
-    return { question, key: [a + b > 0 ? 0 : 1, Math.abs(a - b), index] as const };
+    // Sort key: the largest smaller side (it divides the most options into two real groups),
+    // then the more even split, then question order.
+    return { question, key: [-Math.min(a, b), Math.abs(a - b), index] as const };
   });
   keyed.sort((left, right) => left.key[0] - right.key[0] || left.key[1] - right.key[1] || left.key[2] - right.key[2]);
   return keyed[0].question;

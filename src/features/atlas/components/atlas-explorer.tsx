@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ONET_CREDIT } from "@/content/atlas/occupations";
 import { ANSWER_LABELS, type QuestionAnswer } from "@/content/atlas/questions";
-import { hasSignals, nextQuestion, rankSpecializations, topPicks, type Answers, type Ranked } from "@/features/atlas/rank";
+import { hasSignals, nextQuestion, questionPool, rankSpecializations, topPicks, type Answers, type Ranked } from "@/features/atlas/rank";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import type { AtlasNodeId } from "@/features/atlas/types";
@@ -109,8 +109,12 @@ export function AtlasExplorer({
     () => ({ answers, interested: marks.interested, dismissed: marks.dismissed, directionInterested: interestedRoles, directionDismissed: dismissedRoles }),
     [answers, marks, interestedRoles, dismissedRoles],
   );
-  const picks = useMemo(() => topPicks(rankSpecializations(graph, entry, signals), entry), [graph, entry, signals]);
-  const question = useMemo(() => nextQuestion(graph, picks, answers, skipped), [graph, picks, answers, skipped]);
+  const ranked = useMemo(() => rankSpecializations(graph, entry, signals), [graph, entry, signals]);
+  const picks = useMemo(() => topPicks(ranked, entry), [ranked, entry]);
+  const question = useMemo(
+    () => nextQuestion(graph, questionPool(ranked, picks, signals), answers, skipped),
+    [graph, ranked, picks, signals, answers, skipped],
+  );
   const showPicks = hasSignals(signals) && picks.length > 0;
 
   function answer(id: string, value: QuestionAnswer) {
