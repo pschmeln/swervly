@@ -1,6 +1,6 @@
 # Career Atlas: Stage D (persistence and scale)
 
-Status: persistence is built and tested; the migration has **not** been applied to any Neon branch. Full coverage and review-level evidence are designed here and not built.
+Status: persistence is built, tested and live: migration 0007 was applied to dev-peter, dev-li and production on 2026-11-18, and the map was turned on in production the same night. Full coverage and review-level evidence are designed here and not built.
 
 ## 1. Saved choices (built)
 

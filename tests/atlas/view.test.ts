@@ -120,9 +120,13 @@ describe("Atlas search and links", () => {
 });
 
 describe("Atlas prototype switch", () => {
-  it("is off in production and on in preview and locally", () => {
-    expect(atlasPrototypeEnabled({ VERCEL_ENV: "production" })).toBe(false);
-    expect(atlasPrototypeEnabled({ VERCEL_ENV: "preview" })).toBe(true);
-    expect(atlasPrototypeEnabled({})).toBe(true);
+  it("is live in production now", () => {
+    expect(atlasPrototypeEnabled({ VERCEL_ENV: "production" })).toBe(true);
+  });
+
+  it("turns off in production only when ATLAS_LIVE is false, staying on in preview and locally", () => {
+    expect(atlasPrototypeEnabled({ VERCEL_ENV: "production" }, false)).toBe(false);
+    expect(atlasPrototypeEnabled({ VERCEL_ENV: "preview" }, false)).toBe(true);
+    expect(atlasPrototypeEnabled({}, false)).toBe(true);
   });
 });
