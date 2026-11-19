@@ -1,4 +1,7 @@
+import { COMPANY_FAMILIES } from "@/content/atlas/company-links";
 import { ONET_DETAILS, ONET_JOB_ZONES, type OnetJobZone } from "@/content/atlas/onet-details";
+import { CATALOG_COMPANIES } from "@/features/explore/companies";
+import { careerLinkById, careerPageHref } from "@/features/explore/links";
 import { familiesForRole } from "@/features/atlas/compat";
 import type { AtlasEntry } from "@/features/atlas/entry";
 import { childrenOf, familiesBlockedByRoles, pathsTo, visibilityOf, type AtlasGraph } from "@/features/atlas/graph";
@@ -259,4 +262,99 @@ export function isAtlasNodeId(value: string): value is AtlasNodeId {
 
 export function onetOnlineHref(onetCode: string): string | null {
   return /^\d{2}-\d{4}\.\d{2}$/.test(onetCode) ? `https://www.onetonline.org/link/summary/${onetCode}` : null;
+}
+
+// ---- Organizations (Stage C) ----------------------------------------------
+
+export type CompanyModel = { id: string; name: string; field: string; careersUrl: string | null; areas: string[] };
+
+/** Families above a node: itself, its parents, or the families of every specialization it sits under. */
+export function familiesAbove(graph: AtlasGraph, id: AtlasNodeId): FamilyId[] {
+  const level = levelOf(id);
+  if (level === "family") return [id as FamilyId];
+  if (level === "specialization") return [...(graph.data.specializations.find((spec) => spec.id === id)?.families ?? [])];
+  if (level === "occupation") {
+    const found = new Set<FamilyId>();
+    for (const spec of graph.data.specializations) {
+      if (spec.occupations.some((link) => link.id === id)) for (const familyId of spec.families) found.add(familyId);
+    }
+    return [...found].sort();
+  }
+  return [];
+}
+
+/** Directory organizations listed under any family above the node. Never a hiring claim. */
+export function companiesFor(graph: AtlasGraph, id: AtlasNodeId): CompanyModel[] {
+  const families = new Set(familiesAbove(graph, id));
+  if (families.size === 0) return [];
+  const result: CompanyModel[] = [];
+  for (const company of CATALOG_COMPANIES) {
+    const listed = (COMPANY_FAMILIES[company.id] ?? []).filter((familyId) => families.has(familyId));
+    if (listed.length === 0) continue;
+    const link = company.careerLinkId ? careerLinkById(company.careerLinkId) : null;
+    result.push({
+      id: company.id,
+      name: company.name,
+      field: company.field,
+      careersUrl: link ? careerPageHref(link.finalUrl) : null,
+      areas: listed.map((familyId) => graph.nodes.get(familyId)?.title ?? familyId),
+    });
+  }
+  return result.sort((left, right) => left.name.localeCompare(right.name));
+}
+
+// ---- Compare two occupations (Stage C) -------------------------------------
+
+export type CompareSide = {
+  id: AtlasNodeId;
+  title: string;
+  onetCode: string;
+  description: string | null;
+  tasks: readonly string[];
+  skills: readonly string[];
+  software: readonly string[];
+  preparation: string | null;
+  areas: string[];
+};
+
+export type CompareModel = {
+  left: CompareSide;
+  right: CompareSide;
+  sharedSkills: string[];
+  sharedSoftware: string[];
+  sharedAreas: string[];
+};
+
+function compareSide(graph: AtlasGraph, id: AtlasNodeId): CompareSide | null {
+  const occupation = graph.data.occupations.find((item) => item.id === id);
+  if (!occupation) return null;
+  const record = ONET_DETAILS[occupation.onetCode];
+  const zone = record?.jobZone != null ? ONET_JOB_ZONES[record.jobZone] : undefined;
+  return {
+    id,
+    title: occupation.title,
+    onetCode: occupation.onetCode,
+    description: record?.description ?? null,
+    tasks: record?.tasks.slice(0, 3) ?? [],
+    skills: record?.skills ?? [],
+    software: record?.software ?? [],
+    preparation: zone ? `${zone.name}. ${zone.education}` : null,
+    areas: familiesAbove(graph, id).map((familyId) => graph.nodes.get(familyId)?.title ?? familyId),
+  };
+}
+
+/** Two occupations side by side, with what they share called out. Null unless both are occupations. */
+export function compareModel(graph: AtlasGraph, leftId: AtlasNodeId, rightId: AtlasNodeId): CompareModel | null {
+  if (leftId === rightId) return null;
+  const left = compareSide(graph, leftId);
+  const right = compareSide(graph, rightId);
+  if (!left || !right) return null;
+  const shared = (a: readonly string[], b: readonly string[]) => a.filter((item) => b.includes(item));
+  return {
+    left,
+    right,
+    sharedSkills: shared(left.skills, right.skills),
+    sharedSoftware: shared(left.software, right.software),
+    sharedAreas: shared(left.areas, right.areas),
+  };
 }

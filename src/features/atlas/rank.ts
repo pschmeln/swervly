@@ -15,14 +15,18 @@ import type { ActivityTag, AtlasNodeId, FamilyId, SpecializationId } from "@/fea
  *
  *   entry       +2 common major link, +1 sometimes (best family wins)
  *   activities  +1 per chosen activity the specialization involves, max +3
- *   direction   +1 if a family maps to a Direction role marked Interested
+ *   direction   +1 if a family maps to a Direction role marked Interested, or
+ *               to one Direction currently suggests (one point, not both)
+ *   evidence    +1 if a family maps to a role with Direction student evidence:
+ *               at least 2 consenting students with quiz profiles near this one
+ *               rated that role highly (computed by Direction, reused here)
  *   interest    +3 if the student marked it, or a family above it, Interested here
  *   excluded    dismissed here, or every family above it is dismissed or role-blocked
  *
  * Missing information never subtracts. Ties break by stable id.
  */
 
-export const POINTS = { common: 2, sometimes: 1, activityEach: 1, activityMax: 3, direction: 1, interest: 3 } as const;
+export const POINTS = { common: 2, sometimes: 1, activityEach: 1, activityMax: 3, direction: 1, evidence: 1, interest: 3 } as const;
 export const TOP = 6;
 export const MAX_PER_FAMILY = 2;
 
@@ -36,6 +40,10 @@ export type Signals = {
   /** Direction role ids, read only. */
   directionInterested: readonly string[];
   directionDismissed: readonly string[];
+  /** Roles Direction currently suggests, after its own dismissals. */
+  directionSuggested?: readonly string[];
+  /** Roles with Direction student evidence: distinct consenting similar students. */
+  evidence?: readonly { role: string; roleLabel: string; sampleSize: number }[];
 };
 
 export type Ranked = {
@@ -63,7 +71,13 @@ export function chosenTags(answers: Answers): { tag: ActivityTag; because: strin
 
 /** True when the student has told Atlas anything beyond their major. */
 export function hasSignals(signals: Signals): boolean {
-  return chosenTags(signals.answers).length > 0 || signals.interested.length > 0 || signals.directionInterested.length > 0;
+  return (
+    chosenTags(signals.answers).length > 0 ||
+    signals.interested.length > 0 ||
+    signals.directionInterested.length > 0 ||
+    (signals.directionSuggested ?? []).length > 0 ||
+    (signals.evidence ?? []).some((item) => item.sampleSize >= 2)
+  );
 }
 
 export function rankSpecializations(graph: AtlasGraph, entry: AtlasEntry, signals: Signals): Ranked[] {
@@ -74,6 +88,16 @@ export function rankSpecializations(graph: AtlasGraph, entry: AtlasEntry, signal
   const directionFamilies = new Map<FamilyId, string>();
   for (const role of signals.directionInterested) {
     for (const familyId of familiesForRole(role)) if (!directionFamilies.has(familyId)) directionFamilies.set(familyId, role);
+  }
+  const suggestedFamilies = new Set<FamilyId>();
+  for (const role of signals.directionSuggested ?? []) for (const familyId of familiesForRole(role)) suggestedFamilies.add(familyId);
+  const evidenceFamilies = new Map<FamilyId, { roleLabel: string; sampleSize: number }>();
+  for (const item of signals.evidence ?? []) {
+    if (item.sampleSize < 2) continue;
+    for (const familyId of familiesForRole(item.role)) {
+      const current = evidenceFamilies.get(familyId);
+      if (!current || item.sampleSize > current.sampleSize) evidenceFamilies.set(familyId, item);
+    }
   }
 
   const scored: Ranked[] = [];
@@ -109,9 +133,22 @@ export function rankSpecializations(graph: AtlasGraph, entry: AtlasEntry, signal
 
     // Direction roles marked Interested.
     const viaDirection = openFamilies.find((familyId) => directionFamilies.has(familyId));
+    const viaSuggestion = openFamilies.find((familyId) => suggestedFamilies.has(familyId));
     if (viaDirection) {
       points += POINTS.direction;
       reasons.push("It's in an area you marked Interested on Direction.");
+    } else if (viaSuggestion) {
+      points += POINTS.direction;
+      reasons.push("It's in an area Direction currently suggests for you.");
+    }
+
+    // Co-op evidence, at the level Direction measured it (the role), never pushed lower.
+    const viaEvidence = openFamilies.map((familyId) => evidenceFamilies.get(familyId)).find((item) => item !== undefined);
+    if (viaEvidence) {
+      points += POINTS.evidence;
+      reasons.push(
+        `${viaEvidence.sampleSize} students with quiz profiles near yours rated ${viaEvidence.roleLabel} co-ops highly. That's about the broad area, not this specialization, and similarity isn't proof of fit.`,
+      );
     }
 
     // Interested marks in Atlas, on the specialization or a family above it.
