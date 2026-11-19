@@ -11,6 +11,12 @@ const openAndConscientious: TraitScores = {
   openness: 18,
 };
 
+const middle: TraitScores = { extraversion: 12, agreeableness: 12, conscientiousness: 12, neuroticism: 12, openness: 12 };
+
+const peopleFirst: TraitScores = { extraversion: 18, agreeableness: 18, conscientiousness: 12, neuroticism: 8, openness: 12 };
+
+const quietPlanner: TraitScores = { extraversion: 8, agreeableness: 12, conscientiousness: 18, neuroticism: 8, openness: 12 };
+
 const ENGINEERING_ROLES = [
   "design",
   "test_validation",
@@ -54,7 +60,7 @@ describe("direction outside engineering", () => {
     expect(direction.basis).toBe("rules");
     expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
     expect(direction.suggestions.map((item) => item.roleType)).not.toContain("software");
-    expect(direction.label.toLowerCase()).not.toContain("quiz");
+    expect(direction.label.toLowerCase()).toContain("from your quiz and major");
     expectNoFitClaim(direction);
   });
 
@@ -89,17 +95,52 @@ describe("direction outside engineering", () => {
     expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
   });
 
-  it("does not invent roles for undecided or legacy Other", () => {
+  it("suggests roles from the quiz alone for undecided or legacy Other", () => {
     for (const major of ["", "Other"]) {
-      const direction = buildDirection(
-        { traits: openAndConscientious, major, goal: "industry" },
-        [],
-      );
-      expect(direction.suggestions.map((item) => item.roleType)).toEqual(["insufficient"]);
-      expect(direction.label.toLowerCase()).toContain("not a career-fit score");
-      expect(direction.suggestions[0]?.source).toBe("rules");
-      expect(direction.suggestions[0]?.evidenceLabel).toBe("Not enough information");
+      const direction = buildDirection({ traits: openAndConscientious, major, goal: "industry" }, []);
+      expect(direction.suggestions).toHaveLength(3);
+      expect(direction.suggestions.map((item) => item.roleType)).not.toContain("insufficient");
+      expect(direction.label.toLowerCase()).toContain("from your quiz");
+      expect(direction.label.toLowerCase()).not.toContain("major");
+      expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
+      expect(direction.suggestions.every((item) => item.reason.includes("not a fit score"))).toBe(true);
+      expectNoFitClaim(direction);
     }
+  });
+
+  it("never uses the engineering catch-all as a quiz signal for undecided students", () => {
+    const direction = buildDirection({ traits: middle, major: "", goal: "industry" }, []);
+    expect(direction.suggestions.map((item) => item.roleType)).toEqual(["insufficient"]);
+    expect(direction.label.toLowerCase()).toContain("not a career-fit score");
+  });
+
+  it("lets the quiz change undecided suggestions", () => {
+    const people = suggestionsFromRules({ traits: peopleFirst, major: "", goal: "industry" }).map((item) => item.roleType);
+    const quiet = suggestionsFromRules({ traits: quietPlanner, major: "", goal: "industry" }).map((item) => item.roleType);
+    expect(people).not.toEqual(quiet);
+  });
+
+  it("lets the quiz order a nursing student's roles", () => {
+    const people = suggestionsFromRules({ traits: peopleFirst, major: "Nursing", goal: "industry" }).map((item) => item.roleType);
+    const quiet = suggestionsFromRules({ traits: quietPlanner, major: "Nursing", goal: "industry" }).map((item) => item.roleType);
+    expect(people[0]).toBe("healthcare_clinical");
+    expect(quiet[0]).toBe("healthcare_admin");
+  });
+
+  it("fills the last slot from the quiz with a non-engineering role only", () => {
+    const suggestions = suggestionsFromRules({ traits: peopleFirst, major: "Nursing", goal: "industry" });
+    expect(suggestions).toHaveLength(3);
+    const third = suggestions[2];
+    expect(["healthcare_clinical", "healthcare_admin"]).not.toContain(third.roleType);
+    expect(third.reason).toContain("outside your major's usual paths");
+    for (const role of [...ENGINEERING_ROLES, "research", "data_analytics"]) {
+      expect(suggestions.map((item) => item.roleType)).not.toContain(role);
+    }
+  });
+
+  it("keeps a major's own two roles when the quiz points nowhere", () => {
+    const suggestions = suggestionsFromRules({ traits: middle, major: "Nursing", goal: "industry" });
+    expect(suggestions.map((item) => item.roleType)).toEqual(["healthcare_clinical", "healthcare_admin"]);
   });
 
   it("still separates an evidence-backed engineering role from a hypothesis", () => {

@@ -1,5 +1,5 @@
 import type { Trait } from "@/content/mini-ipip";
-import { careerRoleLabel, type ExtraCareerRole } from "@/features/direction/career-roles";
+import { careerRoleLabel, EXTRA_CAREER_ROLE_IDS, type ExtraCareerRole } from "@/features/direction/career-roles";
 import { majorFamily, usesEngineeringDirection, type MajorFamily } from "@/features/majors/catalog";
 import type { TraitScores } from "@/features/profile/scoring";
 import { traitBand } from "@/features/profile/traits";
@@ -13,8 +13,8 @@ export const DIRECTION_RULES_LABEL =
 export const DIRECTION_EVIDENCE_LABEL =
   "Worth exploring — some roles below use student reviews; others are still early hypotheses.";
 
-export const DIRECTION_MAJOR_GOAL_LABEL =
-  "Worth exploring — early hypotheses from your major and stated goal. Not a career diagnosis, and not a fit score.";
+export const DIRECTION_QUIZ_LABEL =
+  "Worth exploring — early hypotheses from your quiz. Not a career diagnosis, and not a fit score.";
 
 export const DIRECTION_INSUFFICIENT_LABEL =
   "Not enough information for a role suggestion. Quiz scores are not a career-fit score.";
@@ -64,6 +64,8 @@ type Rule = {
   points: number;
   when: (context: DirectionContext) => boolean;
   reason: string;
+  /** Matches everyone. Used to fill engineering suggestions, never as a quiz signal. */
+  fallback?: true;
 };
 
 const SOFTWARE = new Set([
@@ -215,6 +217,7 @@ const RULES: readonly Rule[] = [
     role: "test_validation",
     points: 1,
     when: () => true,
+    fallback: true,
     reason: "Checking whether something works is a common co-op, and a fair first guess.",
   },
 ];
@@ -318,24 +321,182 @@ function asSuggestion(role: RoleType | ExtraCareerRole, reason: string): Directi
   };
 }
 
+type QuizRule = {
+  role: RoleType | ExtraCareerRole;
+  points: number;
+  when: (context: DirectionContext) => boolean;
+  reason: string;
+};
+
+/**
+ * Quiz rules for roles outside the engineering co-op table (editorial, like RULES).
+ * Early hypotheses from Big Five bands, not a validated career assessment.
+ */
+const EXTRA_RULES: readonly QuizRule[] = [
+  {
+    role: "healthcare_clinical",
+    points: 3,
+    when: (c) => traitBand(c.traits.agreeableness) === "high" && traitBand(c.traits.extraversion) !== "low",
+    reason: "You look out for people and are comfortable around them, which fits hands-on care.",
+  },
+  {
+    role: "healthcare_clinical",
+    points: 2,
+    when: (c) => traitBand(c.traits.conscientiousness) === "high" && traitBand(c.traits.neuroticism) === "low",
+    reason: "You stay steady and careful, which clinical work asks for.",
+  },
+  {
+    role: "healthcare_admin",
+    points: 3,
+    when: (c) => traitBand(c.traits.conscientiousness) === "high" && traitBand(c.traits.extraversion) !== "high",
+    reason: "You like a plan and steady, organized work, which fits healthcare administration.",
+  },
+  {
+    role: "teaching",
+    points: 3,
+    when: (c) => traitBand(c.traits.extraversion) === "high" && traitBand(c.traits.agreeableness) === "high",
+    reason: "You gain energy around people and look out for them, which fits teaching.",
+  },
+  {
+    role: "counseling_support",
+    points: 3,
+    when: (c) => traitBand(c.traits.agreeableness) === "high" && traitBand(c.traits.neuroticism) !== "high",
+    reason: "You look out for people and stay steady, which fits support work.",
+  },
+  {
+    role: "business_operations",
+    points: 3,
+    when: (c) => traitBand(c.traits.conscientiousness) === "high" && traitBand(c.traits.extraversion) !== "low",
+    reason: "You like a plan and you work well with people, which fits operations.",
+  },
+  {
+    role: "finance",
+    points: 2,
+    when: (c) => traitBand(c.traits.conscientiousness) === "high" && traitBand(c.traits.openness) !== "high",
+    reason: "You like a careful, known method, which fits finance work.",
+  },
+  {
+    role: "marketing",
+    points: 3,
+    when: (c) => traitBand(c.traits.extraversion) === "high" && traitBand(c.traits.openness) === "high",
+    reason: "You like new ideas and being around people, which fits marketing.",
+  },
+  {
+    role: "laboratory",
+    points: 2,
+    when: (c) => traitBand(c.traits.conscientiousness) === "high" && traitBand(c.traits.extraversion) !== "high",
+    reason: "You're careful and you like focused work, which fits lab work.",
+  },
+  {
+    role: "policy_research",
+    points: 3,
+    when: (c) => c.goal === "grad_school" && traitBand(c.traits.openness) === "high",
+    reason: "Graduate school is your goal, and you like unfamiliar questions.",
+  },
+  {
+    role: "policy_research",
+    points: 2,
+    when: (c) => traitBand(c.traits.openness) === "high" && traitBand(c.traits.extraversion) !== "high",
+    reason: "You like new ideas and quieter focus, which fits research-style work.",
+  },
+  {
+    role: "writing_media",
+    points: 3,
+    when: (c) => traitBand(c.traits.openness) === "high" && traitBand(c.traits.extraversion) !== "high",
+    reason: "You like new ideas and quieter focus, which fits writing.",
+  },
+];
+
+const EXTRA_ROLE_ORDER: readonly ExtraCareerRole[] = EXTRA_CAREER_ROLE_IDS.filter(
+  (role): role is ExtraCareerRole => role !== "insufficient",
+);
+
+const NOT_A_FIT_SCORE = "This is not a fit score.";
+
+/** The strongest quiz rule that matches each role. Engineering rules only when asked. */
+function quizMatches(
+  context: DirectionContext,
+  withEngineering: boolean,
+): Map<RoleType | ExtraCareerRole, { points: number; reason: string }> {
+  const best = new Map<RoleType | ExtraCareerRole, { points: number; reason: string }>();
+  const rules: readonly QuizRule[] = withEngineering
+    ? [...RULES.filter((rule) => !rule.fallback), ...EXTRA_RULES]
+    : EXTRA_RULES;
+  for (const rule of rules) {
+    if (!rule.when(context)) continue;
+    const current = best.get(rule.role);
+    if (!current || rule.points > current.points) best.set(rule.role, { points: rule.points, reason: rule.reason });
+  }
+  return best;
+}
+
+/**
+ * A major outside the engineering co-op rules. The major picks the roles on the
+ * table; the quiz orders them, and may fill the last slot with another
+ * non-engineering role when it points there more strongly. Engineering roles
+ * only appear when the major's own list includes them (computing, math, science).
+ */
+function majorFamilySuggestions(context: DirectionContext, rows: readonly { role: RoleType | ExtraCareerRole; reason: string }[]): DirectionSuggestion[] {
+  const quiz = quizMatches(context, false);
+  const pointsOf = (role: RoleType | ExtraCareerRole) => quiz.get(role)?.points ?? 0;
+  const familyRoles = rows.map((row) => row.role);
+  const ordered = rows
+    .map((row, index) => ({ row, index }))
+    .sort((left, right) => pointsOf(right.row.role) - pointsOf(left.row.role) || left.index - right.index)
+    .map((item) => item.row);
+
+  const familyReason = (row: { role: RoleType | ExtraCareerRole; reason: string }) => {
+    const match = quiz.get(row.role);
+    return match ? `${match.reason} Your major points here too. ${NOT_A_FIT_SCORE}` : row.reason;
+  };
+
+  const chosen = ordered.slice(0, 2).map((row) => asSuggestion(row.role, familyReason(row)));
+  const rest = ordered.slice(2);
+  const outside = EXTRA_ROLE_ORDER.filter((role) => !familyRoles.includes(role) && pointsOf(role) > 0);
+  // Best remaining by quiz points; ties go to the major's own roles, then editorial order.
+  const candidates = [
+    ...rest.map((row) => ({ role: row.role, points: pointsOf(row.role), reason: familyReason(row) })),
+    ...outside.map((role) => ({
+      role,
+      points: pointsOf(role),
+      reason: `${quiz.get(role)?.reason ?? ""} It's outside your major's usual paths. ${NOT_A_FIT_SCORE}`,
+    })),
+  ];
+  const third = candidates.reduce<(typeof candidates)[number] | null>(
+    (best, item) => (best === null || item.points > best.points ? item : best),
+    null,
+  );
+  if (third && chosen.length === 2) chosen.push(asSuggestion(third.role, third.reason));
+  return chosen;
+}
+
+/** Undecided, custom or unknown major: the quiz alone, across every role. */
+function quizOnlySuggestions(context: DirectionContext): DirectionSuggestion[] {
+  const quiz = quizMatches(context, true);
+  const order: readonly (RoleType | ExtraCareerRole)[] = [...ROLE_TYPE_VALUES.filter((role) => role !== "other"), ...EXTRA_ROLE_ORDER];
+  return [...quiz.entries()]
+    .sort((left, right) => right[1].points - left[1].points || order.indexOf(left[0]) - order.indexOf(right[0]))
+    .slice(0, 3)
+    .map(([role, match]) => asSuggestion(role, `${match.reason} ${NOT_A_FIT_SCORE}`));
+}
+
+function insufficientSuggestion(): DirectionSuggestion {
+  return {
+    roleType: "insufficient",
+    roleLabel: careerRoleLabel("insufficient"),
+    reason: withRulesLabel(
+      "There isn't enough information to suggest a role yet. Quiz scores are not a career-fit score.",
+    ),
+    source: "rules",
+    evidenceLabel: "Not enough information",
+  };
+}
+
 function nonEngineeringSuggestions(context: DirectionContext): DirectionSuggestion[] {
   const family = majorFamily(context.major);
   const rows = FAMILY_SUGGESTIONS[family] ?? [];
-  const chosen = rows.slice(0, 3).map((row) => asSuggestion(row.role, row.reason));
-  if (chosen.length === 0) {
-    return [
-      {
-        roleType: "insufficient",
-        roleLabel: careerRoleLabel("insufficient"),
-        reason: withRulesLabel(
-          "There isn't enough information to suggest a role yet. Quiz scores are not a career-fit score.",
-        ),
-        source: "rules",
-        evidenceLabel: "Not enough information",
-      },
-    ];
-  }
-  return chosen.slice(0, 3);
+  const chosen = rows.length > 0 ? majorFamilySuggestions(context, rows) : quizOnlySuggestions(context);
+  return chosen.length > 0 ? chosen : [insufficientSuggestion()];
 }
 
 function keepsEngineeringCoopRules(major: string): boolean {
@@ -462,8 +623,9 @@ export function buildDirection(
   const fromRules = suggestionsFromRules(context);
   if (!keepsEngineeringCoopRules(context.major)) {
     const concrete = fromRules.some((item) => item.roleType !== "insufficient");
+    const quizOnly = (FAMILY_SUGGESTIONS[majorFamily(context.major)] ?? []).length === 0;
     return {
-      label: concrete ? DIRECTION_MAJOR_GOAL_LABEL : DIRECTION_INSUFFICIENT_LABEL,
+      label: !concrete ? DIRECTION_INSUFFICIENT_LABEL : quizOnly ? DIRECTION_QUIZ_LABEL : DIRECTION_RULES_LABEL,
       basis: "rules",
       suggestions: fromRules,
     };
