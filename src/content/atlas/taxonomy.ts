@@ -17,6 +17,7 @@ export const DOMAINS: readonly CareerDomain[] = [
   domain("dom:healthcare", "Healthcare"),
   domain("dom:media-design", "Media, writing and design"),
   domain("dom:science", "Science and research"),
+  domain("dom:society", "Government, law and society"),
 ];
 
 const family = (id: FamilyId, title: string, summary: string, domains: CareerFamily["domains"]): CareerFamily => ({
@@ -50,6 +51,15 @@ export const FAMILIES: readonly CareerFamily[] = [
   family("fam:teaching-advising", "Teaching and Advising", "Helping people learn and choose their path.", ["dom:education"]),
   family("fam:writing-communication", "Writing and Communication", "Explaining complex things clearly to an audience.", ["dom:media-design"]),
   family("fam:industrial-design", "Industrial and Product Design", "Shaping how products look, feel and get used.", ["dom:media-design", "dom:engineering"]),
+  // Coverage batch 1 (Nov 19, 2026)
+  family("fam:social-science", "Social Science and Policy", "Studying how people, communities and governments work, and what changes them.", ["dom:society", "dom:science"]),
+  family("fam:law-justice", "Law and Justice", "Working inside the legal and justice systems.", ["dom:society"]),
+  family("fam:social-services", "Social Work and Counseling", "Supporting people through hard times and connecting them to help.", ["dom:education", "dom:healthcare"]),
+  family("fam:medicine-pharmacy", "Medicine and Pharmacy", "Diagnosing illness and deciding on treatment and medication.", ["dom:healthcare"]),
+  family("fam:rehab-wellness", "Rehabilitation and Wellness", "Helping people move, recover, eat well and stay active.", ["dom:healthcare"]),
+  family("fam:public-health", "Public and Community Health", "Preventing illness and improving health across whole communities.", ["dom:healthcare", "dom:science"]),
+  family("fam:human-resources", "People and Talent (HR)", "Hiring, training and supporting an organization's people.", ["dom:business"]),
+  family("fam:visual-performing-arts", "Visual and Performing Arts", "Creating visual design, art and music.", ["dom:media-design"]),
 ];
 
 const occ = (code: string, primary = false) => ({ id: `occ:onet:${code}` as OccupationId, primary });
@@ -125,4 +135,46 @@ export const SPECIALIZATIONS: readonly Specialization[] = [
   spec("spec:career-advising", "Academic and career advising", "Helping students plan school and work.", ["fam:teaching-advising"], [occ("21-1012.00", true)], ["people"]),
   spec("spec:technical-writing", "Technical writing", "Writing manuals and documentation for technical products.", ["fam:writing-communication"], [occ("27-3042.00", true)], ["organize"]),
   spec("spec:product-design", "Industrial product design", "Designing the form and use of manufactured products.", ["fam:industrial-design", "fam:design-development"], [occ("27-1021.00", true)], ["build", "people"]),
+  // Coverage batch 1 (Nov 19, 2026). Social science and policy
+  spec("spec:policy-analysis", "Policy analysis and planning", "Studying government, economies and places, and proposing what should change.", ["fam:social-science"], [occ("19-3094.00", true), occ("19-3011.00"), occ("19-3051.00")], ["data", "model"]),
+  spec("spec:social-research", "Social research", "Studying how people and groups behave, through surveys, interviews and fieldwork.", ["fam:social-science", "fam:data-analytics"], [occ("19-3041.00", true), occ("19-3022.00"), occ("19-3091.00")], ["data", "people"]),
+  spec("spec:history-heritage", "History, museums and libraries", "Researching, preserving and sharing records and collections.", ["fam:social-science", "fam:teaching-advising"], [occ("19-3093.00", true), occ("25-4012.00"), occ("25-4022.00")], ["organize", "people"]),
+  // Law and justice
+  spec("spec:legal-practice", "Legal practice", "Advising clients and preparing cases. Lawyers need law school after college.", ["fam:law-justice"], [occ("23-1011.00", true), occ("23-2011.00")], ["people", "organize"]),
+  spec("spec:investigation-forensics", "Investigation and forensics", "Gathering and analyzing evidence about what happened.", ["fam:law-justice", "fam:laboratory-science"], [occ("33-3021.00", true), occ("19-4092.00")], ["field", "test"]),
+  spec("spec:corrections-probation", "Probation and corrections", "Supervising and supporting people in the justice system.", ["fam:law-justice", "fam:social-services"], [occ("21-1092.00", true)], ["people", "field"]),
+  // Social work and counseling
+  spec("spec:social-work", "Social work", "Helping children, families and patients get support and services.", ["fam:social-services"], [occ("21-1021.00", true), occ("21-1022.00"), occ("21-1023.00")], ["people", "field"]),
+  spec("spec:counseling", "Counseling", "Working one-on-one with people through addiction, disability or other challenges.", ["fam:social-services"], [occ("21-1011.00", true), occ("21-1015.00")], ["people"]),
+  spec("spec:psychology-practice", "Psychology practice", "Assessing and treating mental health, usually after graduate study.", ["fam:social-services", "fam:clinical-care"], [occ("19-3033.00", true), occ("19-3034.00")], ["people", "data"]),
+  // Medicine and pharmacy
+  spec("spec:physician", "Physician practice", "Diagnosing and treating patients. Requires medical school and residency.", ["fam:medicine-pharmacy", "fam:clinical-care"], [occ("29-1215.00", true), occ("29-1216.00")], ["people", "model"]),
+  spec("spec:physician-assistant", "Physician assistant", "Examining, diagnosing and treating patients on a physician-led team.", ["fam:medicine-pharmacy", "fam:clinical-care"], [occ("29-1071.00", true)], ["people"]),
+  spec("spec:pharmacy", "Pharmacy", "Dispensing medications and advising patients and doctors on their use.", ["fam:medicine-pharmacy"], [occ("29-1051.00", true)], ["people", "test"]),
+  // Rehabilitation and wellness
+  spec("spec:physical-therapy", "Physical therapy", "Helping patients recover movement after injury or illness.", ["fam:rehab-wellness", "fam:clinical-care"], [occ("29-1123.00", true)], ["people", "field"]),
+  spec("spec:occupational-therapy", "Occupational therapy", "Helping patients manage daily tasks after injury, illness or disability.", ["fam:rehab-wellness", "fam:clinical-care"], [occ("29-1122.00", true)], ["people"]),
+  spec("spec:exercise-sport", "Exercise and sports medicine", "Using exercise to treat, prevent and recover from injury.", ["fam:rehab-wellness"], [occ("29-1128.00", true), occ("29-9091.00")], ["people", "test"]),
+  spec("spec:nutrition", "Nutrition and dietetics", "Planning what people eat to treat illness or stay healthy.", ["fam:rehab-wellness", "fam:public-health"], [occ("29-1031.00", true)], ["people", "organize"]),
+  // Public and community health
+  spec("spec:epidemiology", "Epidemiology", "Tracking diseases and their causes across populations.", ["fam:public-health", "fam:data-analytics"], [occ("19-1041.00", true)], ["data", "model"]),
+  spec("spec:community-health", "Community health and education", "Teaching communities about health and connecting them to care.", ["fam:public-health", "fam:social-services"], [occ("21-1091.00", true), occ("21-1094.00")], ["people", "organize"]),
+  // People and talent
+  spec("spec:hr", "Human resources", "Recruiting, hiring and supporting employees.", ["fam:human-resources", "fam:business-operations"], [occ("13-1071.00", true)], ["people", "organize"]),
+  spec("spec:training-development", "Training and instructional design", "Designing how employees or students learn.", ["fam:human-resources", "fam:teaching-advising"], [occ("13-1151.00", true), occ("25-9031.00")], ["people", "organize"]),
+  // Teaching
+  spec("spec:early-childhood", "Early childhood teaching", "Teaching preschool and kindergarten children.", ["fam:teaching-advising"], [occ("25-2011.00", true), occ("25-2012.00")], ["people"]),
+  spec("spec:elementary-middle-teaching", "Elementary and middle school teaching", "Teaching children from first grade through middle school.", ["fam:teaching-advising"], [occ("25-2021.00", true), occ("25-2022.00")], ["people", "organize"]),
+  spec("spec:special-education", "Special education", "Teaching students with learning, emotional or physical disabilities.", ["fam:teaching-advising", "fam:social-services"], [occ("25-2056.00", true), occ("25-2051.00"), occ("25-2058.00")], ["people"]),
+  // Writing, media and marketing
+  spec("spec:journalism", "Journalism", "Reporting and explaining news and events.", ["fam:writing-communication"], [occ("27-3023.00", true)], ["people", "field"]),
+  spec("spec:writing-editing", "Writing and editing", "Writing, shaping and checking content for readers.", ["fam:writing-communication"], [occ("27-3043.00", true), occ("27-3041.00")], ["organize"]),
+  spec("spec:translation", "Translation and interpreting", "Carrying meaning between languages, in writing or speech.", ["fam:writing-communication"], [occ("27-3091.00", true)], ["people"]),
+  spec("spec:public-relations", "Public relations", "Shaping how an organization is seen by the public and the press.", ["fam:marketing", "fam:writing-communication"], [occ("27-3031.00", true)], ["people", "organize"]),
+  spec("spec:marketing-management", "Marketing and advertising management", "Planning campaigns and deciding how a product is promoted.", ["fam:marketing"], [occ("11-2021.00", true), occ("11-2011.00")], ["people", "organize"]),
+  // Visual and performing arts
+  spec("spec:graphic-design", "Graphic and visual design", "Designing images, layouts and visual identities.", ["fam:visual-performing-arts", "fam:marketing"], [occ("27-1024.00", true), occ("27-1011.00")], ["build", "people"]),
+  spec("spec:music", "Music", "Performing, composing and directing music.", ["fam:visual-performing-arts"], [occ("27-2042.00", true), occ("27-2041.00")], ["people", "build"]),
+  // Environment
+  spec("spec:geoscience", "Geoscience", "Studying rock, soil and water to find resources and manage hazards.", ["fam:environmental"], [occ("19-2042.00", true), occ("19-2043.00")], ["field", "data"]),
 ];
