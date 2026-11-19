@@ -3,7 +3,7 @@
  *
  * 1. Download the O*NET database (CSV) from https://www.onetcenter.org/database.html
  * 2. Unzip it, then run:
- *      npx tsx scripts/atlas-import-onet.ts <folder with the CSVs> <release, e.g. 30.3>
+ *      npx tsx scripts/atlas-import-onet.ts <folder with the CSVs> <release, e.g. 31.0>
  * 3. Review the diff of src/content/atlas/onet-details.ts and commit it.
  *
  * Reads only: occupation_data, task_statements, task_ratings, essential_skills,
@@ -18,7 +18,7 @@ import { buildDetails, buildJobZones, renderDetailsModule } from "../src/feature
 
 const [folder, release] = process.argv.slice(2);
 if (!folder || !release || !/^\d+\.\d+$/.test(release)) {
-  console.error("Usage: npx tsx scripts/atlas-import-onet.ts <csv folder> <release, e.g. 30.3>");
+  console.error("Usage: npx tsx scripts/atlas-import-onet.ts <csv folder> <release, e.g. 31.0>");
   process.exit(2);
 }
 

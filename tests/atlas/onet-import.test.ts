@@ -114,7 +114,7 @@ describe("O*NET selection rules", () => {
   it("produces the same module text every run", () => {
     const zones = buildJobZones("Job Zone,Name,Experience,Education\n2,Zone 1-2,Some,High school\n4,Zone Four,Lots,Bachelor's");
     expect(zones[1]).toEqual(zones[2]);
-    expect(renderDetailsModule(details, zones, "30.3")).toBe(renderDetailsModule(details, zones, "30.3"));
+    expect(renderDetailsModule(details, zones, "31.0")).toBe(renderDetailsModule(details, zones, "31.0"));
   });
 });
 

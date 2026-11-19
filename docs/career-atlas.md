@@ -1,6 +1,6 @@
 # Career Atlas
 
-Status: B1 (data, graph, tests) is on `main`. B2 adds the `/direction/atlas` drill-down (off in production) and O*NET 30.3 content: descriptions, top tasks, standout skills, in-demand software, Job Zone and related occupations. No table, no migration.
+Status: B1 (data, graph, tests) is on `main`. B2 adds the `/direction/atlas` drill-down (off in production) and O*NET 31.0 content: descriptions, top tasks, standout skills, in-demand software, Job Zone and related occupations. No table, no migration.
 
 Full design (Stage A): the "Career Atlas — Stage A Architecture Proposal" doc shared by the founders.
 
