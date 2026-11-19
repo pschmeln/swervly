@@ -89,7 +89,7 @@ export const rotations = pgTable("rotations", {
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   employerId: uuid("employer_id").notNull().references(() => employers.id, { onDelete: "restrict" }),
   roleTitle: text("role_title").notNull(),
-  roleType: text("role_type").notNull(),              // design | test_validation | manufacturing_process | software | data_analytics | research | field_site | other
+  roleType: text("role_type").notNull(),              // one of ROLE_TYPE_VALUES in src/features/review/roles.ts
   termSeason: text("term_season").notNull(),          // 'spring' | 'summer' | 'fall'
   termYear: integer("term_year").notNull(),
   rotationNumber: integer("rotation_number").notNull(),
@@ -105,7 +105,7 @@ export const rotations = pgTable("rotations", {
   check("rotations_would_return", sql`${t.wouldReturn} in ('yes', 'maybe', 'no')`),
   check(
     "rotations_role_type",
-    sql`${t.roleType} in ('design', 'test_validation', 'manufacturing_process', 'software', 'data_analytics', 'research', 'field_site', 'other')`,
+    sql`${t.roleType} in ('design', 'test_validation', 'manufacturing_process', 'software', 'data_analytics', 'research', 'field_site', 'business_operations', 'finance', 'marketing', 'healthcare_clinical', 'healthcare_admin', 'laboratory', 'teaching', 'counseling_support', 'policy_research', 'writing_media', 'other')`,
   ),
 ]);
 

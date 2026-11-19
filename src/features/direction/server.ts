@@ -5,6 +5,7 @@ import { assessments, profiles, reviews, rotations, users, type User } from "@/d
 import { interestedFirst, withoutDismissedRoles } from "@/features/direction/career-roles";
 import {
   buildDirection,
+  evidenceGroup,
   type DirectionSuggestion,
   type SimilarReview,
 } from "@/features/direction/rules";
@@ -60,6 +61,8 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
         enjoyment: reviews.enjoyment,
         shareReviewsConsentAt: users.shareReviewsConsentAt,
         shareReviewsConsentVersion: users.shareReviewsConsentVersion,
+        major: users.major,
+        majorSource: users.majorSource,
       })
       .from(reviews)
       .innerJoin(rotations, eq(reviews.rotationId, rotations.id))
@@ -81,9 +84,16 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
     if (parsed) latest.set(row.userId, parsed);
   }
 
+  const majorForRules =
+    user.majorSource === "undecided" || user.majorSource === "custom" ? "" : (user.major ?? "");
+  // Evidence only from students in the same group of majors (founder decision, Nov 19, 2026).
+  const group = evidenceGroup(majorForRules);
   const similar: SimilarReview[] = [];
   for (const row of reviewRows) {
     if (row.userId === user.id || !isRoleType(row.roleType)) continue;
+    const reviewerMajor =
+      row.majorSource === "undecided" || row.majorSource === "custom" ? "" : (row.major ?? "");
+    if (group === null || evidenceGroup(reviewerMajor) !== group) continue;
     if (
       !hasShareReviewsConsent({
         shareReviewsConsentAt: row.shareReviewsConsentAt,
@@ -104,8 +114,6 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
 
   const goalValue = profileRows[0]?.goal;
   const goal = goalValue === "grad_school" || goalValue === "undecided" ? goalValue : "industry";
-  const majorForRules =
-    user.majorSource === "undecided" || user.majorSource === "custom" ? "" : (user.major ?? "");
   const direction = buildDirection({ traits, major: majorForRules, goal }, similar);
 
   return {
