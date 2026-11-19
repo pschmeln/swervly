@@ -11,7 +11,7 @@ export const metadata = { title: "Career map" };
 
 /**
  * Career Atlas prototype. Reads only the student's catalog major, major source
- * and dismissed Direction roles. Custom major text is never passed in.
+ * and Direction role marks (dismissed / Interested). Custom major text is never passed in.
  * Interested / Not interested marks stay in the browser and are not saved.
  */
 export default async function CareerAtlasPage({
@@ -43,7 +43,12 @@ export default async function CareerAtlasPage({
 
   return (
     <PageShell title="Career map" description="Browse careers from your major outward, or anywhere you like.">
-      <AtlasExplorer entry={entry} dismissedRoles={[...user.dismissedCareerRoles]} initialFocus={initialFocus} />
+      <AtlasExplorer
+        entry={entry}
+        dismissedRoles={[...user.dismissedCareerRoles]}
+        interestedRoles={[...user.interestedCareerRoles]}
+        initialFocus={initialFocus}
+      />
     </PageShell>
   );
 }
