@@ -1,18 +1,19 @@
+import { ONET_RELEASE } from "@/content/atlas/onet-details";
 import type { Occupation } from "@/features/atlas/types";
 
 /**
  * O*NET-SOC occupations used by the Career Atlas prototype.
  *
- * Only the code and the title are stored. Both were checked against the
- * "Browse by Job Family → All Job Families" list on O*NET OnLine
- * (https://www.onetonline.org/find/family?f=0) on 2026-11-18.
- * Descriptions, tasks and skills are NOT here yet: they come from the O*NET
- * database text files in a later step, never from memory or a model.
+ * Codes and titles were checked against O*NET OnLine on 2026-11-18 and match
+ * the O*NET database release in ONET_RELEASE exactly. Descriptions, tasks and software come from
+ * the database files via scripts/atlas-import-onet.ts (src/content/atlas/onet-details.ts),
+ * never from memory or a model.
  *
- * Credit line required wherever these titles are shown:
+ * Credit line required wherever O*NET content is shown. Swervly selects a
+ * subset of tasks and software, so the line says the content was adapted.
  */
 export const ONET_CREDIT =
-  "Occupation titles and codes from O*NET OnLine by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license. O*NET® is a trademark of USDOL/ETA.";
+  `Occupation information from the O*NET ${ONET_RELEASE} Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license; Swervly selected which tasks and software to show. O*NET® is a trademark of USDOL/ETA.`;
 
 export const ONET_CHECKED_ON = "2026-11-18";
 

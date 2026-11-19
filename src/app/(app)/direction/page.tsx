@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Button, Card, PageShell } from "@/components/ui";
 import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
+import { familiesForRole } from "@/features/atlas/compat";
+import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { loadDirection } from "@/features/direction/server";
@@ -31,6 +33,7 @@ export default async function DirectionPage() {
   }
 
   await captureEvent("direction_viewed", user.id);
+  const atlasOn = atlasPrototypeEnabled();
 
   return (
     <PageShell title="Direction">
@@ -100,12 +103,25 @@ export default async function DirectionPage() {
                 <DismissSuggestion roleType={suggestion.roleType} />
               </div>
             ) : null}
+            {atlasOn && familiesForRole(suggestion.roleType)[0] ? (
+              <p className="mt-3 text-sm">
+                <Link
+                  className="font-medium underline"
+                  href={`${ROUTES.directionAtlas}?at=${encodeURIComponent(familiesForRole(suggestion.roleType)[0])}`}
+                >
+                  See careers in this area
+                </Link>
+              </p>
+            ) : null}
           </Card>
         ))}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button href={ROUTES.directionExplore} className="w-full sm:w-auto">Explore pathways and companies</Button>
         <Button href={ROUTES.reviews} variant="secondary" className="w-full sm:w-auto">Review a co-op</Button>
+        {atlasOn ? (
+          <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">Browse the career map</Button>
+        ) : null}
       </div>
     </PageShell>
   );
