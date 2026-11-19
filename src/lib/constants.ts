@@ -38,6 +38,7 @@ export const ROUTES = {
   directionDismiss: "/api/direction/dismiss",
   directionInterest: "/api/direction/interest",
   directionExplore: "/direction/explore",
+  directionAtlas: "/direction/atlas",
   feedback: "/feedback",
   feedbackApi: "/api/feedback",
   company: "/companies/[id]",
