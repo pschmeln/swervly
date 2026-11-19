@@ -175,11 +175,10 @@ describe("migration 0007", () => {
     expect(sql).toContain("career_atlas_marks_one_pursuing");
   });
 
-  it("is the last journal entry, with a later timestamp than the one before", () => {
-    const last = journal.entries.at(-1);
-    const before = journal.entries.at(-2);
-    expect(last?.tag).toBe("0007_career_atlas_marks");
-    expect((last?.when ?? 0) > (before?.when ?? 0)).toBe(true);
+  it("is in the journal, with a later timestamp than the one before", () => {
+    const index = journal.entries.findIndex((entry: { tag: string }) => entry.tag === "0007_career_atlas_marks");
+    expect(index).toBeGreaterThan(0);
+    expect(journal.entries[index].when > journal.entries[index - 1].when).toBe(true);
   });
 
   it("allows every real Atlas id and rejects others in its check constraint", async () => {

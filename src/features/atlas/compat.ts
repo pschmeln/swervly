@@ -30,7 +30,8 @@ export const ROLE_FAMILIES: Readonly<Record<RoleType | ExtraCareerRole, readonly
   insufficient: [],
 };
 
-export const ALL_ROLE_IDS: readonly string[] = [...ROLE_TYPE_VALUES, ...EXTRA_CAREER_ROLE_IDS];
+// Co-op role types now include the non-engineering career roles, so drop the repeats.
+export const ALL_ROLE_IDS: readonly string[] = [...new Set<string>([...ROLE_TYPE_VALUES, ...EXTRA_CAREER_ROLE_IDS])];
 
 export function familiesForRole(role: string): readonly FamilyId[] {
   return (ROLE_FAMILIES as Readonly<Record<string, readonly FamilyId[]>>)[role] ?? [];

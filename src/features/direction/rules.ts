@@ -616,27 +616,24 @@ export function suggestionsFromSimilar(
   }));
 }
 
-export function buildDirection(
-  context: DirectionContext,
-  reviews: readonly SimilarReview[],
+/**
+ * Whose reviews can count as evidence for whom. Students only see evidence from
+ * students in the same group of majors. Engineering and computing are one group,
+ * as they share co-op roles. Undecided, custom and unknown majors have no group,
+ * so they get no student evidence.
+ */
+export function evidenceGroup(major: string): MajorFamily | null {
+  if (!major) return null;
+  const family = majorFamily(major);
+  if (family === "unknown") return null;
+  return family === "computing" ? "engineering" : family;
+}
+
+/** Evidence first, then rule hypotheses that aren't already shown, three at most. */
+function withEvidence(
+  fromStudents: readonly DirectionSuggestion[],
+  fromRules: readonly DirectionSuggestion[],
 ): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
-  const fromRules = suggestionsFromRules(context);
-  if (!keepsEngineeringCoopRules(context.major)) {
-    const concrete = fromRules.some((item) => item.roleType !== "insufficient");
-    const quizOnly = (FAMILY_SUGGESTIONS[majorFamily(context.major)] ?? []).length === 0;
-    return {
-      label: !concrete ? DIRECTION_INSUFFICIENT_LABEL : quizOnly ? DIRECTION_QUIZ_LABEL : DIRECTION_RULES_LABEL,
-      basis: "rules",
-      suggestions: fromRules,
-    };
-  }
-
-  const fromStudents = suggestionsFromSimilar(context.traits, reviews);
-
-  if (fromStudents.length === 0) {
-    return { label: DIRECTION_RULES_LABEL, basis: "rules", suggestions: fromRules };
-  }
-
   const suggestions: DirectionSuggestion[] = [];
   for (const evidence of fromStudents) {
     if (suggestions.length === 3) break;
@@ -644,23 +641,46 @@ export function buildDirection(
   }
   for (const rule of fromRules) {
     if (suggestions.length === 3) break;
+    if (rule.roleType === "insufficient") continue;
     if (suggestions.some((item) => item.roleType === rule.roleType)) continue;
     suggestions.push(rule);
   }
-
   const hasRules = suggestions.some((item) => item.source === "rules");
-  const hasEvidence = suggestions.some((item) => item.source === "similar_students");
-  const basis = hasRules && hasEvidence ? "mixed" : hasEvidence ? "similar_students" : "rules";
-  const label =
-    basis === "rules"
-      ? DIRECTION_RULES_LABEL
-      : DIRECTION_EVIDENCE_LABEL;
+  const basis = hasRules ? "mixed" : "similar_students";
+  return { label: DIRECTION_EVIDENCE_LABEL, basis, suggestions };
+}
 
-  return {
-    label,
-    basis,
-    suggestions: suggestions.slice(0, 3),
-  };
+/**
+ * Callers pass only reviews from students in the same evidence group
+ * (see evidenceGroup). Outside engineering, evidence is also limited to the
+ * roles the major's own list or the non-engineering roles cover, so an
+ * engineering role never reaches a nursing student this way.
+ */
+export function buildDirection(
+  context: DirectionContext,
+  reviews: readonly SimilarReview[],
+): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
+  const fromRules = suggestionsFromRules(context);
+  if (!keepsEngineeringCoopRules(context.major)) {
+    const concrete = fromRules.some((item) => item.roleType !== "insufficient");
+    const rows = FAMILY_SUGGESTIONS[majorFamily(context.major)] ?? [];
+    const quizOnly = rows.length === 0;
+    const rulesOnly = {
+      label: !concrete ? DIRECTION_INSUFFICIENT_LABEL : quizOnly ? DIRECTION_QUIZ_LABEL : DIRECTION_RULES_LABEL,
+      basis: "rules" as const,
+      suggestions: fromRules,
+    };
+    if (quizOnly) return rulesOnly;
+    const allowed = new Set<string>([...rows.map((row) => row.role), ...EXTRA_ROLE_ORDER]);
+    const fromStudents = suggestionsFromSimilar(context.traits, reviews).filter((item) => allowed.has(item.roleType));
+    return fromStudents.length === 0 ? rulesOnly : withEvidence(fromStudents, fromRules);
+  }
+
+  const fromStudents = suggestionsFromSimilar(context.traits, reviews);
+  if (fromStudents.length === 0) {
+    return { label: DIRECTION_RULES_LABEL, basis: "rules", suggestions: fromRules };
+  }
+  return withEvidence(fromStudents, fromRules);
 }
 
 /** @deprecated Prefer DIRECTION_RULES_LABEL / DIRECTION_EVIDENCE_LABEL. */
