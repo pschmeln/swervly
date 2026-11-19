@@ -48,7 +48,9 @@ export default function PrivacyPage() {
             the information needed to authenticate you, including a password if
             you set one. We also store when you consent to the Privacy Policy,
             to storing your data, and to including reviews in anonymous company
-            pages.
+            pages. If you use the career map, we store the careers you mark
+            Interested or Not interested, the one you choose as your direction,
+            and your answers to its short preference questions.
           </p>
         </section>
 
@@ -66,6 +68,9 @@ export default function PrivacyPage() {
             of career fit. Swervly does not send your text to an AI model. The quiz
             uses lightly reworded Mini-IPIP items; treat scores as exploratory, not
             as having the same validation evidence as the original instrument.
+            The career map uses your major, your Direction results and your own
+            career map choices to order what you see first. It never shows a fit
+            score, and you can change or clear those choices at any time.
           </p>
         </section>
 

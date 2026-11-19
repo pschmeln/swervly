@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
-  boolean, check, index, integer, jsonb, numeric, pgTable, text, timestamp,
+  boolean, check, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp,
   uniqueIndex, uuid, vector,
 } from "drizzle-orm/pg-core";
 
@@ -186,6 +186,35 @@ export const majorSubmissions = pgTable("major_submissions", {
   check("major_submissions_status", sql`${t.status} in ('pending', 'approved', 'merged', 'rejected')`),
 ]);
 
+// Career Atlas (migration 0007). One mark per student per map node. Node ids are the
+// stable Atlas ids (dom:, fam:, spec:, occ:onet:). 'pursuing' is the student's chosen
+// direction: at most one per student, and it implies Interested.
+export const careerAtlasMarks = pgTable("career_atlas_marks", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  nodeId: text("node_id").notNull(),
+  mark: text("mark").notNull(), // interested | dismissed | pursuing
+  createdAt,
+  updatedAt,
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.nodeId], name: "career_atlas_marks_pk" }),
+  uniqueIndex("career_atlas_marks_one_pursuing").on(t.userId).where(sql`${t.mark} = 'pursuing'`),
+  check("career_atlas_marks_mark", sql`${t.mark} in ('interested', 'dismissed', 'pursuing')`),
+  check("career_atlas_marks_node", sql`${t.nodeId} ~ '^((dom|fam|spec):[a-z0-9-]+|occ:onet:[0-9]{2}-[0-9]{4}[.][0-9]{2})$'`),
+]);
+
+// Career Atlas preference answers. One row per student per question id.
+export const careerAtlasAnswers = pgTable("career_atlas_answers", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  questionId: text("question_id").notNull(),
+  answer: text("answer").notNull(), // a | b | both | unsure
+  createdAt,
+  updatedAt,
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.questionId], name: "career_atlas_answers_pk" }),
+  check("career_atlas_answers_answer", sql`${t.answer} in ('a', 'b', 'both', 'unsure')`),
+  check("career_atlas_answers_question", sql`${t.questionId} ~ '^[a-z0-9-]{1,64}$'`),
+]);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Assessment = typeof assessments.$inferSelect;
@@ -196,3 +225,5 @@ export type SkillRow = typeof skills.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type MajorCatalogRow = typeof majorCatalog.$inferSelect;
 export type MajorSubmission = typeof majorSubmissions.$inferSelect;
+export type CareerAtlasMark = typeof careerAtlasMarks.$inferSelect;
+export type CareerAtlasAnswer = typeof careerAtlasAnswers.$inferSelect;

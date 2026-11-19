@@ -53,4 +53,19 @@ describe("AtlasExplorer", () => {
     expect(html).toContain("You said you&#x27;d rather explore: using math models");
     expect(html).not.toMatch(/\d+\s*%|fit score|points/i);
   });
+
+  it("shows saved choices: the chosen direction and the saved-answers note", () => {
+    const entry = atlasEntry(graph, { major: "Mechanical Engineering", majorSource: "catalog" });
+    const html = renderToStaticMarkup(
+      <AtlasExplorer
+        entry={entry}
+        dismissedRoles={[]}
+        initialFocus={null}
+        saved={{ available: true, interested: ["spec:cfd-simulation"], dismissed: [], pursuing: "spec:cfd-simulation", answers: {} }}
+      />,
+    );
+    expect(html).toContain("Your direction");
+    expect(html).toContain("CFD simulation");
+    expect(html).toContain("saved to your account");
+  });
 });

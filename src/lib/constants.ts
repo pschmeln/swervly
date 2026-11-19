@@ -39,6 +39,8 @@ export const ROUTES = {
   directionInterest: "/api/direction/interest",
   directionExplore: "/direction/explore",
   directionAtlas: "/direction/atlas",
+  atlasMarks: "/api/atlas/marks",
+  atlasAnswers: "/api/atlas/answers",
   feedback: "/feedback",
   feedbackApi: "/api/feedback",
   company: "/companies/[id]",
