@@ -7,7 +7,7 @@ import {
   stepOneErrors,
   type OnboardingDefaults,
 } from "@/features/profile/components/onboarding-flow";
-import { QUIZ_EXPLORATORY_DISCLAIMER } from "@/content/mini-ipip";
+import { QUIZ_INTRO } from "@/content/mini-ipip";
 import { ProfileInput } from "@/features/profile/schemas";
 import { MAJORS } from "@/lib/constants";
 
@@ -65,7 +65,7 @@ describe("data-use consent copy", () => {
       <OnboardingFlow initialStep={3} defaults={blankDefaults} />,
     );
     expect(quiz).toContain("About you");
-    expect(quiz).toContain(QUIZ_EXPLORATORY_DISCLAIMER);
+    expect(quiz).toContain(QUIZ_INTRO.replace("you'd", "you&#x27;d"));
     expect(quiz).not.toContain("O*NET");
   });
 });

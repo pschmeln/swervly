@@ -51,7 +51,8 @@ describe("public copy", () => {
     expect(text).toContain("turned on sharing");
     expect(text).toContain("Sharing is optional");
     expect(text).toContain("co-op experiences");
-    expect(text).toContain("exploratory");
+    expect(text).toContain("not a clinical or hiring assessment");
+    expect(text).not.toContain("not proof of career fit");
     expect(text).toContain("November 18, 2026");
     expect(text).not.toContain("only you can see your profile and co-op reviews");
     expect(text).not.toContain("for UC students");

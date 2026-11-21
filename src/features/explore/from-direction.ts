@@ -36,10 +36,10 @@ const ROLE_DIRECTORY: Record<string, readonly string[]> = {
 };
 
 const QUIZ_HEADLINE = "Take the quiz first.";
-const QUIZ_NOTE = "Direction is a guess from those answers.";
+const QUIZ_NOTE = "Direction matches roles to how you work.";
 const DISMISSED_NOTE = "You dismissed the current suggestions. You can change your major on your profile.";
 const PATHS_READY =
-  "These pathways are the suggestions already on Direction. Early hypotheses and student evidence stay separate.";
+  "These pathways are your Direction suggestions. Ones backed by student reviews say so.";
 const PATHS_QUIZ = "Career pathways show up here after you take the quiz.";
 const PATHS_DISMISSED = "No pathways are listed while those suggestions are dismissed.";
 const PATHS_INSUFFICIENT = "There is not enough information for a pathway yet.";
@@ -125,7 +125,7 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
     title: item.roleLabel,
     summary: item.reason,
     sourceLabel:
-      item.evidenceLabel?.trim() || (item.source === "similar_students" ? "Student evidence" : "Early hypothesis"),
+      item.evidenceLabel?.trim() || (item.source === "similar_students" ? "Backed by student reviews" : "Matched to your quiz and major"),
   }));
   const categories = overlapCategories(insufficient ? [] : pathways.map((path) => path.id));
 
