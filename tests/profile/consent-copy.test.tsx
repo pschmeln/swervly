@@ -23,7 +23,6 @@ const blankDefaults: OnboardingDefaults = {
   major: { source: "catalog", name: "" },
   exploringMajors: false,
   year: "",
-  coopTrack: "",
   goal: "",
   goalNotes: "",
   locationConstraint: "",
@@ -38,7 +37,6 @@ const readyWithoutShare: OnboardingDefaults = {
   major: { source: "catalog", name: MAJORS[0] },
   exploringMajors: false,
   year: "3",
-  coopTrack: "",
   goal: "industry",
   goalNotes: "",
   locationConstraint: "anywhere",
@@ -51,8 +49,9 @@ describe("data-use consent copy", () => {
     expect(DATA_USE_CONSENT_LABEL).not.toContain("company pages");
     expect(SHARE_REVIEWS_CONSENT_LABEL).toMatch(/^Optional:/);
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("anonymous company pages");
-    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("2 different students");
-    expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("3 different students");
+    // Pages need 2 students (since Nov 18, 2026); pay needs 3 (since Nov 21, 2026).
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("at least 2 different students in that major");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Pay ranges need 3 different students");
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Settings");
     expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("UC students");
     expect(SHARE_REVIEWS_CONSENT_LABEL).not.toContain("in the future");

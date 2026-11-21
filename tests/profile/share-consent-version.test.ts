@@ -14,7 +14,7 @@ describe("review sharing consent version 2 (2-student minimum)", () => {
   it("is version 2 and states the 2-student rule", () => {
     expect(SHARE_REVIEWS_CONSENT_VERSION).toBe(2);
     expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("at least 2 different students");
-    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Pay ranges need 2 different students");
+    expect(SHARE_REVIEWS_CONSENT_LABEL).toContain("Pay ranges need 3 different students");
   });
 
   it("stops counting consent given to the 3-student terms", () => {
