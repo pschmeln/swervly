@@ -58,16 +58,13 @@ const skillRow = {
 } as ActionSkillProgress;
 
 describe("Action client DTO contract", () => {
-  it("nests goal and uses ISO timestamps on plans", () => {
+  it("keeps flat goal fields and ISO timestamps for Peter UI", () => {
     const dto = toActionPlanDto(planRow);
-    expect(dto.goal).toEqual({
-      nodeId: "occ:onet:15-1252.00",
-      level: "occupation",
-      title: "Software Developers",
-      onetCode: "15-1252.00",
-      source: "manual",
-    });
-    expect(dto).not.toHaveProperty("goalNodeId");
+    expect(dto.goalNodeId).toBe("occ:onet:15-1252.00");
+    expect(dto.goalLevel).toBe("occupation");
+    expect(dto.goalTitle).toBe("Software Developers");
+    expect(dto.goalSource).toBe("manual");
+    expect(dto).not.toHaveProperty("goal");
     expect(dto.createdAt).toBe("2026-11-21T12:00:00.000Z");
     expect(dto.weeklyHours).toBe(10);
   });
@@ -79,10 +76,10 @@ describe("Action client DTO contract", () => {
     expect(dto.originKey).toBe("template:practice:1");
   });
 
-  it("maps skill_name to name for the client", () => {
+  it("exposes skillName for Peter UI (DB column name)", () => {
     const dto = toActionSkillDto(skillRow);
-    expect(dto.name).toBe("JavaScript");
-    expect(dto).not.toHaveProperty("skillName");
+    expect(dto.skillName).toBe("JavaScript");
+    expect(dto).not.toHaveProperty("name");
     expect(dto.progress).toBe("learning");
   });
 
@@ -93,7 +90,8 @@ describe("Action client DTO contract", () => {
       skills: [skillRow],
     });
     expect(bundle.plan.id).toBe(planRow.id);
+    expect(bundle.plan.goalNodeId).toBe(planRow.goalNodeId);
     expect(bundle.tasks).toHaveLength(1);
-    expect(bundle.skills[0]?.name).toBe("JavaScript");
+    expect(bundle.skills[0]?.skillName).toBe("JavaScript");
   });
 });

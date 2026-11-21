@@ -2,13 +2,18 @@ export { ActionAuthzError, allOwned, filterOwned, requireOwned } from "@/feature
 export { isMissingActionRelation, isUniqueViolation } from "@/features/action/db-errors";
 export {
   toActionPlanBundleDto,
+  toActionPlanBundleJson,
   toActionPlanDto,
   toActionSkillDto,
   toActionTaskDto,
   type ActionPlanBundleDto,
+  type ActionPlanBundleJson,
   type ActionPlanDto,
+  type ActionPlanJson,
   type ActionSkillDto,
+  type ActionSkillJson,
   type ActionTaskDto,
+  type ActionTaskJson,
 } from "@/features/action/dto";
 export { analyzeSkillTargets, openSkillTargets, progressLabel, MIN_OCCUPATIONS_FOR_SHARED } from "@/features/action/gap-analysis";
 export { isValidActionGoalId, resolveActionGoal, type ResolveActionGoalContext } from "@/features/action/goal";
