@@ -6,6 +6,8 @@ import { assessments, profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
+import { archetypeFor } from "@/features/profile/archetype";
+import { ArchetypeCard } from "@/features/profile/components/archetype-card";
 import { readTraits } from "@/features/profile/traits";
 import type { TraitScores } from "@/features/profile/scoring";
 import { TRAITS } from "@/content/mini-ipip";
@@ -55,9 +57,11 @@ export default async function ProfilePage() {
   const latest = assessmentRows[0];
   const parsedScores = latest?.instrument === INSTRUMENT ? scoresFrom(latest.scored) : null;
   const readings = parsedScores ? readTraits(parsedScores) : null;
+  const archetype = parsedScores ? archetypeFor(parsedScores) : null;
 
   return (
     <PageShell title="Profile">
+      {archetype ? <ArchetypeCard card={archetype} /> : null}
       {user.school ? (
         <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
       ) : null}

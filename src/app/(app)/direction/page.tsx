@@ -6,14 +6,21 @@ import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { loadDirection } from "@/features/direction/server";
+import { archetypeFor } from "@/features/profile/archetype";
+import { ArchetypeCard } from "@/features/profile/components/archetype-card";
 import { captureEvent } from "@/lib/analytics";
 import { requireOnboardedUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Direction" };
 
-export default async function DirectionPage() {
+export default async function DirectionPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await requireOnboardedUser();
+  const justFinishedQuiz = (await searchParams).quiz === "done";
   const direction = await loadDirection(user);
   if (!direction) {
     return (
@@ -37,6 +44,7 @@ export default async function DirectionPage() {
 
   return (
     <PageShell title="Direction">
+      {justFinishedQuiz ? <ArchetypeCard card={archetypeFor(direction.traits)} justFinished /> : null}
       <p className="text-neutral-700">{direction.label}</p>
       <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
       {direction.academic.visible ? (
