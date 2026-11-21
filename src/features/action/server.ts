@@ -10,6 +10,7 @@ import {
   type ActionTask,
   type User,
 } from "@/db/schema";
+import { isMissingActionRelation, isUniqueViolation } from "@/features/action/db-errors";
 import { resolveActionGoal } from "@/features/action/goal";
 import { reviseActivePlanSeed, seedAfterGoalChange } from "@/features/action/plan-change";
 import { defaultPlanningService } from "@/features/action/planning-service";
@@ -67,19 +68,30 @@ async function draftFor(
   });
 }
 
-async function resolveGoalFromInput(
+/**
+ * Resolve the goal. atlas_pursuing always comes from the server-side Atlas mark —
+ * never from a client-supplied occupation id.
+ */
+export async function resolveGoalFromInput(
   userId: string,
   input: SeedPlanInput["goal"] | ChangeGoalInput["goal"],
 ): Promise<ActionGoal> {
   if (input.mode === "atlas_pursuing") {
-    const pursuing = input.pursuingNodeId ?? (await loadAtlasState(userId)).pursuing;
-    const resolved = resolveActionGoal({ mode: "atlas_pursuing", pursuingNodeId: pursuing });
+    const pursuing = (await loadAtlasState(userId)).pursuing;
+    const resolved = resolveActionGoal({ mode: "atlas_pursuing" }, { atlasPursuing: pursuing });
     if (!resolved.ok) throw new ApiError(400, resolved.code, resolved.message);
     return resolved.goal;
   }
   const resolved = resolveActionGoal(input);
   if (!resolved.ok) throw new ApiError(400, resolved.code, resolved.message);
   return resolved.goal;
+}
+
+function mapUnavailable(error: unknown): never {
+  if (isMissingActionRelation(error)) {
+    throw new ApiError(503, "action_unavailable", "Action plans are not available on this database yet.");
+  }
+  throw error;
 }
 
 export async function getActivePlan(userId: string): Promise<ActionPlanBundle | null> {
@@ -104,10 +116,31 @@ export async function getActivePlan(userId: string): Promise<ActionPlanBundle | 
         .orderBy(asc(actionSkillProgress.skillName)),
     ]);
     return { plan, tasks, skills };
-  } catch {
-    // Migration not applied yet on this database.
-    throw new ApiError(503, "action_unavailable", "Action plans are not available on this database yet.");
+  } catch (error) {
+    mapUnavailable(error);
   }
+}
+
+/** Load a plan owned by the user (active or archived) for read-only paths. */
+export async function getOwnedPlan(userId: string, planId: string): Promise<ActionPlan | null> {
+  const [plan] = await db
+    .select()
+    .from(actionPlans)
+    .where(and(eq(actionPlans.userId, userId), eq(actionPlans.id, planId)))
+    .limit(1);
+  return plan ?? null;
+}
+
+async function requireActivePlanForMutableRow(
+  userId: string,
+  planId: string,
+): Promise<ActionPlan> {
+  const plan = await getOwnedPlan(userId, planId);
+  if (!plan) throw new ApiError(404, "not_found", "Plan not found.");
+  if (plan.status !== "active") {
+    throw new ApiError(409, "plan_archived", "Archived plans are read-only. Change the active plan instead.");
+  }
+  return plan;
 }
 
 function taskRowsFromDraft(
@@ -158,7 +191,34 @@ function skillRowsFromDraft(
   }));
 }
 
-/** Create the first active plan from a template seed. Fails if one already exists. */
+async function insertPlanBundle(
+  planRow: typeof actionPlans.$inferInsert,
+  tasks: (typeof actionTasks.$inferInsert)[],
+  skills: (typeof actionSkillProgress.$inferInsert)[],
+): Promise<void> {
+  try {
+    if (tasks.length > 0 && skills.length > 0) {
+      await db.batch([
+        db.insert(actionPlans).values(planRow),
+        db.insert(actionTasks).values(tasks),
+        db.insert(actionSkillProgress).values(skills),
+      ]);
+    } else if (tasks.length > 0) {
+      await db.batch([db.insert(actionPlans).values(planRow), db.insert(actionTasks).values(tasks)]);
+    } else if (skills.length > 0) {
+      await db.batch([db.insert(actionPlans).values(planRow), db.insert(actionSkillProgress).values(skills)]);
+    } else {
+      await db.insert(actionPlans).values(planRow);
+    }
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new ApiError(409, "plan_exists", "You already have an active plan. Change the goal or revise it instead.");
+    }
+    mapUnavailable(error);
+  }
+}
+
+/** Create the first active plan from a template seed. Concurrent seeds race on the one-active unique. */
 export async function seedActivePlan(user: User, input: SeedPlanInput): Promise<ActionPlanBundle> {
   const existing = await getActivePlan(user.id);
   if (existing) {
@@ -184,27 +244,14 @@ export async function seedActivePlan(user: User, input: SeedPlanInput): Promise<
   };
   const tasks = taskRowsFromDraft(user.id, planId, draft.tasks.slice(0, ACTION_LIMITS.maxTasksPerPlan), 0, now);
   const skills = skillRowsFromDraft(user.id, planId, draft.skills, now);
-
-  if (tasks.length > 0 && skills.length > 0) {
-    await db.batch([
-      db.insert(actionPlans).values(planRow),
-      db.insert(actionTasks).values(tasks),
-      db.insert(actionSkillProgress).values(skills),
-    ]);
-  } else if (tasks.length > 0) {
-    await db.batch([db.insert(actionPlans).values(planRow), db.insert(actionTasks).values(tasks)]);
-  } else if (skills.length > 0) {
-    await db.batch([db.insert(actionPlans).values(planRow), db.insert(actionSkillProgress).values(skills)]);
-  } else {
-    await db.insert(actionPlans).values(planRow);
-  }
-
+  await insertPlanBundle(planRow, tasks, skills);
   return { plan: planRow as ActionPlan, tasks: tasks as ActionTask[], skills: skills as ActionSkillProgress[] };
 }
 
 /**
- * Goal change: archive the active plan intact (tasks/skills stay on it). Seed a
- * new active plan from templates. Never copies skill progress across plans.
+ * Goal change: archive the active plan intact and insert a new active plan in one
+ * db.batch so a failed insert does not leave the student without an active plan
+ * (Neon HTTP batch is one request). Never copies skill progress across plans.
  */
 export async function changePlanGoal(user: User, input: ChangeGoalInput): Promise<ActionPlanBundle> {
   if (input.copySkillProgress) {
@@ -251,14 +298,21 @@ export async function changePlanGoal(user: User, input: ChangeGoalInput): Promis
     .where(and(eq(actionPlans.userId, user.id), eq(actionPlans.id, current.plan.id), eq(actionPlans.status, "active")));
   const insertPlan = db.insert(actionPlans).values(planRow);
 
-  if (tasks.length > 0 && skills.length > 0) {
-    await db.batch([archive, insertPlan, db.insert(actionTasks).values(tasks), db.insert(actionSkillProgress).values(skills)]);
-  } else if (tasks.length > 0) {
-    await db.batch([archive, insertPlan, db.insert(actionTasks).values(tasks)]);
-  } else if (skills.length > 0) {
-    await db.batch([archive, insertPlan, db.insert(actionSkillProgress).values(skills)]);
-  } else {
-    await db.batch([archive, insertPlan]);
+  try {
+    if (tasks.length > 0 && skills.length > 0) {
+      await db.batch([archive, insertPlan, db.insert(actionTasks).values(tasks), db.insert(actionSkillProgress).values(skills)]);
+    } else if (tasks.length > 0) {
+      await db.batch([archive, insertPlan, db.insert(actionTasks).values(tasks)]);
+    } else if (skills.length > 0) {
+      await db.batch([archive, insertPlan, db.insert(actionSkillProgress).values(skills)]);
+    } else {
+      await db.batch([archive, insertPlan]);
+    }
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new ApiError(409, "plan_exists", "You already have an active plan. Refresh and try again.");
+    }
+    mapUnavailable(error);
   }
 
   return { plan: planRow as ActionPlan, tasks: tasks as ActionTask[], skills: skills as ActionSkillProgress[] };
@@ -290,7 +344,7 @@ export async function reviseActivePlan(user: User): Promise<ActionPlanBundle> {
   const touch = db
     .update(actionPlans)
     .set({ updatedAt: now })
-    .where(and(eq(actionPlans.userId, user.id), eq(actionPlans.id, current.plan.id)));
+    .where(and(eq(actionPlans.userId, user.id), eq(actionPlans.id, current.plan.id), eq(actionPlans.status, "active")));
 
   if (taskRows.length > 0 && skillRows.length > 0) {
     await db.batch([db.insert(actionTasks).values(taskRows), db.insert(actionSkillProgress).values(skillRows), touch]);
@@ -315,7 +369,7 @@ export async function updateActivePlan(userId: string, input: UpdatePlanInput): 
   await db
     .update(actionPlans)
     .set(patch)
-    .where(and(eq(actionPlans.userId, userId), eq(actionPlans.id, current.plan.id)));
+    .where(and(eq(actionPlans.userId, userId), eq(actionPlans.id, current.plan.id), eq(actionPlans.status, "active")));
   return { ...current.plan, ...patch };
 }
 
@@ -355,6 +409,7 @@ export async function updateTask(userId: string, taskId: string, input: UpdateTa
     .where(and(eq(actionTasks.userId, userId), eq(actionTasks.id, taskId)))
     .limit(1);
   if (!existing) throw new ApiError(404, "not_found", "Task not found.");
+  await requireActivePlanForMutableRow(userId, existing.planId);
 
   const now = new Date();
   const nextStatus: TaskStatus | undefined = input.status;
@@ -381,6 +436,14 @@ export async function updateTask(userId: string, taskId: string, input: UpdateTa
 }
 
 export async function deleteTask(userId: string, taskId: string): Promise<void> {
+  const [existing] = await db
+    .select()
+    .from(actionTasks)
+    .where(and(eq(actionTasks.userId, userId), eq(actionTasks.id, taskId)))
+    .limit(1);
+  if (!existing) throw new ApiError(404, "not_found", "Task not found.");
+  await requireActivePlanForMutableRow(userId, existing.planId);
+
   const removed = await db
     .delete(actionTasks)
     .where(and(eq(actionTasks.userId, userId), eq(actionTasks.id, taskId)))
@@ -399,6 +462,7 @@ export async function updateSkillProgress(
     .where(and(eq(actionSkillProgress.userId, userId), eq(actionSkillProgress.id, skillId)))
     .limit(1);
   if (!existing) throw new ApiError(404, "not_found", "Skill progress not found.");
+  await requireActivePlanForMutableRow(userId, existing.planId);
 
   const now = new Date();
   await db
@@ -409,6 +473,10 @@ export async function updateSkillProgress(
   return { ...existing, progress: input.progress, updatedAt: now };
 }
 
+/**
+ * Account export. Missing Action tables (pre-0009) → empty arrays.
+ * Any other database failure propagates so export does not silently drop data.
+ */
 export async function exportActionData(userId: string): Promise<{
   plans: ActionPlan[];
   tasks: ActionTask[];
@@ -425,8 +493,11 @@ export async function exportActionData(userId: string): Promise<{
         .orderBy(asc(actionSkillProgress.skillName)),
     ]);
     return { plans, tasks, skillProgress };
-  } catch {
-    return { plans: [], tasks: [], skillProgress: [] };
+  } catch (error) {
+    if (isMissingActionRelation(error)) {
+      return { plans: [], tasks: [], skillProgress: [] };
+    }
+    throw error;
   }
 }
 

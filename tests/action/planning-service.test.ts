@@ -7,7 +7,7 @@ const graph = atlasGraph();
 
 describe("TemplatePlanningService", () => {
   it("drafts a plan without calling any AI provider", async () => {
-    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
+    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, { graph });
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
 
@@ -27,7 +27,10 @@ describe("TemplatePlanningService", () => {
   });
 
   it("is deterministic for the same goal", async () => {
-    const resolved = resolveActionGoal({ mode: "atlas_pursuing", pursuingNodeId: "spec:test-validation" }, graph);
+    const resolved = resolveActionGoal(
+      { mode: "atlas_pursuing" },
+      { graph, atlasPursuing: "spec:test-validation" },
+    );
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
     const service = new TemplatePlanningService(graph);

@@ -200,7 +200,7 @@ describe("Action plan APIs", () => {
 
 describe("Action task/skill APIs authz", () => {
   it("updates a task only when user_id matches the signed-in student", async () => {
-    captured.rows = [[taskRow()]];
+    captured.rows = [[taskRow()], [activePlanRow()]];
     const response = await call(patchTask, "PATCH", { status: "done", userId: OTHER_USER }, { id: TASK_ID });
     expect(response.status).toBe(200);
     expectScopedToCurrentUser();
@@ -208,15 +208,15 @@ describe("Action task/skill APIs authz", () => {
   });
 
   it("deletes a task scoped to the signed-in user", async () => {
-    captured.rows = [[[TASK_ID]]];
+    captured.rows = [[taskRow()], [activePlanRow()], [[TASK_ID]]];
     const response = await call(deleteTaskRoute, "DELETE", undefined, { id: TASK_ID });
     expect(response.status).toBe(200);
     expectScopedToCurrentUser();
-    expect(actionStatements()[0].sql).toMatch(/^delete from "action_tasks"/i);
+    expect(actionStatements().some((statement) => /^delete from "action_tasks"/i.test(statement.sql))).toBe(true);
   });
 
   it("updates skill progress scoped to the signed-in user", async () => {
-    captured.rows = [[skillRow()]];
+    captured.rows = [[skillRow()], [activePlanRow()]];
     const response = await call(patchSkill, "PATCH", { progress: "learning" }, { id: SKILL_ID });
     expect(response.status).toBe(200);
     expectScopedToCurrentUser();

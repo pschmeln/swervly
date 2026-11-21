@@ -1,6 +1,7 @@
 export { ActionAuthzError, allOwned, filterOwned, requireOwned } from "@/features/action/authz";
+export { isMissingActionRelation, isUniqueViolation } from "@/features/action/db-errors";
 export { analyzeSkillTargets, openSkillTargets, progressLabel, MIN_OCCUPATIONS_FOR_SHARED } from "@/features/action/gap-analysis";
-export { isValidActionGoalId, resolveActionGoal } from "@/features/action/goal";
+export { isValidActionGoalId, resolveActionGoal, type ResolveActionGoalContext } from "@/features/action/goal";
 export { reviseActivePlanSeed, seedAfterGoalChange } from "@/features/action/plan-change";
 export {
   defaultPlanningService,
@@ -24,6 +25,8 @@ export {
   deleteTask,
   exportActionData,
   getActivePlan,
+  getOwnedPlan,
+  resolveGoalFromInput,
   reviseActivePlan,
   seedActivePlan,
   updateActivePlan,

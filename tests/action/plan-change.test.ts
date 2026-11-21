@@ -8,8 +8,8 @@ const graph = atlasGraph();
 
 describe("seedAfterGoalChange", () => {
   it("seeds a fresh plan only — does not carry completed tasks from the old goal", async () => {
-    const firstGoal = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
-    const secondGoal = resolveActionGoal({ mode: "manual", nodeId: "spec:test-validation" }, graph);
+    const firstGoal = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, { graph });
+    const secondGoal = resolveActionGoal({ mode: "manual", nodeId: "spec:test-validation" }, { graph });
     expect(firstGoal.ok && secondGoal.ok).toBe(true);
     if (!firstGoal.ok || !secondGoal.ok) return;
 
@@ -31,7 +31,7 @@ describe("seedAfterGoalChange", () => {
 
 describe("reviseActivePlanSeed", () => {
   it("preserves existing origin_keys and only inserts missing template rows", async () => {
-    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
+    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, { graph });
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
     const draft = await new TemplatePlanningService(graph).draftPlan({

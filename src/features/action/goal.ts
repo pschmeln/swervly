@@ -7,6 +7,15 @@ export type GoalResolveResult =
   | { ok: true; goal: ActionGoal }
   | { ok: false; code: "no_pursuing" | "unknown_node" | "invalid_level"; message: string };
 
+export type ResolveActionGoalContext = {
+  graph?: AtlasGraph;
+  /**
+   * Server-loaded Atlas pursuing mark. Required when input.mode is atlas_pursuing.
+   * Never taken from the client request body.
+   */
+  atlasPursuing?: string | null;
+};
+
 function buildGoal(
   graph: AtlasGraph,
   nodeId: AtlasNodeId,
@@ -39,21 +48,22 @@ function buildGoal(
 
 /**
  * Resolve the Action goal from Atlas pursuing (preferred) or a manual pick.
- * Does not write marks — manual choice is Action-local until persistence exists.
+ * atlas_pursuing uses context.atlasPursuing only — never a client occupation id.
  */
 export function resolveActionGoal(
   input: ResolveGoalInput,
-  graph: AtlasGraph = atlasGraph(),
+  context: ResolveActionGoalContext = {},
 ): GoalResolveResult {
+  const graph = context.graph ?? atlasGraph();
   if (input.mode === "atlas_pursuing") {
-    if (!input.pursuingNodeId) {
+    if (!context.atlasPursuing) {
       return {
         ok: false,
         code: "no_pursuing",
         message: "No direction is set on the career map yet. Pick a goal here, or set one in Atlas.",
       };
     }
-    return buildGoal(graph, input.pursuingNodeId as AtlasNodeId, "atlas_pursuing");
+    return buildGoal(graph, context.atlasPursuing as AtlasNodeId, "atlas_pursuing");
   }
   return buildGoal(graph, input.nodeId as AtlasNodeId, "manual");
 }

@@ -13,12 +13,10 @@ import type { ActionGoal } from "@/features/action/types";
 const graph = atlasGraph();
 
 function goal(nodeId: string, source: ActionGoal["source"] = "manual"): ActionGoal {
-  const result = resolveActionGoal(
+  const result =
     source === "atlas_pursuing"
-      ? { mode: "atlas_pursuing", pursuingNodeId: nodeId }
-      : { mode: "manual", nodeId },
-    graph,
-  );
+      ? resolveActionGoal({ mode: "atlas_pursuing" }, { graph, atlasPursuing: nodeId })
+      : resolveActionGoal({ mode: "manual", nodeId }, { graph });
   if (!result.ok) throw new Error(result.message);
   return result.goal;
 }

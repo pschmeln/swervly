@@ -7,7 +7,7 @@ const graph = atlasGraph();
 
 describe("templateTasks", () => {
   it("seeds O*NET practice tasks for an occupation plus phased editorial steps", () => {
-    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
+    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, { graph });
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
     const tasks = templateTasks(resolved.goal);
@@ -24,7 +24,7 @@ describe("templateTasks", () => {
   });
 
   it("does not invent O*NET task mirrors for a specialization goal", () => {
-    const resolved = resolveActionGoal({ mode: "manual", nodeId: "spec:test-validation" }, graph);
+    const resolved = resolveActionGoal({ mode: "manual", nodeId: "spec:test-validation" }, { graph });
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
     const tasks = templateTasks(resolved.goal);

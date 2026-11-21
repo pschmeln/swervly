@@ -10,7 +10,7 @@ const FAMILY = "fam:finance";
 
 describe("resolveActionGoal", () => {
   it("uses Atlas pursuing when present", () => {
-    const result = resolveActionGoal({ mode: "atlas_pursuing", pursuingNodeId: OCC }, graph);
+    const result = resolveActionGoal({ mode: "atlas_pursuing" }, { graph, atlasPursuing: OCC });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.goal).toMatchObject({
@@ -23,29 +23,31 @@ describe("resolveActionGoal", () => {
   });
 
   it("allows a manual specialization when the student has no pursuing mark", () => {
-    const noPursuing = resolveActionGoal({ mode: "atlas_pursuing", pursuingNodeId: null }, graph);
+    const noPursuing = resolveActionGoal({ mode: "atlas_pursuing" }, { graph, atlasPursuing: null });
     expect(noPursuing).toMatchObject({ ok: false, code: "no_pursuing" });
 
-    const manual = resolveActionGoal({ mode: "manual", nodeId: SPEC }, graph);
+    const manual = resolveActionGoal({ mode: "manual", nodeId: SPEC }, { graph });
     expect(manual.ok).toBe(true);
     if (!manual.ok) return;
     expect(manual.goal).toMatchObject({ nodeId: SPEC, level: "specialization", source: "manual", onetCode: null });
   });
 
   it("refuses families, domains, and unknown ids", () => {
-    expect(resolveActionGoal({ mode: "manual", nodeId: FAMILY }, graph)).toMatchObject({
+    expect(resolveActionGoal({ mode: "manual", nodeId: FAMILY }, { graph })).toMatchObject({
       ok: false,
       code: "invalid_level",
     });
-    expect(resolveActionGoal({ mode: "manual", nodeId: "occ:onet:00-0000.00" }, graph)).toMatchObject({
+    expect(resolveActionGoal({ mode: "manual", nodeId: "occ:onet:00-0000.00" }, { graph })).toMatchObject({
       ok: false,
       code: "unknown_node",
     });
   });
 
-  it("validates zod input shapes", () => {
+  it("validates zod input shapes and refuses a client node on atlas_pursuing", () => {
     expect(ResolveGoalInput.parse({ mode: "manual", nodeId: OCC }).mode).toBe("manual");
+    expect(ResolveGoalInput.parse({ mode: "atlas_pursuing" }).mode).toBe("atlas_pursuing");
     expect(() => ResolveGoalInput.parse({ mode: "manual", nodeId: FAMILY })).toThrow();
+    expect(() => ResolveGoalInput.parse({ mode: "atlas_pursuing", pursuingNodeId: OCC })).toThrow();
     expect(isValidActionGoalId(OCC, graph)).toBe(true);
     expect(isValidActionGoalId(FAMILY, graph)).toBe(false);
   });

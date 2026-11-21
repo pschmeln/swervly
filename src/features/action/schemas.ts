@@ -26,11 +26,16 @@ export const SkillProgressSchema = z.enum(SKILL_PROGRESS);
 export const SkillScopeSchema = z.enum(SKILL_SCOPES);
 export const EvidenceLevelSchema = z.enum(EVIDENCE_LEVELS);
 
+/**
+ * atlas_pursuing: server loads the saved Atlas mark — clients must not send a node id.
+ * manual: client picks a specialization or occupation explicitly.
+ */
 export const ResolveGoalInput = z.discriminatedUnion("mode", [
-  z.object({
-    mode: z.literal("atlas_pursuing"),
-    pursuingNodeId: AtlasGoalNodeId.nullable(),
-  }),
+  z
+    .object({
+      mode: z.literal("atlas_pursuing"),
+    })
+    .strict(),
   z.object({
     mode: z.literal("manual"),
     nodeId: AtlasGoalNodeId,
