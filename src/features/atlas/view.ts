@@ -325,7 +325,7 @@ export type CompareModel = {
   sharedAreas: string[];
 };
 
-function compareSide(graph: AtlasGraph, id: AtlasNodeId): CompareSide | null {
+export function compareSide(graph: AtlasGraph, id: AtlasNodeId): CompareSide | null {
   const occupation = graph.data.occupations.find((item) => item.id === id);
   if (!occupation) return null;
   const record = ONET_DETAILS[occupation.onetCode];
