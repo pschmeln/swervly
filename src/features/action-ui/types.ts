@@ -1,12 +1,11 @@
 /**
- * Structural copy of the Action plan JSON from PR #50's ActionPlanBundle.
- * Over HTTP, createdAt / updatedAt / completedAt are ISO strings and dueOn is
- * YYYY-MM-DD. The adapter also accepts Date objects and normalizes them.
+ * Mirror of the client-safe Action DTOs in src/features/action/dto.ts at PR #50
+ * commit 20edb66 (dto.ts@20edb66). Timestamps are ISO-8601 strings. dueOn is
+ * YYYY-MM-DD or null. The goal is nested. Skill display name is `name`.
  *
- * TODO: replace this declaration with Ziang's client-safe wire type once PR #50
- * exports it (dates as strings). Swap point is the export at the bottom of this
- * file — change that one line to:
- * export type { ActionPlanBundleJson } from "@/features/action/wire";
+ * TODO: once PR #50 merges, delete the local DTO declarations below and replace
+ * them with:
+ * export type { ActionPlanDto, ActionTaskDto, ActionSkillDto, ActionPlanBundleDto } from "@/features/action/dto";
  */
 
 export const GOAL_LEVELS = ["specialization", "occupation"] as const;
@@ -33,24 +32,31 @@ export type SkillScope = (typeof SKILL_SCOPES)[number];
 export const EVIDENCE_LEVELS = ["known", "suggested", "unknown"] as const;
 export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
 
-export type WireDate = string | Date;
+export type SkillSourceKind = "onet" | "editorial";
 
-export type ActionPlanJson = {
-  id: string;
-  userId: string;
-  goalNodeId: string;
-  goalLevel: GoalLevel;
-  goalTitle: string;
-  goalSource: GoalSource;
-  draftSource: "template_v1";
-  status: "active" | "archived";
-  weeklyHours: number | null;
-  horizonWeeks: number | null;
-  createdAt: WireDate;
-  updatedAt: WireDate;
+/** Nested career goal. nodeId and onetCode travel with title, level, and source. */
+export type ActionGoalDto = {
+  nodeId: string;
+  level: GoalLevel;
+  title: string;
+  /** Present when level is occupation. Null for a specialization. */
+  onetCode: string | null;
+  source: GoalSource;
 };
 
-export type ActionTaskJson = {
+export type ActionPlanDto = {
+  id: string;
+  userId: string;
+  goal: ActionGoalDto;
+  status: "active" | "archived";
+  draftSource: "template_v1";
+  weeklyHours: number | null;
+  horizonWeeks: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ActionTaskDto = {
   id: string;
   planId: string;
   userId: string;
@@ -58,40 +64,36 @@ export type ActionTaskJson = {
   description: string | null;
   phase: TaskPhase | null;
   status: TaskStatus;
-  sortOrder: number;
   origin: TaskOrigin;
   originKey: string | null;
   explanation: string;
+  sortOrder: number;
   dueOn: string | null;
-  completedAt: WireDate | null;
-  createdAt: WireDate;
-  updatedAt: WireDate;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
-export type ActionSkillJson = {
+export type ActionSkillDto = {
   id: string;
   planId: string;
   userId: string;
-  skillName: string;
+  name: string;
   scope: SkillScope;
   evidence: EvidenceLevel;
-  skillSource: "onet" | "editorial";
+  skillSource: SkillSourceKind;
   progress: SkillProgress;
   originKey: string;
   explanation: string;
-  createdAt: WireDate;
-  updatedAt: WireDate;
+  createdAt: string;
+  updatedAt: string;
 };
 
-type ActionPlanBundleJsonLocal = {
-  plan: ActionPlanJson;
-  tasks: ActionTaskJson[];
-  skills: ActionSkillJson[];
+export type ActionPlanBundleDto = {
+  plan: ActionPlanDto;
+  tasks: ActionTaskDto[];
+  skills: ActionSkillDto[];
 };
-
-// TODO: one-line swap once PR #50 exports the client-safe wire type (dates as strings):
-// export type { ActionPlanBundleJson } from "@/features/action/wire";
-export type ActionPlanBundleJson = ActionPlanBundleJsonLocal;
 
 /** Career the student marked as pursuing on the career map. The id stays on the server. */
 export type PursuingDisplay = {

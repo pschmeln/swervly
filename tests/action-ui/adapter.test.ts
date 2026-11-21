@@ -15,16 +15,30 @@ import { ACTION_API } from "@/features/action-ui/paths";
 import type { DashboardLoad, TaskPatch } from "@/features/action-ui/types";
 
 describe("wire adapter", () => {
-  it("drops userId and accepts Date timestamps", () => {
+  it("reads the nested goal and skill name, and drops userId", () => {
     const bundle = filledBundle();
     bundle.plan.userId = "secret-user";
-    bundle.plan.createdAt = new Date("2026-01-02T00:00:00.000Z");
     bundle.tasks[0].userId = "secret-user";
-    bundle.tasks[0].completedAt = new Date("2026-11-18T16:00:00.000Z");
+    bundle.skills[0].userId = "secret-user";
     const view = toDashboard(bundle);
     expect(view?.goalTitle).toBe("Software Developers");
-    expect(view?.tasks[0].completedAt).toBe("2026-11-18T16:00:00.000Z");
+    expect(view?.goalLevel).toBe("occupation");
+    expect(view?.goalSource).toBe("manual");
+    expect(bundle.plan.goal.nodeId).toBe("occ:onet:15-1252.00");
+    expect(bundle.plan.goal.onetCode).toBe("15-1252.00");
+    expect(view?.skills.map((skill) => skill.name)).toContain("Programming");
+    expect(view?.tasks[0].completedAt).toBeNull();
     expect(JSON.stringify(view)).not.toContain("secret-user");
+    expect(JSON.stringify(bundle.skills[0])).toContain("\"name\":\"Programming\"");
+    expect(JSON.stringify(bundle.plan.goal)).not.toContain("goalTitle");
+  });
+
+  it("rejects the old flat goal and skillName fields", () => {
+    const bundle = filledBundle();
+    const flat = { ...bundle.plan, goal: undefined } as unknown as typeof bundle.plan;
+    expect(toDashboard({ ...bundle, plan: flat })).toBeNull();
+    const skill = { ...bundle.skills[0], name: undefined } as unknown as (typeof bundle.skills)[0];
+    expect(toDashboard({ ...bundle, skills: [skill] })).toBeNull();
   });
 
   it("returns null for an empty plan response and for a broken bundle", () => {

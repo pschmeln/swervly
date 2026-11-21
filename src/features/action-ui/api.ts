@@ -21,10 +21,10 @@ import { freshDashboard } from "@/features/action-ui/mock";
 import { ACTION_API } from "@/features/action-ui/paths";
 import type { ActionDataSource } from "@/features/action-ui/source";
 import type {
-  ActionPlanBundleJson,
-  ActionPlanJson,
-  ActionSkillJson,
-  ActionTaskJson,
+  ActionPlanBundleDto,
+  ActionPlanDto,
+  ActionSkillDto,
+  ActionTaskDto,
   DashboardLoad,
   DashboardView,
   PursuingDisplay,
@@ -135,18 +135,18 @@ function succeed(load: DashboardLoad): DispatchResult {
 function applySuccess(load: DashboardLoad, retry: RetryAction, data: unknown): DispatchResult {
   if (retry.kind === "reload" || retry.kind === "seed-atlas" || retry.kind === "seed-manual" || retry.kind === "change-goal-atlas" || retry.kind === "change-goal-manual") {
     if (data == null) return succeed({ status: "empty" });
-    const dashboard = toDashboard(data as ActionPlanBundleJson);
+    const dashboard = toDashboard(data as ActionPlanBundleDto);
     return dashboard ? succeed(ready(dashboard)) : fail(load, NOTHING_SAVED);
   }
   if (load.status !== "ready") return fail(load, NOTHING_SAVED);
   const dashboard = load.dashboard;
   if (retry.kind === "settings") {
-    const plan = data && typeof data === "object" && "plan" in data ? (data as { plan: ActionPlanJson }).plan : null;
+    const plan = data && typeof data === "object" && "plan" in data ? (data as { plan: ActionPlanDto }).plan : null;
     const next = plan ? applyPlan(dashboard, plan) : null;
     return next ? succeed(ready(next)) : fail(load, NOTHING_SAVED);
   }
   if (retry.kind === "add-task" || retry.kind === "update-task") {
-    const raw = data && typeof data === "object" && "task" in data ? (data as { task: ActionTaskJson }).task : null;
+    const raw = data && typeof data === "object" && "task" in data ? (data as { task: ActionTaskDto }).task : null;
     const task = raw ? toTaskView(raw) : null;
     return task ? succeed(ready(upsertTask(dashboard, task))) : fail(load, NOTHING_SAVED);
   }
@@ -154,7 +154,7 @@ function applySuccess(load: DashboardLoad, retry: RetryAction, data: unknown): D
     const deleted = data && typeof data === "object" && "deleted" in data && (data as { deleted: unknown }).deleted === true;
     return deleted ? succeed(ready(removeTask(dashboard, retry.id))) : fail(load, NOTHING_SAVED);
   }
-  const raw = data && typeof data === "object" && "skill" in data ? (data as { skill: ActionSkillJson }).skill : null;
+  const raw = data && typeof data === "object" && "skill" in data ? (data as { skill: ActionSkillDto }).skill : null;
   const skill = raw ? toSkillView(raw) : null;
   if (!skill || skill.id !== retry.id) return fail(load, NOTHING_SAVED);
   return succeed(ready(upsertSkill(dashboard, skill)));

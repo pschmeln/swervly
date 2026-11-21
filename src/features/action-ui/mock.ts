@@ -1,8 +1,8 @@
 import { toDashboard } from "@/features/action-ui/adapter";
 import type { ActionPreview } from "@/features/action-ui/source";
 import type {
-  ActionPlanBundleJson,
-  ActionTaskJson,
+  ActionPlanBundleDto,
+  ActionTaskDto,
   DashboardLoad,
   DashboardView,
   GoalLevel,
@@ -24,11 +24,11 @@ const NOW_ISO = "2026-11-01T15:00:00.000Z";
 const PRACTICE_NOTE = "Adapted from an O*NET important task for Software Developers. Practice idea only — not a job duty.";
 const SKILL_NOTE = "O*NET lists this among the standout skills for Software Developers.";
 
-function task(partial: Omit<ActionTaskJson, "planId" | "userId" | "createdAt" | "updatedAt"> & { createdAt?: string }): ActionTaskJson {
+function task(partial: Omit<ActionTaskDto, "planId" | "userId" | "createdAt" | "updatedAt">): ActionTaskDto {
   return {
     planId: PLAN_ID,
     userId: USER_ID,
-    createdAt: partial.createdAt ?? NOW_ISO,
+    createdAt: NOW_ISO,
     updatedAt: NOW_ISO,
     ...partial,
   };
@@ -39,7 +39,7 @@ function task(partial: Omit<ActionTaskJson, "planId" | "userId" | "createdAt" | 
  * the O*NET 31.0 strings already stored for Software Developers (15-1252.00).
  * completedAt values are placed relative to `now` so the week summary stays true.
  */
-export function filledBundle(now: Date = new Date(), timeZone: string = studentTimeZone()): ActionPlanBundleJson {
+export function filledBundle(now: Date = new Date(), timeZone: string = studentTimeZone()): ActionPlanBundleDto {
   const { start } = localWeekRange(now, timeZone);
   const thisWeek = new Date(start.getTime() + 2 * 60 * 60 * 1000).toISOString();
   const older = new Date(start.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString();
@@ -47,10 +47,13 @@ export function filledBundle(now: Date = new Date(), timeZone: string = studentT
     plan: {
       id: PLAN_ID,
       userId: USER_ID,
-      goalNodeId: "occ:onet:15-1252.00",
-      goalLevel: "occupation",
-      goalTitle: "Software Developers",
-      goalSource: "manual",
+      goal: {
+        nodeId: "occ:onet:15-1252.00",
+        level: "occupation",
+        title: "Software Developers",
+        onetCode: "15-1252.00",
+        source: "manual",
+      },
       draftSource: "template_v1",
       status: "active",
       weeklyHours: 5,
@@ -156,7 +159,7 @@ export function filledBundle(now: Date = new Date(), timeZone: string = studentT
         id: "33333333-3333-4333-8333-333333333331",
         planId: PLAN_ID,
         userId: USER_ID,
-        skillName: "Programming",
+        name: "Programming",
         scope: "shared",
         evidence: "known",
         skillSource: "onet",
@@ -170,7 +173,7 @@ export function filledBundle(now: Date = new Date(), timeZone: string = studentT
         id: "33333333-3333-4333-8333-333333333332",
         planId: PLAN_ID,
         userId: USER_ID,
-        skillName: "Technology Design",
+        name: "Technology Design",
         scope: "shared",
         evidence: "known",
         skillSource: "onet",
@@ -184,7 +187,7 @@ export function filledBundle(now: Date = new Date(), timeZone: string = studentT
         id: "33333333-3333-4333-8333-333333333333",
         planId: PLAN_ID,
         userId: USER_ID,
-        skillName: "Systems Analysis",
+        name: "Systems Analysis",
         scope: "shared",
         evidence: "known",
         skillSource: "onet",
@@ -198,7 +201,7 @@ export function filledBundle(now: Date = new Date(), timeZone: string = studentT
   };
 }
 
-export function gapBundle(now: Date = new Date(), timeZone: string = studentTimeZone()): ActionPlanBundleJson {
+export function gapBundle(now: Date = new Date(), timeZone: string = studentTimeZone()): ActionPlanBundleDto {
   const filled = filledBundle(now, timeZone);
   return {
     ...filled,
@@ -207,7 +210,7 @@ export function gapBundle(now: Date = new Date(), timeZone: string = studentTime
         id: "33333333-3333-4333-8333-333333333339",
         planId: PLAN_ID,
         userId: USER_ID,
-        skillName: "Skills not listed yet",
+        name: "Skills not listed yet",
         scope: "optional_exploration",
         evidence: "unknown",
         skillSource: "editorial",

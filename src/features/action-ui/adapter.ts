@@ -1,9 +1,9 @@
 import { ACTION_LIMITS } from "@/features/action-ui/limits";
 import type {
-  ActionPlanBundleJson,
-  ActionPlanJson,
-  ActionSkillJson,
-  ActionTaskJson,
+  ActionPlanBundleDto,
+  ActionPlanDto,
+  ActionSkillDto,
+  ActionTaskDto,
   DashboardView,
   EvidenceLevel,
   GoalLevel,
@@ -57,7 +57,7 @@ function asText(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
-export function toTaskView(raw: ActionTaskJson): TaskView | null {
+export function toTaskView(raw: ActionTaskDto): TaskView | null {
   const title = asText(raw.title);
   const status = asText(raw.status);
   const origin = asText(raw.origin);
@@ -80,9 +80,9 @@ export function toTaskView(raw: ActionTaskJson): TaskView | null {
   };
 }
 
-export function toSkillView(raw: ActionSkillJson): SkillView | null {
+export function toSkillView(raw: ActionSkillDto): SkillView | null {
   const id = asText(raw.id);
-  const name = asText(raw.skillName);
+  const name = asText(raw.name);
   const scope = asText(raw.scope);
   const evidence = asText(raw.evidence);
   const progress = asText(raw.progress);
@@ -103,14 +103,17 @@ export function toSkillView(raw: ActionSkillJson): SkillView | null {
 }
 
 /** Drop userId and normalize dates. Returns null when the bundle is not a plan. */
-export function toDashboard(bundle: ActionPlanBundleJson | null | undefined): DashboardView | null {
-  if (!bundle || typeof bundle !== "object" || !bundle.plan) return null;
+export function toDashboard(bundle: ActionPlanBundleDto | null | undefined): DashboardView | null {
+  if (!bundle || typeof bundle !== "object" || !bundle.plan?.goal) return null;
   const plan = bundle.plan;
-  const level = asText(plan.goalLevel);
-  const source = asText(plan.goalSource);
-  const title = asText(plan.goalTitle);
+  const goal = plan.goal;
+  const level = asText(goal.level);
+  const source = asText(goal.source);
+  const title = asText(goal.title);
+  const nodeId = asText(goal.nodeId);
   const id = asText(plan.id);
-  if (!id || !title || !level || !GOAL_LEVELS.has(level) || !source || !GOAL_SOURCES.has(source)) return null;
+  if (!id || !title || !nodeId || !level || !GOAL_LEVELS.has(level) || !source || !GOAL_SOURCES.has(source)) return null;
+  if (goal.onetCode != null && typeof goal.onetCode !== "string") return null;
   if (!Array.isArray(bundle.tasks) || !Array.isArray(bundle.skills)) return null;
   const tasks = bundle.tasks.map((task) => toTaskView(task)).filter((task): task is TaskView => task != null);
   const skills = bundle.skills.map((skill) => toSkillView(skill)).filter((skill): skill is SkillView => skill != null);
@@ -146,7 +149,7 @@ export function upsertSkill(dashboard: DashboardView, skill: SkillView): Dashboa
   };
 }
 
-export function applyPlan(dashboard: DashboardView, plan: ActionPlanJson): DashboardView | null {
+export function applyPlan(dashboard: DashboardView, plan: ActionPlanDto): DashboardView | null {
   const next = toDashboard({ plan, tasks: [], skills: [] });
   if (!next) return null;
   return {

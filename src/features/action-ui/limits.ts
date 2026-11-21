@@ -1,6 +1,8 @@
 /**
- * Must match ACTION_LIMITS in src/features/action/types.ts (PR #50).
- * Switch to that shared constant once #50 merges:
+ * Mirror of ACTION_LIMITS in src/features/action/types.ts at PR #50 commit 20edb66
+ * (dto.ts@20edb66 lives beside that constant).
+ *
+ * TODO: once PR #50 merges, replace this declaration with:
  * export { ACTION_LIMITS } from "@/features/action/types";
  */
 export const ACTION_LIMITS = {

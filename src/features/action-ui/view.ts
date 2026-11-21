@@ -38,6 +38,9 @@ export const PHASES: readonly { id: TaskPhase; label: string }[] = [
 export const GOAL_CHANGE_WARNING =
   "This replaces your active plan. The plan you have now is kept as history and won't show here. The new plan starts with new steps, and skill ratings start over as not yet assessed.";
 
+/** Blank hours or horizon on a goal change keep the previous plan's settings. */
+export const GOAL_CHANGE_CARRYOVER = "Your current hours and horizon carry over unless you change them.";
+
 const PROGRESS_ORDER: readonly SkillProgress[] = ["comfortable", "learning", "unrated"];
 
 export function showsAsSaved(status: "idle" | "saving" | "saved" | "error"): boolean {

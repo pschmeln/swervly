@@ -2,10 +2,11 @@ import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PageShell } from "@/components/ui";
+import { GoalPicker } from "@/features/action-ui/components/goal-picker";
 import { ActionDashboard } from "@/features/action-ui/dashboard";
 import { filledDashboard, gapBundle, MOCK_PURSUING } from "@/features/action-ui/mock";
 import { toDashboard } from "@/features/action-ui/adapter";
-import { ACTION_UNAVAILABLE_MESSAGE, NO_PURSUING_MESSAGE, PROGRESS_COPY, READINESS_NOTE } from "@/features/action-ui/view";
+import { ACTION_UNAVAILABLE_MESSAGE, GOAL_CHANGE_CARRYOVER, NO_PURSUING_MESSAGE, PROGRESS_COPY, READINESS_NOTE } from "@/features/action-ui/view";
 
 const now = new Date("2026-11-18T15:00:00.000Z");
 
@@ -119,6 +120,27 @@ describe("Action dashboard", () => {
     expect(html).toContain('role="status"');
     expect(text(html)).toContain("Saved.");
     expect(html).not.toContain('role="alert"');
+  });
+
+  it("tells students that blank hours and horizon keep the current settings", () => {
+    const html = renderToStaticMarkup(
+      <GoalPicker
+        pursuing={null}
+        mode="change"
+        pending={false}
+        initialHours="5"
+        initialWeeks="8"
+        onAtlas={() => {}}
+        onManual={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    const plain = text(html);
+    expect(plain).toContain(GOAL_CHANGE_CARRYOVER);
+    expect(plain).toContain("5 hours a week set aside.");
+    expect(plain).toContain("Looking ahead 8 weeks.");
+    expect(html).toContain('value="5"');
+    expect(html).toContain('value="8"');
   });
 
   it("renders missing skill data as a note without a rating control", () => {

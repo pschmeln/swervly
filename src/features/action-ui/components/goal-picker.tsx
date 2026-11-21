@@ -5,8 +5,12 @@ import { Button, Field, TextInput } from "@/components/ui";
 import { focusRing } from "@/components/ui/controls";
 import { searchGoals } from "@/features/action-ui/catalog";
 import type { GoalOption, PursuingDisplay } from "@/features/action-ui/types";
-import { GOAL_CHANGE_WARNING, NO_PURSUING_MESSAGE } from "@/features/action-ui/view";
+import { GOAL_CHANGE_CARRYOVER, GOAL_CHANGE_WARNING, horizonSentence, hoursSentence, NO_PURSUING_MESSAGE } from "@/features/action-ui/view";
 import { ROUTES } from "@/lib/constants";
+
+function wholeOrNull(raw: string): number | null {
+  return /^\d+$/.test(raw) ? Number(raw) : null;
+}
 
 export function GoalPicker({
   pursuing,
@@ -143,11 +147,16 @@ export function GoalPicker({
         {mode === "change" ? "Use this career" : "Start with this career"}
       </Button>
 
+      {mode === "change" ? (
+        <p className="text-sm text-ink-2">
+          {hoursSentence(wholeOrNull(initialHours))} {horizonSentence(wholeOrNull(initialWeeks))} {GOAL_CHANGE_CARRYOVER}
+        </p>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Weekly hours" htmlFor={hoursId} hint="Optional. 1–40. This is time you set aside, not hours worked.">
+        <Field label="Weekly hours" htmlFor={hoursId} hint={mode === "change" ? "Leave blank to keep the current hours. 1–40. Time set aside, not hours worked." : "Optional. 1–40. This is time you set aside, not hours worked."}>
           <TextInput id={hoursId} inputMode="numeric" value={hours} onChange={(event) => setHours(event.target.value)} />
         </Field>
-        <Field label="Horizon in weeks" htmlFor={weeksId} hint="Optional. 1–52.">
+        <Field label="Horizon in weeks" htmlFor={weeksId} hint={mode === "change" ? "Leave blank to keep the current horizon. 1–52." : "Optional. 1–52."}>
           <TextInput id={weeksId} inputMode="numeric" value={weeks} onChange={(event) => setWeeks(event.target.value)} />
         </Field>
       </div>
