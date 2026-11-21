@@ -156,7 +156,7 @@ export function SettingsForm({
         <p className="mt-1 text-neutral-700">
           When this is on, your reviews can count toward anonymous company pages and Direction for
           other signed-in students. Pages stay hidden until at least 2 different students in a major
-          contribute. Turn it off to keep your reviews private.
+          contribute, and pay stays hidden until 3 report it. Turn it off to keep your reviews private.
         </p>
         {shareReviewsConsentOutdated && !shareReviews ? (
           <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">

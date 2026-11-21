@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SKILLS } from "@/content/skills";
-import { aggregateForMajor, type ReviewForAggregate } from "@/features/company/aggregate";
+import { aggregateForMajor, MIN_DISTINCT_PAY_CONTRIBUTORS, type ReviewForAggregate } from "@/features/company/aggregate";
 import { PublicMajorSection } from "@/features/company/public-section";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -68,8 +68,8 @@ describe("aggregateForMajor", () => {
     );
     expect(threeStudents.maybeLine).toBe("1 said maybe.");
     expect(threeStudents.basisLine).toBe("Based on 3 reviews from 3 students.");
-    // Two different students reported pay (b and c), which meets the 2-student pay minimum.
-    expect(threeStudents.payRange).toEqual({ low: 25, high: 30 });
+    // Only two different students reported pay (b and c): below the 3-student pay minimum.
+    expect(threeStudents.payRange).toBeNull();
     expect(threeStudents.topSkills).toEqual(["CAD"]);
     expect(threeStudents.sharedNotes).toEqual(["Bring boots."]);
     expect(JSON.stringify(threeStudents)).not.toContain("@");
@@ -114,7 +114,21 @@ describe("aggregateForMajor", () => {
       "Electrical Engineering",
       SKILLS,
     );
-    expect(twoPayStudents.payRange).toEqual({ low: 20, high: 23 });
+    // Two reporters would mean each one could read the other's pay.
+    expect(twoPayStudents.visible).toBe(true);
+    expect(twoPayStudents.payRange).toBeNull();
+
+    const threePayStudents = aggregateForMajor(
+      [
+        review({ userId: "a", payHourly: 20 }),
+        review({ userId: "b", payHourly: 22.5 }),
+        review({ userId: "c", payHourly: 21 }),
+      ],
+      "Electrical Engineering",
+      SKILLS,
+    );
+    expect(threePayStudents.payRange).toEqual({ low: 20, high: 23 });
+    expect(MIN_DISTINCT_PAY_CONTRIBUTORS).toBe(3);
   });
 });
 
