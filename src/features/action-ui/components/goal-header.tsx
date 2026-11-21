@@ -64,7 +64,7 @@ export function GoalHeader({
           <Button type="submit" disabled={pending} className="w-full sm:w-auto">
             Save settings
           </Button>
-          <Button type="button" variant="secondary" onClick={onChangeGoal} disabled={pending} className="w-full sm:w-auto">
+          <Button id="change-goal" type="button" variant="secondary" onClick={onChangeGoal} disabled={pending} className="w-full sm:w-auto">
             Change goal
           </Button>
         </div>

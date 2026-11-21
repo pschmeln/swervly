@@ -5,7 +5,11 @@ import { ACTION_UNAVAILABLE_MESSAGE } from "@/features/action-ui/view";
 import type { SaveNotice } from "@/features/action-ui/types";
 
 export function LoadingState() {
-  return <p className="text-ink-2">Loading…</p>;
+  return (
+    <p role="status" className="text-ink-2">
+      Loading…
+    </p>
+  );
 }
 
 export function UnavailableState({ message = ACTION_UNAVAILABLE_MESSAGE, onRetry }: { message?: string; onRetry: () => void }) {

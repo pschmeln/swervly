@@ -15,7 +15,7 @@ import { ACTION_API } from "@/features/action-ui/paths";
 import type { DashboardLoad, TaskPatch } from "@/features/action-ui/types";
 
 describe("wire adapter", () => {
-  it("reads the nested goal and skill name, and drops userId", () => {
+  it("reads the flat goal fields and skillName, and drops userId", () => {
     const bundle = filledBundle();
     bundle.plan.userId = "secret-user";
     bundle.tasks[0].userId = "secret-user";
@@ -24,20 +24,18 @@ describe("wire adapter", () => {
     expect(view?.goalTitle).toBe("Software Developers");
     expect(view?.goalLevel).toBe("occupation");
     expect(view?.goalSource).toBe("manual");
-    expect(bundle.plan.goal.nodeId).toBe("occ:onet:15-1252.00");
-    expect(bundle.plan.goal.onetCode).toBe("15-1252.00");
+    expect(bundle.plan.goalNodeId).toBe("occ:onet:15-1252.00");
     expect(view?.skills.map((skill) => skill.name)).toContain("Programming");
     expect(view?.tasks[0].completedAt).toBeNull();
     expect(JSON.stringify(view)).not.toContain("secret-user");
-    expect(JSON.stringify(bundle.skills[0])).toContain("\"name\":\"Programming\"");
-    expect(JSON.stringify(bundle.plan.goal)).not.toContain("goalTitle");
+    expect(JSON.stringify(bundle.skills[0])).toContain("\"skillName\":\"Programming\"");
   });
 
-  it("rejects the old flat goal and skillName fields", () => {
+  it("rejects a nested goal object and a skill name field", () => {
     const bundle = filledBundle();
-    const flat = { ...bundle.plan, goal: undefined } as unknown as typeof bundle.plan;
-    expect(toDashboard({ ...bundle, plan: flat })).toBeNull();
-    const skill = { ...bundle.skills[0], name: undefined } as unknown as (typeof bundle.skills)[0];
+    const nested = { ...bundle.plan, goalTitle: undefined, goalLevel: undefined, goalSource: undefined, goalNodeId: undefined } as unknown as typeof bundle.plan;
+    expect(toDashboard({ ...bundle, plan: nested })).toBeNull();
+    const skill = { ...bundle.skills[0], skillName: undefined } as unknown as (typeof bundle.skills)[0];
     expect(toDashboard({ ...bundle, skills: [skill] })).toBeNull();
   });
 

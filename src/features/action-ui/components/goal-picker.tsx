@@ -63,7 +63,7 @@ export function GoalPicker({
     <div className="grid gap-4">
       {mode === "change" ? (
         <div>
-          <h2 id="change-goal-title" className="text-lg font-semibold text-ink">
+          <h2 id="change-goal-title" tabIndex={-1} className="text-lg font-semibold text-ink outline-none">
             Change goal
           </h2>
           <p className="mt-2 text-ink-2">{GOAL_CHANGE_WARNING}</p>

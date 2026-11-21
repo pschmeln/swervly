@@ -26,20 +26,36 @@ export function NextActions({
           </div>
         ) : (
           <ol className="mt-4 grid gap-2.5">
-            {tasks.map((task, index) => (
-              <li key={task.id} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
-                <p className="text-sm font-semibold text-ink-3">
-                  {index + 1} · {STATUS_LABEL[task.status]}
-                </p>
-                <p className="mt-1 font-semibold break-words text-ink">{task.title}</p>
-                {task.explanation ? <p className="mt-1 text-sm text-ink-3">{task.explanation}</p> : null}
-                {task.status !== "done" ? (
-                  <Button onClick={() => onStatus(task.id, "done")} disabled={pending} className="mt-3 w-full sm:w-auto">
-                    Mark done
-                  </Button>
-                ) : null}
-              </li>
-            ))}
+            {tasks.map((task, index) => {
+              const first = index === 0;
+              return (
+                <li
+                  key={task.id}
+                  className={
+                    first
+                      ? "rounded-2xl border-2 border-ink bg-white px-4 py-4 shadow-[0_8px_20px_rgba(11,18,32,0.08)]"
+                      : "rounded-2xl border border-neutral-200 bg-white px-4 py-3"
+                  }
+                >
+                  <p className={first ? "text-sm font-semibold text-ink" : "text-sm font-semibold text-ink-3"}>
+                    {first ? "Do this next" : `${index + 1} · ${STATUS_LABEL[task.status]}`}
+                    {first ? <span className="ml-2 font-medium text-ink-3">{STATUS_LABEL[task.status]}</span> : null}
+                  </p>
+                  <p className={`mt-1 break-words font-semibold text-ink ${first ? "text-xl leading-snug" : ""}`}>{task.title}</p>
+                  {task.explanation ? <p className="mt-1 text-sm text-ink-3">{task.explanation}</p> : null}
+                  {task.status !== "done" ? (
+                    <Button
+                      onClick={() => onStatus(task.id, "done")}
+                      disabled={pending}
+                      variant={first ? "primary" : "secondary"}
+                      className="mt-4 w-full sm:w-auto"
+                    >
+                      {first ? "Mark this done" : "Mark done"}
+                    </Button>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
         )}
       </div>

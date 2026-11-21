@@ -1,6 +1,6 @@
 /**
- * Mirror of ACTION_LIMITS in src/features/action/types.ts at PR #50 commit 20edb66
- * (dto.ts@20edb66 lives beside that constant).
+ * Mirror of ACTION_LIMITS in src/features/action/types.ts at PR #50 commit 4995fab
+ * (dto.ts@4995fab). Values are unchanged from 20edb66.
  *
  * TODO: once PR #50 merges, replace this declaration with:
  * export { ACTION_LIMITS } from "@/features/action/types";

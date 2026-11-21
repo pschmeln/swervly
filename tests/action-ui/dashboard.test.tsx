@@ -31,7 +31,9 @@ describe("Action dashboard", () => {
     expect(plain).toContain("Software Developers");
     expect(plain).toContain("Chosen here");
     expect(plain).toContain("Your next three steps");
-    expect(plain).toContain("Mark done");
+    expect(plain).toContain("Do this next");
+    expect(plain).toContain("Mark this done");
+    expect(plain).toContain("Skip to your next step");
     expect(plain).toContain("Programming");
     expect(plain).toContain("Comfortable");
     expect(plain).toContain("Developing");

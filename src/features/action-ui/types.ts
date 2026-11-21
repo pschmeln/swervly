@@ -1,11 +1,11 @@
 /**
- * Mirror of the client-safe Action DTOs in src/features/action/dto.ts at PR #50
- * commit 20edb66 (dto.ts@20edb66). Timestamps are ISO-8601 strings. dueOn is
- * YYYY-MM-DD or null. The goal is nested. Skill display name is `name`.
+ * Mirror of the client-safe Action wire DTOs in src/features/action/dto.ts at
+ * PR #50 commit 4995fab (dto.ts@4995fab). Flat goal fields. Skill field is
+ * skillName. Timestamps are ISO-8601 strings. dueOn is YYYY-MM-DD or null.
  *
  * TODO: once PR #50 merges, delete the local DTO declarations below and replace
  * them with:
- * export type { ActionPlanDto, ActionTaskDto, ActionSkillDto, ActionPlanBundleDto } from "@/features/action/dto";
+ * export type { ActionPlanBundleJson } from "@/features/action/dto";
  */
 
 export const GOAL_LEVELS = ["specialization", "occupation"] as const;
@@ -34,22 +34,15 @@ export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
 
 export type SkillSourceKind = "onet" | "editorial";
 
-/** Nested career goal. nodeId and onetCode travel with title, level, and source. */
-export type ActionGoalDto = {
-  nodeId: string;
-  level: GoalLevel;
-  title: string;
-  /** Present when level is occupation. Null for a specialization. */
-  onetCode: string | null;
-  source: GoalSource;
-};
-
 export type ActionPlanDto = {
   id: string;
   userId: string;
-  goal: ActionGoalDto;
-  status: "active" | "archived";
+  goalNodeId: string;
+  goalLevel: GoalLevel;
+  goalTitle: string;
+  goalSource: GoalSource;
   draftSource: "template_v1";
+  status: "active" | "archived";
   weeklyHours: number | null;
   horizonWeeks: number | null;
   createdAt: string;
@@ -64,10 +57,10 @@ export type ActionTaskDto = {
   description: string | null;
   phase: TaskPhase | null;
   status: TaskStatus;
+  sortOrder: number;
   origin: TaskOrigin;
   originKey: string | null;
   explanation: string;
-  sortOrder: number;
   dueOn: string | null;
   completedAt: string | null;
   createdAt: string;
@@ -78,7 +71,7 @@ export type ActionSkillDto = {
   id: string;
   planId: string;
   userId: string;
-  name: string;
+  skillName: string;
   scope: SkillScope;
   evidence: EvidenceLevel;
   skillSource: SkillSourceKind;
@@ -94,6 +87,12 @@ export type ActionPlanBundleDto = {
   tasks: ActionTaskDto[];
   skills: ActionSkillDto[];
 };
+
+/** Aliases matching dto.ts@4995fab so the swap is one import line. */
+export type ActionPlanBundleJson = ActionPlanBundleDto;
+export type ActionPlanJson = ActionPlanDto;
+export type ActionTaskJson = ActionTaskDto;
+export type ActionSkillJson = ActionSkillDto;
 
 /** Career the student marked as pursuing on the career map. The id stays on the server. */
 export type PursuingDisplay = {

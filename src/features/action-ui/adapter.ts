@@ -82,7 +82,7 @@ export function toTaskView(raw: ActionTaskDto): TaskView | null {
 
 export function toSkillView(raw: ActionSkillDto): SkillView | null {
   const id = asText(raw.id);
-  const name = asText(raw.name);
+  const name = asText(raw.skillName);
   const scope = asText(raw.scope);
   const evidence = asText(raw.evidence);
   const progress = asText(raw.progress);
@@ -104,16 +104,14 @@ export function toSkillView(raw: ActionSkillDto): SkillView | null {
 
 /** Drop userId and normalize dates. Returns null when the bundle is not a plan. */
 export function toDashboard(bundle: ActionPlanBundleDto | null | undefined): DashboardView | null {
-  if (!bundle || typeof bundle !== "object" || !bundle.plan?.goal) return null;
+  if (!bundle || typeof bundle !== "object" || !bundle.plan) return null;
   const plan = bundle.plan;
-  const goal = plan.goal;
-  const level = asText(goal.level);
-  const source = asText(goal.source);
-  const title = asText(goal.title);
-  const nodeId = asText(goal.nodeId);
+  const level = asText(plan.goalLevel);
+  const source = asText(plan.goalSource);
+  const title = asText(plan.goalTitle);
+  const nodeId = asText(plan.goalNodeId);
   const id = asText(plan.id);
   if (!id || !title || !nodeId || !level || !GOAL_LEVELS.has(level) || !source || !GOAL_SOURCES.has(source)) return null;
-  if (goal.onetCode != null && typeof goal.onetCode !== "string") return null;
   if (!Array.isArray(bundle.tasks) || !Array.isArray(bundle.skills)) return null;
   const tasks = bundle.tasks.map((task) => toTaskView(task)).filter((task): task is TaskView => task != null);
   const skills = bundle.skills.map((skill) => toSkillView(skill)).filter((skill): skill is SkillView => skill != null);

@@ -50,6 +50,7 @@ export function ActionDashboard({
   const taskSubmit = useRef<(() => void) | null>(null);
   const goalSubmit = useRef<(() => void) | null>(null);
   const alertRef = useRef<HTMLDivElement>(null);
+  const wasConfirming = useRef(false);
   loadRef.current = load;
 
   useEffect(() => {
@@ -71,6 +72,13 @@ export function ActionDashboard({
   useEffect(() => {
     if (notice.status === "error") alertRef.current?.focus();
   }, [notice]);
+
+  useEffect(() => {
+    if (wasConfirming.current && !confirming) {
+      document.getElementById("change-goal")?.focus();
+    }
+    wasConfirming.current = confirming;
+  }, [confirming]);
 
   function remember(retry: RetryAction) {
     retryRef.current = () => {
@@ -198,6 +206,16 @@ export function ActionDashboard({
   }
   if (load.status === "error") return <ErrorState message={load.message} onRetry={() => void commit({ kind: "reload" })} />;
 
+  const skip =
+    load.status === "ready" ? (
+      <a
+        href="#next"
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30 focus:inline-flex focus:min-h-12 focus:items-center focus:rounded-full focus:bg-ink focus:px-4 focus:text-base focus:font-semibold focus:text-white ${focusRing}`}
+      >
+        Skip to your next step
+      </a>
+    ) : null;
+
   if (load.status === "empty") {
     return (
       <div className="grid gap-4">
@@ -225,6 +243,7 @@ export function ActionDashboard({
 
   return (
     <div className="grid gap-4">
+      {skip}
       <GoalHeader
         dashboard={dashboard}
         pending={pending}
@@ -333,6 +352,7 @@ function Modal({ onClose, children }: { onClose: () => void; children: ReactNode
     const el = ref.current;
     if (!el) return;
     if (!el.open) el.showModal();
+    document.getElementById("change-goal-title")?.focus();
     return () => {
       closing.current = true;
       if (el.open) el.close();
