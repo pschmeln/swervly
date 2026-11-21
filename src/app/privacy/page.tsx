@@ -42,8 +42,7 @@ export default function PrivacyPage() {
             scores we calculate from them; and the employers, role type, role
             title, term, ratings, whether you would go back, optional pay, skills,
             and optional free text you enter for co-ops and internships. Your
-            profile can include an optional co-op track, location preferences or
-            constraints, and notes. If you join through another student&apos;s
+            profile can include location preferences or constraints, and notes. If you join through another student&apos;s
             invite link, we store that connection. Our sign-in provider processes
             the information needed to authenticate you, including a password if
             you set one. We also store when you consent to the Privacy Policy,
@@ -89,8 +88,8 @@ export default function PrivacyPage() {
             experiences were rated &quot;Would go back&quot; (counting Yes only, with
             Maybe shown separately), with a separate count of reviews and students,
             plus average ratings, top skills, and shared notes. It does not show
-            names. Pay is shown only as a range, and only when 2 different students
-            in that group reported pay. A written note appears only if you ticked
+            names. Pay is shown only as the lowest and highest figures, and only when
+            at least 3 different students in that group reported pay. A written note appears only if you ticked
             the share box for that note. The box is off until you type something. A
             threshold of two is a minimum, not a guarantee of anonymity: with
             only two students, each one may be able to work out what the other
