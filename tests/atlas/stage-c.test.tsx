@@ -23,11 +23,14 @@ afterAll(() => {
 const quiet: Signals = { answers: {}, interested: [], dismissed: [], directionInterested: [], directionDismissed: [] };
 
 describe("organizations in the map", () => {
-  it("links only real directory organizations to real families", () => {
-    const ids = new Set(CATALOG_COMPANIES.map((company) => company.id));
-    for (const [companyId, families] of Object.entries(COMPANY_FAMILIES)) {
-      expect(ids.has(companyId), companyId).toBe(true);
+  it("links companies only to real families, and lists only directory organizations", () => {
+    for (const families of Object.values(COMPANY_FAMILIES)) {
       for (const familyId of families) expect(graph.nodes.get(familyId)?.level, familyId).toBe("family");
+    }
+    // A company with families but no checked careers page stays off the map.
+    const listed = new Set(CATALOG_COMPANIES.map((company) => company.name));
+    for (const node of graph.nodes.values()) {
+      for (const company of companiesFor(graph, node.id)) expect(listed.has(company.name), company.name).toBe(true);
     }
   });
 
