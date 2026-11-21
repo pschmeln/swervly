@@ -77,7 +77,7 @@ export function LandingPitch() {
 const STEPS = [
   { title: "Take the quiz", body: "A minute of quick statements about how you like to work. There are no right answers." },
   { title: "Review your co-ops", body: "Rate what you enjoyed and learned. Your reviews help other students and sharpen your own Direction." },
-  { title: "Get your direction", body: "Careers and majors to explore, as a best guess that improves as more students review." },
+  { title: "Get your direction", body: "Careers and majors matched to how you work, sharper as more students review co-ops." },
 ] as const;
 
 async function Landing() {

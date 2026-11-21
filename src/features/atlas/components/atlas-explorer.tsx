@@ -338,7 +338,7 @@ export function AtlasExplorer({
           {showPicks ? (
             <section aria-label="Start here" className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">Start here</h2>
-              <p className="text-sm text-neutral-600">Ordered by what you told Swervly on this screen. A starting point, not a prediction.</p>
+              <p className="text-sm text-neutral-600">Ordered by what you told Swervly on this screen.</p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {picks.slice(0, 3).map((item) => <PickCard key={item.id} item={item} onOpen={() => openFromRoot(item.id)} />)}
               </ul>
