@@ -5,6 +5,8 @@ import { familiesForRole } from "@/features/atlas/compat";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import { InterestedButton } from "@/features/direction/components/interested-button";
+import { loadChosenDirection } from "@/features/direction/chosen";
+import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
 import { loadDirection } from "@/features/direction/server";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
@@ -21,7 +23,7 @@ export default async function DirectionPage({
 }) {
   const user = await requireOnboardedUser();
   const justFinishedQuiz = (await searchParams).quiz === "done";
-  const direction = await loadDirection(user);
+  const [direction, chosen] = await Promise.all([loadDirection(user), loadChosenDirection(user.id)]);
   if (!direction) {
     return (
       <PageShell title="Direction">
@@ -45,6 +47,7 @@ export default async function DirectionPage({
   return (
     <PageShell title="Direction">
       {justFinishedQuiz ? <ArchetypeCard card={archetypeFor(direction.traits)} justFinished /> : null}
+      {atlasOn ? <ChosenDirectionCard chosen={chosen} /> : null}
       <p className="text-neutral-700">{direction.label}</p>
       <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
       {direction.academic.visible ? (
