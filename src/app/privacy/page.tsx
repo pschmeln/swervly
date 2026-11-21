@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <header className="flex flex-col gap-1 text-sm text-neutral-600">
           <p>
             <span className="font-medium text-neutral-900">Last updated:</span>{" "}
-            November 18, 2026
+            November 21, 2026
           </p>
           <p>
             <span className="font-medium text-neutral-900">Contact:</span>{" "}
