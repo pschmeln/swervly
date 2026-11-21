@@ -60,7 +60,9 @@ describe("direction explore integration", () => {
     });
     expect(missingQuiz.direction.needsQuiz).toBe(true);
     expect(missingQuiz.paths).toEqual([]);
-    expect(missingQuiz.pathsEmpty).toContain("quiz");
+    expect(missingQuiz.pathsIntro).toContain("quiz");
+    // The quiz message used to print twice: once as the intro, once as the empty state.
+    expect(missingQuiz.pathsEmpty).toBeNull();
     expect(missingQuiz.profile.goalLabel).toBe("Not on your profile yet");
     expect(missingQuiz.profile.majorLabel).toBe("Nursing");
     expect(companyWhy("mayo", missingQuiz)).toBe(DIRECTORY_WHY_SHOWN);
@@ -143,6 +145,29 @@ describe("direction explore integration", () => {
       direction: { label: "Worth exploring.", suggestions: [] },
     });
     expect(copy.paths).toEqual([]);
-    expect(copy.direction.note).toContain("dismissed");
+    expect(copy.direction.exhausted).toBe(true);
+    expect(copy.direction.note).toContain("Retake the quiz");
+    expect(copy.direction.note).toContain("career map");
+  });
+
+  it("says each empty-state message once", () => {
+    const dismissedAll = directionExploreCopy({
+      stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+      goal: "industry",
+      dismissedRoleIds: ["healthcare_clinical", "healthcare_admin"],
+      direction: { label: "Worth exploring.", suggestions: [] },
+    });
+    const noQuiz = directionExploreCopy({
+      stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+      goal: "industry",
+      dismissedRoleIds: [],
+      direction: null,
+    });
+    for (const copy of [dismissedAll, noQuiz]) {
+      const shown = [copy.pathsIntro, copy.pathsEmpty].filter(Boolean);
+      expect(new Set(shown).size).toBe(shown.length);
+      expect(copy.pathsEmpty).toBeNull();
+    }
+    expect(dismissedAll.pathsIntro).not.toContain("No pathways are listed while those suggestions are dismissed");
   });
 });
