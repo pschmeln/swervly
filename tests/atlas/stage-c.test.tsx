@@ -64,7 +64,7 @@ describe("compare two occupations", () => {
     expect(compareModel(graph, "fam:finance", "occ:onet:17-2141.00")).toBeNull();
   });
 
-  it("renders side by side with a clear button", () => {
+  it("renders side by side, with a clear button on each side and a close button", () => {
     const entry = atlasEntry(graph, { major: "Nursing", majorSource: "catalog" });
     const html = renderToStaticMarkup(
       <AtlasExplorer entry={entry} dismissedRoles={[]} initialFocus={null} initialCompare={["occ:onet:29-1141.00", "occ:onet:29-1171.00"]} />,
@@ -72,7 +72,9 @@ describe("compare two occupations", () => {
     expect(html).toContain("Compare occupations");
     expect(html).toContain("Registered Nurses");
     expect(html).toContain("Nurse Practitioners");
-    expect(html).toContain("Clear compare");
+    expect(html).toContain('aria-label="Clear Registered Nurses"');
+    expect(html).toContain('aria-label="Clear Nurse Practitioners"');
+    expect(html).toContain(">Close<");
   });
 });
 
