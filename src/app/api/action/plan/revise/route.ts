@@ -1,3 +1,4 @@
+import { toActionPlanBundleDto } from "@/features/action/dto";
 import { reviseActivePlan } from "@/features/action/server";
 import { handle, ok } from "@/lib/api";
 import { apiOnboardedUser } from "@/lib/auth";
@@ -6,5 +7,5 @@ import { apiOnboardedUser } from "@/lib/auth";
 export const POST = handle(async () => {
   const user = await apiOnboardedUser();
   const bundle = await reviseActivePlan(user);
-  return ok(bundle);
+  return ok(toActionPlanBundleDto(bundle));
 });

@@ -1,3 +1,4 @@
+import { toActionTaskDto } from "@/features/action/dto";
 import { AddTaskInput } from "@/features/action/schemas";
 import { addTask } from "@/features/action/server";
 import { handle, ok, parseBody } from "@/lib/api";
@@ -8,5 +9,5 @@ export const POST = handle(async (req) => {
   const user = await apiOnboardedUser();
   const input = await parseBody(req, AddTaskInput);
   const task = await addTask(user.id, input);
-  return ok({ task });
+  return ok({ task: toActionTaskDto(task) });
 });

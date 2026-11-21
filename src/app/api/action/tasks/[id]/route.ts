@@ -1,3 +1,4 @@
+import { toActionTaskDto } from "@/features/action/dto";
 import { UpdateTaskInput } from "@/features/action/schemas";
 import { deleteTask, updateTask } from "@/features/action/server";
 import { ApiError, handle, ok, parseBody } from "@/lib/api";
@@ -17,7 +18,7 @@ export const PATCH = handle(async (req, ctx) => {
   const id = await taskId(ctx.params);
   const input = await parseBody(req, UpdateTaskInput);
   const task = await updateTask(user.id, id, input);
-  return ok({ task });
+  return ok({ task: toActionTaskDto(task) });
 });
 
 export const DELETE = handle(async (_req, ctx) => {

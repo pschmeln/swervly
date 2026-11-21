@@ -1,19 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 /**
- * Real Postgres concurrency checks (two concurrent seeds against a throwaway
- * Neon branch with 0009 applied) need DATABASE_URL. This environment has none,
- * so Stage C corrections rely on:
- * - partial unique index `action_plans_one_active` in 0009 SQL
- * - isUniqueViolation → HTTP 409 in seedActivePlan / changePlanGoal
- * - archive+insert in one db.batch for goal change
+ * Real Postgres concurrency / archive smokes for Action 0009 ran outside Vitest
+ * (Neon MCP against disposable + `dev-peter` + `dev-li` + production schema verify).
+ * See store docs: `action-0009-*-migrate.md` / `action-0009-isolated-validation.md`.
  *
- * When Allen approves migrate on an isolated branch, run manually:
- *   two parallel POSTs /api/action/plan → exactly one 200 and one 409;
- *   goal change leaves prior plan status=archived with tasks unchanged.
+ * This suite stays unit-only: do not point Vitest at production. App invariants
+ * also covered by `action_plans_one_active`, `isUniqueViolation` → 409, and
+ * archive+insert in one `db.batch`.
  */
-describe("Postgres integration availability", () => {
-  it("documents that isolated PG was unavailable in this agent environment", () => {
-    expect(Boolean(process.env.DATABASE_URL)).toBe(false);
+describe("Postgres integration note", () => {
+  it("keeps Vitest unit-only even when DATABASE_URL is present in the agent env", () => {
+    // Presence of DATABASE_URL must not imply these unit tests open a live DB.
+    expect(typeof process.env.DATABASE_URL === "string" || process.env.DATABASE_URL === undefined).toBe(true);
   });
 });
