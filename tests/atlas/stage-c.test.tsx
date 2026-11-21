@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { COMPANY_FAMILIES, COMPANY_NOTE } from "@/content/atlas/company-links";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { atlasEntry } from "@/features/atlas/entry";
@@ -11,6 +11,15 @@ import { careerPageHref } from "@/features/explore/links";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/features/explore/local-state";
 
 const graph = atlasGraph();
+// Career links expire 90 days after their check; pin "today" so this test does not.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-21T12:00:00Z"));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
+
 const quiet: Signals = { answers: {}, interested: [], dismissed: [], directionInterested: [], directionDismissed: [] };
 
 describe("organizations in the map", () => {
@@ -32,7 +41,7 @@ describe("organizations in the map", () => {
 
   it("shows hospitals for a nursing occupation and never the invented placeholder", () => {
     const names = companiesFor(graph, "occ:onet:29-1141.00").map((company) => company.name);
-    expect(names).toContain("Cincinnati Children's");
+    expect(names).toContain("Cincinnati Children's Hospital Medical Center");
     expect(names).not.toContain("Sample Org With No Page On File");
   });
 

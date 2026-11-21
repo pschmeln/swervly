@@ -33,9 +33,7 @@ describe("direction explore integration", () => {
     expect(JSON.stringify({ paths: model.paths, companies: model.companies, questions: model.questions })).not.toContain(
       PRIVATE_MAJOR,
     );
-    expect(model.companies.every((company) => company.whyShown === DIRECTORY_WHY_SHOWN || company.id === "sample-empty")).toBe(
-      true,
-    );
+    expect(model.companies.every((company) => company.whyShown === DIRECTORY_WHY_SHOWN)).toBe(true);
     expect(model.paths.every((path) => path.id !== "software")).toBe(true);
   });
 
@@ -99,8 +97,9 @@ describe("direction explore integration", () => {
       },
     });
     expect(model.paths.map((path) => path.id)).toEqual(["healthcare_admin", "software"]);
-    expect(companyWhy("cchmc", model)).toBe(DIRECTORY_WHY_SHOWN);
-    expect(companyWhy("mayo", model)).toBe(DIRECTORY_WHY_SHOWN);
+    // The hospitals are tagged with administration too, so they match on that role, never on clinical work.
+    expect(companyWhy("cchmc", model)).toBe("Listed under Healthcare administration, which is also one of your direction suggestions.");
+    expect(companyWhy("mayo", model)).not.toContain("clinical");
     expect(JSON.stringify(model.companies)).not.toContain("%");
   });
 

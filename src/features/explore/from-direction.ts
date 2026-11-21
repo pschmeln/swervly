@@ -1,4 +1,4 @@
-import { withoutDismissedRoles } from "@/features/direction/career-roles";
+import { careerRoleLabel, withoutDismissedRoles } from "@/features/direction/career-roles";
 import type { Goal } from "@/features/direction/rules";
 import {
   academicSource,
@@ -25,15 +25,10 @@ export type StudentExploreInput = {
 };
 
 /**
- * Directory categories that use the same words as a direction role.
- * Engineering "design" is not product design. Healthcare administration is not clinical work.
+ * Directory role categories are Direction's own role ids (src/content/companies.ts), shown
+ * by label, so a match always means the same role. Engineering design is not product
+ * design (IDEO is not tagged Design), and healthcare administration is not clinical work.
  */
-const ROLE_DIRECTORY: Record<string, readonly string[]> = {
-  business_operations: ["Business operations"],
-  finance: ["Finance"],
-  healthcare_clinical: ["Clinical operations"],
-  manufacturing_process: ["Manufacturing"],
-};
 
 const QUIZ_HEADLINE = "Take the quiz first.";
 const QUIZ_NOTE = "Direction is a guess from those answers.";
@@ -84,16 +79,16 @@ function overlapCategories(roleIds: readonly string[]): Set<string> {
   const categories = new Set<string>();
   for (const roleId of roleIds) {
     if (roleId === "insufficient") continue;
-    for (const category of ROLE_DIRECTORY[roleId] ?? []) categories.add(category);
+    categories.add(careerRoleLabel(roleId));
   }
   return categories;
 }
 
 function whyForCompany(company: CompanyCardModel, categories: ReadonlySet<string>): string {
-  if (company.id === "sample-empty") return company.whyShown;
   const shared = company.roleCategories.filter((category) => categories.has(category));
   if (shared.length === 0) return DIRECTORY_WHY_SHOWN;
-  return `Listed under ${shared.join(" and ")}, which is also one of your direction suggestions.`;
+  if (shared.length === 1) return `Listed under ${shared[0]}, which is also one of your direction suggestions.`;
+  return `Listed under ${shared.join(" and ")}, which are also among your direction suggestions.`;
 }
 
 export function directionExploreCopy(input: StudentExploreInput): DirectionExploreCopy {
