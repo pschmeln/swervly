@@ -9,7 +9,7 @@ import { ROLE_FAMILIES } from "@/features/atlas/compat";
 import { levelOf, type AtlasLevel, type AtlasNodeId, type FamilyId } from "@/features/atlas/types";
 
 /** Shown on every Atlas screen. */
-export const ATLAS_BANNER = "Prototype. A map of careers to explore, not a prediction of fit.";
+export const ATLAS_BANNER = "A map of careers. Open any area to see the work, the skills it takes and where it leads.";
 export const EDITORIAL_LABEL = "Swervly grouping";
 export const SOURCED_LABEL = "Official occupation · O*NET";
 export const CLOSEST_LABEL = "No official occupation matches well. These are the closest official categories.";

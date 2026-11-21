@@ -16,7 +16,7 @@ import {
   Textarea,
   TextInput,
 } from "@/components/ui";
-import { INSTRUMENT, QUIZ_EXPLORATORY_DISCLAIMER, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
+import { INSTRUMENT, QUIZ_INTRO, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
 import { MajorPicker } from "@/features/majors/components/major-picker";
 import type { MajorSearchContext } from "@/features/majors/catalog";
 import { isSelectableCatalogName, ProfileWriteInput, type MajorPickerValue } from "@/features/majors/selection";
@@ -495,7 +495,7 @@ export function OnboardingFlow({
             <p className="text-sm text-neutral-700">
               About a minute. There are no right answers. Pick the line that sounds like you now.
             </p>
-            <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
+            <p className="text-sm text-neutral-600">{QUIZ_INTRO}</p>
             <p className="text-sm text-neutral-700" aria-live="polite">
               Questions {pageStart + 1}–{pageStart + pageItems.length} of {QUIZ_ITEMS.length}.{" "}
               {answeredCount} of {QUIZ_ITEMS.length} answered.
