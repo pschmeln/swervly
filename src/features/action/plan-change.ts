@@ -1,49 +1,47 @@
-import type { ActionTaskRecord, PlanDraft, TaskDraft } from "@/features/action/types";
+import type { ActionTaskRecord, PlanDraft, SkillTarget, TaskDraft } from "@/features/action/types";
 
-export type PlanChangeResult = {
-  /** New template/user tasks for the new goal (todo). */
+export type GoalChangeSeed = {
+  /** Always a fresh template seed. Completed work stays on the archived plan. */
   seededTasks: TaskDraft[];
-  /** Completed tasks carried forward so progress is not lost. */
-  preservedCompleted: TaskDraft[];
+  seededSkills: SkillTarget[];
 };
 
 /**
- * When the student changes career goal, seed a new draft but keep every
- * completed task. Titles stay as the student left them; origin becomes
- * `preserved` with a stable key so a later refresh will not duplicate them.
+ * Goal change: the previous plan is archived intact (caller's job). The new plan
+ * gets a fresh deterministic seed only — never silently move or duplicate
+ * completed tasks from an unrelated/archived plan.
  */
-export function tasksAfterGoalChange(
-  previousTasks: readonly Pick<ActionTaskRecord, "title" | "status" | "originKey" | "explanation">[],
-  nextDraft: PlanDraft,
-): PlanChangeResult {
-  const preservedCompleted: TaskDraft[] = previousTasks
-    .filter((task) => task.status === "done")
-    .map((task, index) => ({
-      title: task.title,
-      origin: "preserved",
-      originKey: task.originKey ? `preserved:${task.originKey}` : `preserved:done:${index}`,
-      explanation: "Kept from your previous plan because you marked it done.",
-      status: "done",
-    }));
-
-  const preservedKeys = new Set(preservedCompleted.map((task) => task.originKey));
-  // Avoid re-seeding a template row the student already completed under the same origin key family.
-  const completedTemplateKeys = new Set(
-    previousTasks
-      .filter((task) => task.status === "done" && task.originKey)
-      .map((task) => task.originKey as string),
-  );
-
-  const seededTasks = nextDraft.tasks.filter((task) => {
-    if (preservedKeys.has(task.originKey)) return false;
-    if (completedTemplateKeys.has(task.originKey)) return false;
-    return true;
-  });
-
-  return { seededTasks, preservedCompleted };
+export function seedAfterGoalChange(nextDraft: PlanDraft): GoalChangeSeed {
+  return {
+    seededTasks: nextDraft.tasks.map((task) => ({ ...task, status: "todo" })),
+    seededSkills: nextDraft.skills,
+  };
 }
 
-/** Merge seeded + preserved into one ordered list for a new active plan. */
-export function orderedTasksForNewPlan(change: PlanChangeResult): TaskDraft[] {
-  return [...change.seededTasks, ...change.preservedCompleted];
+export type SamePlanReviseResult = {
+  /** Template tasks whose origin_key is not already on the plan. */
+  tasksToInsert: TaskDraft[];
+  /** Skill targets whose origin_key is not already on the plan (progress starts unrated). */
+  skillsToInsert: SkillTarget[];
+};
+
+/**
+ * Same-plan revise/refresh: keep student edits and completed tasks; only append
+ * missing template origin_keys. Never overwrite titles, statuses, or skill progress.
+ * Never copy skill confidence from another plan.
+ */
+export function reviseActivePlanSeed(
+  existingTasks: readonly Pick<ActionTaskRecord, "originKey" | "status">[],
+  existingSkillOriginKeys: readonly string[],
+  nextDraft: PlanDraft,
+): SamePlanReviseResult {
+  const existingTaskKeys = new Set(
+    existingTasks.map((task) => task.originKey).filter((key): key is string => Boolean(key)),
+  );
+  const existingSkillKeys = new Set(existingSkillOriginKeys);
+
+  return {
+    tasksToInsert: nextDraft.tasks.filter((task) => !existingTaskKeys.has(task.originKey)),
+    skillsToInsert: nextDraft.skills.filter((skill) => !existingSkillKeys.has(skill.originKey)),
+  };
 }

@@ -1,45 +1,54 @@
 import { describe, expect, it } from "vitest";
 import { resolveActionGoal } from "@/features/action/goal";
-import { orderedTasksForNewPlan, tasksAfterGoalChange } from "@/features/action/plan-change";
+import { reviseActivePlanSeed, seedAfterGoalChange } from "@/features/action/plan-change";
 import { TemplatePlanningService } from "@/features/action/planning-service";
 import { atlasGraph } from "@/features/atlas/graph";
 
 const graph = atlasGraph();
 
-describe("tasksAfterGoalChange", () => {
-  it("preserves completed tasks when the goal changes and does not re-seed the same template keys", async () => {
+describe("seedAfterGoalChange", () => {
+  it("seeds a fresh plan only — does not carry completed tasks from the old goal", async () => {
     const firstGoal = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
     const secondGoal = resolveActionGoal({ mode: "manual", nodeId: "spec:test-validation" }, graph);
     expect(firstGoal.ok && secondGoal.ok).toBe(true);
     if (!firstGoal.ok || !secondGoal.ok) return;
 
     const service = new TemplatePlanningService(graph);
-    const firstDraft = await service.draftPlan({
-      userId: "u1",
-      goal: firstGoal.goal,
-      profile: { major: null, majorSource: null, year: null, lifeGoal: null },
-    });
     const nextDraft = await service.draftPlan({
       userId: "u1",
       goal: secondGoal.goal,
       profile: { major: null, majorSource: null, year: null, lifeGoal: null },
     });
 
-    const previous = firstDraft.tasks.map((task, index) => ({
-      title: index === 0 ? "Custom completed title" : task.title,
-      status: index === 0 || task.originKey === "editorial:resume" ? ("done" as const) : ("todo" as const),
-      originKey: task.originKey,
-      explanation: task.explanation,
-    }));
+    const seed = seedAfterGoalChange(nextDraft);
+    expect(seed.seededTasks.every((task) => task.status === "todo")).toBe(true);
+    expect(seed.seededTasks.some((task) => task.origin === "preserved")).toBe(false);
+    expect(seed.seededSkills.every((skill) => skill.originKey.length > 0)).toBe(true);
+    // Archived plan keeps prior completed work; this seed is independent.
+    expect(seed.seededTasks.length).toBe(nextDraft.tasks.length);
+  });
+});
 
-    const change = tasksAfterGoalChange(previous, nextDraft);
-    expect(change.preservedCompleted.length).toBe(2);
-    expect(change.preservedCompleted.every((task) => task.status === "done")).toBe(true);
-    expect(change.preservedCompleted.some((task) => task.title === "Custom completed title")).toBe(true);
-    expect(change.seededTasks.some((task) => task.originKey === "editorial:resume")).toBe(false);
+describe("reviseActivePlanSeed", () => {
+  it("preserves existing origin_keys and only inserts missing template rows", async () => {
+    const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    const draft = await new TemplatePlanningService(graph).draftPlan({
+      userId: "u1",
+      goal: resolved.goal,
+      profile: { major: null, majorSource: null, year: null, lifeGoal: null },
+    });
 
-    const ordered = orderedTasksForNewPlan(change);
-    expect(ordered.filter((task) => task.status === "done").length).toBe(2);
-    expect(ordered.some((task) => task.status === "todo")).toBe(true);
+    const existingTasks = [
+      { originKey: "editorial:resume", status: "done" as const },
+      { originKey: draft.tasks[0]?.originKey ?? "onet-task:0", status: "doing" as const },
+    ];
+    const existingSkills = [draft.skills[0]?.originKey].filter(Boolean) as string[];
+
+    const revise = reviseActivePlanSeed(existingTasks, existingSkills, draft);
+    expect(revise.tasksToInsert.some((task) => task.originKey === "editorial:resume")).toBe(false);
+    expect(revise.skillsToInsert.some((skill) => skill.originKey === existingSkills[0])).toBe(false);
+    expect(revise.tasksToInsert.length).toBeLessThan(draft.tasks.length);
   });
 });

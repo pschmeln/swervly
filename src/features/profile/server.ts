@@ -6,6 +6,9 @@ import { db } from "@/db";
 import {
   careerAtlasAnswers,
   careerAtlasMarks,
+  type ActionPlan,
+  type ActionSkillProgress,
+  type ActionTask,
   type CareerAtlasAnswer,
   type CareerAtlasMark,
   assessments,
@@ -21,6 +24,7 @@ import {
   type Rotation,
   type User,
 } from "@/db/schema";
+import { exportActionData } from "@/features/action/server";
 import { placeByGeoid } from "@/features/location/places";
 import { resolveLocationWrite } from "@/features/location/write";
 import { loadMajorSearchContext } from "@/features/majors/load";
@@ -362,6 +366,8 @@ export type AccountExport = {
   careerAtlas: { marks: CareerAtlasMark[]; answers: CareerAtlasAnswer[] };
   /** Posts and answers the student wrote in Community. */
   community: Awaited<ReturnType<typeof exportCommunity>>;
+  /** Action plans, tasks, and skill progress. Empty when migration 0009 is not applied. Private only. */
+  action: { plans: ActionPlan[]; tasks: ActionTask[]; skillProgress: ActionSkillProgress[] };
 };
 
 async function exportCareerAtlas(userId: string): Promise<AccountExport["careerAtlas"]> {
@@ -409,6 +415,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
     profile: profileRows[0] ?? null,
     careerAtlas: await exportCareerAtlas(userId),
     community: await exportCommunity(userId),
+    action: await exportActionData(userId),
     assessments: assessmentRows,
     rotations: rotationRows.map((row) => ({
       ...row.rotation,

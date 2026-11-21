@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
-  boolean, check, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp,
+  boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp,
   uniqueIndex, uuid, vector,
 } from "drizzle-orm/pg-core";
 
@@ -342,3 +342,106 @@ export type CareerAtlasMark = typeof careerAtlasMarks.$inferSelect;
 export type CareerAtlasAnswer = typeof careerAtlasAnswers.$inferSelect;
 export type CommunityPost = typeof communityPosts.$inferSelect;
 export type CommunityComment = typeof communityComments.$inferSelect;
+
+// Action plans (migration 0009). One active plan per student; archived plans stay intact.
+// Child rows use composite FK (plan_id, user_id) so a task/skill cannot reference another user's plan.
+export const actionPlans = pgTable("action_plans", {
+  id: uuid("id").primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  goalNodeId: text("goal_node_id").notNull(),
+  goalLevel: text("goal_level").notNull(), // specialization | occupation
+  goalTitle: text("goal_title").notNull(),
+  goalSource: text("goal_source").notNull(), // atlas_pursuing | manual
+  draftSource: text("draft_source").notNull(), // template_v1
+  status: text("status").notNull(), // active | archived
+  weeklyHours: integer("weekly_hours"),
+  horizonWeeks: integer("horizon_weeks"),
+  createdAt,
+  updatedAt,
+}, (t) => [
+  uniqueIndex("action_plans_id_user_uq").on(t.id, t.userId),
+  uniqueIndex("action_plans_one_active").on(t.userId).where(sql`${t.status} = 'active'`),
+  index("action_plans_user_status_idx").on(t.userId, t.status),
+  check("action_plans_goal_level", sql`${t.goalLevel} in ('specialization', 'occupation')`),
+  check("action_plans_goal_source", sql`${t.goalSource} in ('atlas_pursuing', 'manual')`),
+  check("action_plans_draft_source", sql`${t.draftSource} in ('template_v1')`),
+  check("action_plans_status", sql`${t.status} in ('active', 'archived')`),
+  check(
+    "action_plans_goal_node",
+    sql`${t.goalNodeId} ~ '^((spec):[a-z0-9-]+|occ:onet:[0-9]{2}-[0-9]{4}[.][0-9]{2})$'`,
+  ),
+  check(
+    "action_plans_weekly_hours",
+    sql`${t.weeklyHours} is null or (${t.weeklyHours} between 1 and 40)`,
+  ),
+  check(
+    "action_plans_horizon_weeks",
+    sql`${t.horizonWeeks} is null or (${t.horizonWeeks} between 1 and 52)`,
+  ),
+]);
+
+export const actionTasks = pgTable("action_tasks", {
+  id: uuid("id").primaryKey(),
+  planId: uuid("plan_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  phase: text("phase"), // practice | prepare | explore | reflect | null
+  status: text("status").notNull(), // todo | doing | done
+  sortOrder: integer("sort_order").notNull(),
+  origin: text("origin").notNull(), // template | user | preserved
+  originKey: text("origin_key"),
+  explanation: text("explanation").notNull(),
+  dueOn: date("due_on"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt,
+  updatedAt,
+}, (t) => [
+  foreignKey({
+    columns: [t.planId, t.userId],
+    foreignColumns: [actionPlans.id, actionPlans.userId],
+    name: "action_tasks_plan_user_fk",
+  }).onDelete("cascade"),
+  index("action_tasks_user_plan_idx").on(t.userId, t.planId),
+  uniqueIndex("action_tasks_plan_origin_key_uq").on(t.planId, t.originKey).where(sql`${t.originKey} is not null`),
+  check("action_tasks_status", sql`${t.status} in ('todo', 'doing', 'done')`),
+  check("action_tasks_origin", sql`${t.origin} in ('template', 'user', 'preserved')`),
+  check(
+    "action_tasks_phase",
+    sql`${t.phase} is null or ${t.phase} in ('practice', 'prepare', 'explore', 'reflect')`,
+  ),
+]);
+
+export const actionSkillProgress = pgTable("action_skill_progress", {
+  id: uuid("id").primaryKey(),
+  planId: uuid("plan_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  skillName: text("skill_name").notNull(),
+  scope: text("scope").notNull(),
+  evidence: text("evidence").notNull(),
+  skillSource: text("skill_source").notNull(),
+  progress: text("progress").notNull().default("unrated"),
+  originKey: text("origin_key").notNull(),
+  explanation: text("explanation").notNull(),
+  createdAt,
+  updatedAt,
+}, (t) => [
+  foreignKey({
+    columns: [t.planId, t.userId],
+    foreignColumns: [actionPlans.id, actionPlans.userId],
+    name: "action_skill_progress_plan_user_fk",
+  }).onDelete("cascade"),
+  index("action_skill_progress_user_plan_idx").on(t.userId, t.planId),
+  uniqueIndex("action_skill_progress_plan_origin_key_uq").on(t.planId, t.originKey),
+  check(
+    "action_skill_progress_scope",
+    sql`${t.scope} in ('shared', 'occupation_specific', 'optional_exploration')`,
+  ),
+  check("action_skill_progress_evidence", sql`${t.evidence} in ('known', 'suggested', 'unknown')`),
+  check("action_skill_progress_skill_source", sql`${t.skillSource} in ('onet', 'editorial')`),
+  check("action_skill_progress_progress", sql`${t.progress} in ('unrated', 'learning', 'comfortable')`),
+]);
+
+export type ActionPlan = typeof actionPlans.$inferSelect;
+export type ActionTask = typeof actionTasks.$inferSelect;
+export type ActionSkillProgress = typeof actionSkillProgress.$inferSelect;

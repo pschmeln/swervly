@@ -9,27 +9,39 @@ const MAX_ONET_TASK_SEEDS = 3;
 export const EDITORIAL_TASKS: readonly Omit<TaskDraft, "status">[] = [
   {
     title: "Update your resume for this direction",
+    description: null,
+    phase: "prepare",
     origin: "template",
     originKey: "editorial:resume",
     explanation: "Swervly suggestion: tailor one page so this career goal is obvious to a reader.",
+    dueOn: null,
   },
   {
     title: "Find two people who work in this area",
+    description: null,
+    phase: "explore",
     origin: "template",
     originKey: "editorial:people",
     explanation: "Swervly suggestion: alumni, classmates, or LinkedIn contacts — not a claim that anyone is hiring.",
+    dueOn: null,
   },
   {
     title: "Shortlist organizations linked to this area in the career map",
+    description: null,
+    phase: "explore",
     origin: "template",
     originKey: "editorial:orgs",
     explanation: "Swervly suggestion: use Atlas organization links as starting points, not open roles.",
+    dueOn: null,
   },
   {
     title: "After your next co-op, log what you actually did",
+    description: null,
+    phase: "reflect",
     origin: "template",
     originKey: "editorial:review-loop",
     explanation: "Swervly suggestion: Reviews close the Self → Direction → Action → Review loop.",
+    dueOn: null,
   },
 ] as const;
 
@@ -52,10 +64,13 @@ export function templateTasks(goal: ActionGoal): TaskDraft[] {
     onetTasks.forEach((task, index) => {
       tasks.push({
         title: `Practice: ${truncate(task)}`,
+        description: task,
+        phase: "practice",
         origin: "template",
         originKey: `onet-task:${index}`,
         explanation: `Adapted from an O*NET important task for ${goal.title}. Practice idea only — not a job duty.`,
         status: "todo",
+        dueOn: null,
       });
     });
   }

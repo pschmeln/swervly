@@ -6,16 +6,16 @@ import { atlasGraph } from "@/features/atlas/graph";
 const graph = atlasGraph();
 
 describe("templateTasks", () => {
-  it("seeds O*NET practice tasks for an occupation plus editorial steps", () => {
+  it("seeds O*NET practice tasks for an occupation plus phased editorial steps", () => {
     const resolved = resolveActionGoal({ mode: "manual", nodeId: "occ:onet:17-2141.00" }, graph);
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
     const tasks = templateTasks(resolved.goal);
     expect(TEMPLATE_VERSION).toBe("v1");
-    expect(tasks.some((task) => task.originKey.startsWith("onet-task:"))).toBe(true);
+    expect(tasks.some((task) => task.originKey.startsWith("onet-task:") && task.phase === "practice")).toBe(true);
     expect(tasks.filter((task) => task.originKey.startsWith("onet-task:")).length).toBeLessThanOrEqual(3);
     for (const editorial of EDITORIAL_TASKS) {
-      expect(tasks.some((task) => task.originKey === editorial.originKey)).toBe(true);
+      expect(tasks.some((task) => task.originKey === editorial.originKey && task.phase === editorial.phase)).toBe(true);
     }
     for (const task of tasks) {
       expect(task.status).toBe("todo");
