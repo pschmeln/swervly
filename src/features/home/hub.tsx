@@ -171,7 +171,9 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-ink-2">You dismissed the current suggestions. See all of Direction for more.</p>
+            <p className="mt-4 text-ink-2">
+              You&apos;ve said &ldquo;Not for me&rdquo; to every role Swervly can suggest right now. Open Direction to retake the quiz or browse the career map.
+            </p>
           )}
           {interested.length > 0 ? (
             <div className="mt-4">
