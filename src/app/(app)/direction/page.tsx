@@ -83,8 +83,18 @@ export default async function DirectionPage() {
         {direction.suggestions.length === 0 ? (
           <Card>
             <p className="text-neutral-700">
-              You dismissed the current suggestions. You can change your major on your profile. Nothing here is a fit score.
+              Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.
             </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
+                Retake the quiz
+              </Button>
+              {atlasOn ? (
+                <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
+                  Browse the career map
+                </Button>
+              ) : null}
+            </div>
           </Card>
         ) : null}
         {direction.suggestions.map((suggestion) => (

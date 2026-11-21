@@ -19,6 +19,18 @@ export const DIRECTION_QUIZ_LABEL =
 export const DIRECTION_INSUFFICIENT_LABEL =
   "Not enough information for a role suggestion. Quiz scores are not a career-fit score.";
 
+/** Shown when the student has set aside every role Swervly can suggest right now. */
+export const DIRECTION_EXHAUSTED_LABEL =
+  "You've set aside every role Swervly can suggest from your quiz and major right now.";
+
+export type DirectionResult = {
+  label: string;
+  basis: "rules" | "similar_students" | "mixed";
+  suggestions: DirectionSuggestion[];
+  /** True when suggestions ran out because the student dismissed them, not for lack of information. */
+  exhausted: boolean;
+};
+
 export const SIMILAR_MAX_DISTANCE = 6;
 
 /** Distinct similar students required for one role before it is evidence-backed. */
@@ -436,12 +448,17 @@ function quizMatches(
  * non-engineering role when it points there more strongly. Engineering roles
  * only appear when the major's own list includes them (computing, math, science).
  */
-function majorFamilySuggestions(context: DirectionContext, rows: readonly { role: RoleType | ExtraCareerRole; reason: string }[]): DirectionSuggestion[] {
+function majorFamilySuggestions(
+  context: DirectionContext,
+  rows: readonly { role: RoleType | ExtraCareerRole; reason: string }[],
+  hidden: ReadonlySet<string>,
+): DirectionSuggestion[] {
   const quiz = quizMatches(context, false);
   const pointsOf = (role: RoleType | ExtraCareerRole) => quiz.get(role)?.points ?? 0;
   const familyRoles = rows.map((row) => row.role);
   const ordered = rows
     .map((row, index) => ({ row, index }))
+    .filter((item) => !hidden.has(item.row.role))
     .sort((left, right) => pointsOf(right.row.role) - pointsOf(left.row.role) || left.index - right.index)
     .map((item) => item.row);
 
@@ -452,8 +469,11 @@ function majorFamilySuggestions(context: DirectionContext, rows: readonly { role
 
   const chosen = ordered.slice(0, 2).map((row) => asSuggestion(row.role, familyReason(row)));
   const rest = ordered.slice(2);
-  const outside = EXTRA_ROLE_ORDER.filter((role) => !familyRoles.includes(role) && pointsOf(role) > 0);
+  const outside = EXTRA_ROLE_ORDER.filter(
+    (role) => !familyRoles.includes(role) && !hidden.has(role) && pointsOf(role) > 0,
+  );
   // Best remaining by quiz points; ties go to the major's own roles, then editorial order.
+  // When the student dismissed some of the major's roles, the next best fill the empty slots.
   const candidates = [
     ...rest.map((row) => ({ role: row.role, points: pointsOf(row.role), reason: familyReason(row) })),
     ...outside.map((role) => ({
@@ -462,19 +482,23 @@ function majorFamilySuggestions(context: DirectionContext, rows: readonly { role
       reason: `${quiz.get(role)?.reason ?? ""} It's outside your major's usual paths. ${NOT_A_FIT_SCORE}`,
     })),
   ];
-  const third = candidates.reduce<(typeof candidates)[number] | null>(
-    (best, item) => (best === null || item.points > best.points ? item : best),
-    null,
-  );
-  if (third && chosen.length === 2) chosen.push(asSuggestion(third.role, third.reason));
+  while (chosen.length < 3 && candidates.length > 0) {
+    const bestIndex = candidates.reduce(
+      (best, item, index) => (item.points > candidates[best].points ? index : best),
+      0,
+    );
+    const [next] = candidates.splice(bestIndex, 1);
+    chosen.push(asSuggestion(next.role, next.reason));
+  }
   return chosen;
 }
 
 /** Undecided, custom or unknown major: the quiz alone, across every role. */
-function quizOnlySuggestions(context: DirectionContext): DirectionSuggestion[] {
+function quizOnlySuggestions(context: DirectionContext, hidden: ReadonlySet<string>): DirectionSuggestion[] {
   const quiz = quizMatches(context, true);
   const order: readonly (RoleType | ExtraCareerRole)[] = [...ROLE_TYPE_VALUES.filter((role) => role !== "other"), ...EXTRA_ROLE_ORDER];
   return [...quiz.entries()]
+    .filter(([role]) => !hidden.has(role))
     .sort((left, right) => right[1].points - left[1].points || order.indexOf(left[0]) - order.indexOf(right[0]))
     .slice(0, 3)
     .map(([role, match]) => asSuggestion(role, `${match.reason} ${NOT_A_FIT_SCORE}`));
@@ -492,11 +516,18 @@ function insufficientSuggestion(): DirectionSuggestion {
   };
 }
 
-function nonEngineeringSuggestions(context: DirectionContext): DirectionSuggestion[] {
+const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
+
+function nonEngineeringSuggestions(context: DirectionContext, hidden: ReadonlySet<string>): DirectionSuggestion[] {
   const family = majorFamily(context.major);
   const rows = FAMILY_SUGGESTIONS[family] ?? [];
-  const chosen = rows.length > 0 ? majorFamilySuggestions(context, rows) : quizOnlySuggestions(context);
-  return chosen.length > 0 ? chosen : [insufficientSuggestion()];
+  const pick = (skip: ReadonlySet<string>) =>
+    rows.length > 0 ? majorFamilySuggestions(context, rows, skip) : quizOnlySuggestions(context, skip);
+  const chosen = pick(hidden);
+  if (chosen.length > 0) return chosen;
+  // Nothing left only because the student dismissed it all: no "not enough information" card.
+  if (hidden.size > 0 && pick(NOTHING_HIDDEN).length > 0) return [];
+  return [insufficientSuggestion()];
 }
 
 function keepsEngineeringCoopRules(major: string): boolean {
@@ -511,10 +542,20 @@ function keepsEngineeringCoopRules(major: string): boolean {
   );
 }
 
-export function suggestionsFromRules(context: DirectionContext): DirectionSuggestion[] {
-  if (!keepsEngineeringCoopRules(context.major)) return nonEngineeringSuggestions(context);
+/**
+ * Up to three rule-based suggestions. Roles in `dismissed` are skipped, so the
+ * next-best role takes a dismissed role's place. An empty list means the student
+ * dismissed everything this engine can suggest.
+ */
+export function suggestionsFromRules(
+  context: DirectionContext,
+  dismissed: readonly string[] = [],
+): DirectionSuggestion[] {
+  const hidden: ReadonlySet<string> = new Set(dismissed);
+  if (!keepsEngineeringCoopRules(context.major)) return nonEngineeringSuggestions(context, hidden);
   const scored = new Map<RoleType, { points: number; reason: string }>();
   for (const rule of RULES) {
+    if (hidden.has(rule.role)) continue;
     if (!rule.when(context)) continue;
     const current = scored.get(rule.role);
     if (!current || rule.points > current.points) {
@@ -541,6 +582,7 @@ export function suggestionsFromRules(context: DirectionContext): DirectionSugges
   }
 
   for (const roleType of FILL_ORDER) {
+    if (hidden.has(roleType)) continue;
     if (chosen.some((item) => item.roleType === roleType)) continue;
     chosen.push({
       roleType,
@@ -633,7 +675,7 @@ export function evidenceGroup(major: string): MajorFamily | null {
 function withEvidence(
   fromStudents: readonly DirectionSuggestion[],
   fromRules: readonly DirectionSuggestion[],
-): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
+): DirectionResult {
   const suggestions: DirectionSuggestion[] = [];
   for (const evidence of fromStudents) {
     if (suggestions.length === 3) break;
@@ -647,7 +689,11 @@ function withEvidence(
   }
   const hasRules = suggestions.some((item) => item.source === "rules");
   const basis = hasRules ? "mixed" : "similar_students";
-  return { label: DIRECTION_EVIDENCE_LABEL, basis, suggestions };
+  return { label: DIRECTION_EVIDENCE_LABEL, basis, suggestions, exhausted: false };
+}
+
+function exhaustedResult(): DirectionResult {
+  return { label: DIRECTION_EXHAUSTED_LABEL, basis: "rules", suggestions: [], exhausted: true };
 }
 
 /**
@@ -655,30 +701,39 @@ function withEvidence(
  * (see evidenceGroup). Outside engineering, evidence is also limited to the
  * roles the major's own list or the non-engineering roles cover, so an
  * engineering role never reaches a nursing student this way.
+ *
+ * Roles in `dismissed` never appear, from the rules or from student evidence.
+ * The next-best role fills each dismissed slot. When nothing is left, the
+ * result is `exhausted` with no suggestions.
  */
 export function buildDirection(
   context: DirectionContext,
   reviews: readonly SimilarReview[],
-): { label: string; basis: "rules" | "similar_students" | "mixed"; suggestions: DirectionSuggestion[] } {
-  const fromRules = suggestionsFromRules(context);
+  dismissed: readonly string[] = [],
+): DirectionResult {
+  const hidden = new Set(dismissed);
+  const fromRules = suggestionsFromRules(context, dismissed);
+  const evidence = suggestionsFromSimilar(context.traits, reviews).filter((item) => !hidden.has(item.roleType));
   if (!keepsEngineeringCoopRules(context.major)) {
-    const concrete = fromRules.some((item) => item.roleType !== "insufficient");
     const rows = FAMILY_SUGGESTIONS[majorFamily(context.major)] ?? [];
     const quizOnly = rows.length === 0;
-    const rulesOnly = {
-      label: !concrete ? DIRECTION_INSUFFICIENT_LABEL : quizOnly ? DIRECTION_QUIZ_LABEL : DIRECTION_RULES_LABEL,
-      basis: "rules" as const,
-      suggestions: fromRules,
-    };
-    if (quizOnly) return rulesOnly;
     const allowed = new Set<string>([...rows.map((row) => row.role), ...EXTRA_ROLE_ORDER]);
-    const fromStudents = suggestionsFromSimilar(context.traits, reviews).filter((item) => allowed.has(item.roleType));
-    return fromStudents.length === 0 ? rulesOnly : withEvidence(fromStudents, fromRules);
+    const fromStudents = quizOnly ? [] : evidence.filter((item) => allowed.has(item.roleType));
+    if (fromStudents.length > 0) return withEvidence(fromStudents, fromRules);
+    if (fromRules.length === 0) return exhaustedResult();
+    const concrete = fromRules.some((item) => item.roleType !== "insufficient");
+    return {
+      label: !concrete ? DIRECTION_INSUFFICIENT_LABEL : quizOnly ? DIRECTION_QUIZ_LABEL : DIRECTION_RULES_LABEL,
+      basis: "rules",
+      suggestions: fromRules,
+      exhausted: false,
+    };
   }
 
-  const fromStudents = suggestionsFromSimilar(context.traits, reviews);
+  const fromStudents = evidence;
   if (fromStudents.length === 0) {
-    return { label: DIRECTION_RULES_LABEL, basis: "rules", suggestions: fromRules };
+    if (fromRules.length === 0) return exhaustedResult();
+    return { label: DIRECTION_RULES_LABEL, basis: "rules", suggestions: fromRules, exhausted: false };
   }
   return withEvidence(fromStudents, fromRules);
 }
