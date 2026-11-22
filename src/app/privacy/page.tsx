@@ -58,7 +58,14 @@ export default function PrivacyPage() {
             Community, we store the posts and answers you write, any company,
             role or career area you tag them with, the posts and answers you mark
             Helpful, the reports you send, when you agreed to the Community rules,
-            and hourly counts used to limit posting.
+            and hourly counts used to limit posting. If you use Action,
+            we store your plan&apos;s career goal, the tasks you add or accept,
+            optional weekly-hours and horizon settings, and how you rate progress
+            on listed skills. Action data is private to you as the student. Authorized
+            administrators who operate Swervly and the necessary service providers
+            that host and run the app may process it to provide the service. It is
+            not shared publicly or with other students. You can export or delete it
+            with your account.
           </p>
         </section>
 

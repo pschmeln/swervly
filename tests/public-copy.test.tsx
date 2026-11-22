@@ -54,12 +54,21 @@ describe("public copy", () => {
     expect(text.toLowerCase()).toContain("would go back");
     expect(text).toContain("turned on sharing");
     expect(text).toContain("Sharing is optional");
+    // #57 company averages + #44 pay-3
     expect(text).toContain("each student counts once");
     expect(text).toContain("average across all majors");
     expect(text).toContain("never pay or written notes");
+    // #46 Why-we-use-it fit copy
     expect(text).toContain("not a clinical or hiring assessment");
     expect(text).not.toContain("not proof of career fit");
+    // #50 Action privacy + Nov 21 date
     expect(text).toContain("November 21, 2026");
+    expect(text).toContain("If you use Action");
+    expect(text).toContain("Action data is private to you as the student");
+    expect(text).toContain("Authorized administrators");
+    expect(text).toContain("necessary service providers");
+    expect(text).toContain("not shared publicly or with other students");
+    expect(text).toContain("export or delete");
     expect(text).not.toContain("only you can see your profile and co-op reviews");
     expect(text).not.toContain("for UC students");
     expect(text).not.toContain("return offer");
