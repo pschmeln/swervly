@@ -37,11 +37,11 @@ const ROLE_DIRECTORY: Record<string, readonly string[]> = {
 
 const QUIZ_HEADLINE = "Take the quiz first.";
 const QUIZ_NOTE = "Direction is a guess from those answers.";
-const DISMISSED_NOTE = "You dismissed the current suggestions. You can change your major on your profile.";
+const DISMISSED_NOTE = "Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.";
 const PATHS_READY =
   "These pathways are the suggestions already on Direction. Early hypotheses and student evidence stay separate.";
 const PATHS_QUIZ = "Career pathways show up here after you take the quiz.";
-const PATHS_DISMISSED = "No pathways are listed while those suggestions are dismissed.";
+const PATHS_DISMISSED = "No pathways to show right now.";
 const PATHS_INSUFFICIENT = "There is not enough information for a pathway yet.";
 
 export type DirectionExploreCopy = {
@@ -110,7 +110,8 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
       direction: { headline: QUIZ_HEADLINE, note: QUIZ_NOTE, needsQuiz: true },
       paths: [],
       pathsIntro: PATHS_QUIZ,
-      pathsEmpty: PATHS_QUIZ,
+      // The intro already says it. Showing it again as the empty state printed it twice.
+      pathsEmpty: null,
       companies: (companies) => companies.map((company) => ({ ...company, whyShown: whyForCompany(company, new Set()) })),
     };
   }
@@ -135,10 +136,12 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
       headline: input.direction.label,
       note: dismissedAll ? DISMISSED_NOTE : insufficient ? PATHS_INSUFFICIENT : PATHS_READY,
       needsQuiz: false,
+      exhausted: dismissedAll,
     },
     paths: pathways,
     pathsIntro: dismissedAll ? PATHS_DISMISSED : insufficient ? PATHS_INSUFFICIENT : PATHS_READY,
-    pathsEmpty: pathways.length === 0 ? (dismissedAll ? PATHS_DISMISSED : PATHS_QUIZ) : null,
+    // Every empty case is already explained by pathsIntro, so there is no second message.
+    pathsEmpty: null,
     companies: (companies) => companies.map((company) => ({ ...company, whyShown: whyForCompany(company, categories) })),
   };
 }
