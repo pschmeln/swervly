@@ -1,5 +1,7 @@
 import { Card } from "@/components/ui";
 import { ALL_MAJORS, type PublicMajorView } from "@/features/company/aggregate";
+import { ReviewThread } from "@/features/company/review-thread";
+import type { CommentView } from "@/features/community/server";
 
 function money(value: number): string {
   return `$${value}`;
@@ -9,9 +11,12 @@ function money(value: number): string {
 export function PublicMajorSection({
   view,
   employerName,
+  threads,
 }: {
   view: PublicMajorView;
   employerName?: string;
+  /** Comments on each shared note (company page only; the review-form preview passes none). */
+  threads?: { comments: Record<string, CommentView[]>; agreed: boolean };
 }) {
   if (!view.visible) {
     return (
@@ -94,8 +99,11 @@ export function PublicMajorSection({
         {view.sharedNotes.length > 0 ? (
           <ul className="mt-2 grid gap-2">
             {view.sharedNotes.map((note, index) => (
-              <li key={`${index}-${note.slice(0, 24)}`} className="break-words text-neutral-800">
-                {note}
+              <li key={note.reviewId ?? `${index}-${note.text.slice(0, 24)}`} className="break-words text-neutral-800">
+                {note.text}
+                {threads && note.reviewId ? (
+                  <ReviewThread reviewId={note.reviewId} comments={threads.comments[note.reviewId] ?? []} agreed={threads.agreed} />
+                ) : null}
               </li>
             ))}
           </ul>

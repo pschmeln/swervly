@@ -10,6 +10,7 @@ import {
   type PublicMajorView,
   type ReviewForAggregate,
 } from "@/features/company/aggregate";
+import { insertReviewComment, loadReviewComments, type CommentView } from "@/features/community/server";
 import { publicAggregateMajor } from "@/features/majors/selection";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { employerUsableByUser } from "@/features/review/server";
@@ -45,6 +46,7 @@ async function loadSharedReviews(employerIds: readonly string[]): Promise<Loaded
   const rows = await db
     .select({
       rotationId: rotations.id,
+      reviewId: reviews.id,
       employerId: rotations.employerId,
       rotationNumber: rotations.rotationNumber,
       userId: rotations.userId,
@@ -79,6 +81,7 @@ async function loadSharedReviews(employerIds: readonly string[]): Promise<Loaded
       if (!major) return [];
       return [{
       rotationId: row.rotationId,
+      reviewId: row.reviewId,
       employerId: row.employerId,
       rotationNumber: row.rotationNumber,
       userId: row.userId,
@@ -100,18 +103,50 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
   return loadSharedReviews([employerId]);
 }
 
-/** The company page: the viewer's own major, or the all-majors fallback when that is hidden (item 4). */
+/** Review ids whose shared notes this viewer sees: their own major's view, once it is visible. */
+export function visibleNoteReviewIds(averages: CompanyAverages): string[] {
+  if (!averages.mine.visible) return [];
+  return averages.mine.sharedNotes.flatMap((note) => (note.reviewId ? [note.reviewId] : []));
+}
+
+/**
+ * The company page: the viewer's own major, or the all-majors fallback when that is hidden (item 4),
+ * plus the comments on each shared note the viewer can see (item 16).
+ */
 export async function companyViewForUser(
   user: User,
   employerId: string,
-): Promise<{ employerName: string; viewerMajor: string | null } & CompanyAverages> {
+): Promise<{ employerName: string; viewerMajor: string | null; noteComments: Record<string, CommentView[]> } & CompanyAverages> {
   const [employer] = await db.select().from(employers).where(eq(employers.id, employerId)).limit(1);
   if (!employer || !employerUsableByUser(employer, user.id)) {
     throw new ApiError(404, "employer_not_found", "Employer not found.");
   }
   const viewerMajor = publicAggregateMajor(user);
   const loaded = await loadEmployerReviews(employer.id);
-  return { employerName: employer.name, viewerMajor, ...companyAverages(loaded, viewerMajor, await approvedSkillNames()) };
+  const averages = companyAverages(loaded, viewerMajor, await approvedSkillNames());
+  const noteComments = await loadReviewComments(user, visibleNoteReviewIds(averages));
+  return { employerName: employer.name, viewerMajor, noteComments, ...averages };
+}
+
+/**
+ * Comment on a shared review note (item 16). Allowed only when the note is on the viewer's company
+ * page right now: same major, author's current share consent, per-note consent, and at least 2
+ * students in the group. Anything else is "not found", so the route can't be used to probe reviews.
+ */
+export async function createReviewComment(user: User, reviewId: string, body: string): Promise<{ id: string }> {
+  const [target] = await db
+    .select({ employerId: rotations.employerId })
+    .from(reviews)
+    .innerJoin(rotations, eq(rotations.id, reviews.rotationId))
+    .where(eq(reviews.id, reviewId))
+    .limit(1);
+  const notFound = new ApiError(404, "not_found", "That review is no longer available.");
+  if (!target) throw notFound;
+  const [employer] = await db.select().from(employers).where(eq(employers.id, target.employerId)).limit(1);
+  if (!employer || !employerUsableByUser(employer, user.id)) throw notFound;
+  const averages = companyAverages(await loadEmployerReviews(employer.id), publicAggregateMajor(user), await approvedSkillNames());
+  if (!visibleNoteReviewIds(averages).includes(reviewId)) throw notFound;
+  return insertReviewComment(user, reviewId, body);
 }
 
 export type DirectoryAverages = { employerId: string } & CompanyAverages;

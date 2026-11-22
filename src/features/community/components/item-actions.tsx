@@ -22,6 +22,7 @@ export function ItemActions({
   title,
   body,
   afterDelete,
+  commentNoun = "answer",
 }: {
   target: Target;
   id: string;
@@ -33,6 +34,8 @@ export function ItemActions({
   title?: string;
   body: string;
   afterDelete?: string;
+  /** What a comment is called where it appears: an answer on a post, a comment on a review note. */
+  commentNoun?: "answer" | "comment";
 }) {
   const router = useRouter();
   const [helped, setHelped] = useState(helpedByMe);
@@ -160,7 +163,7 @@ export function ItemActions({
           <p className="text-neutral-800">
             {target === "post"
               ? "Delete this post? If other students answered it, their answers stay and your post is erased."
-              : "Delete this answer? This can't be undone."}
+              : `Delete this ${commentNoun}? This can't be undone.`}
           </p>
           <div><Button disabled={pending} onClick={remove} className="w-full sm:w-auto">Delete {noun}</Button></div>
         </div>
