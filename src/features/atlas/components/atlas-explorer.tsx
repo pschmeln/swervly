@@ -484,6 +484,11 @@ export function AtlasExplorer({
                       <button type="button" onClick={() => item.id && go(defaultTrail(graph, item.id))} className={`min-h-12 rounded-full border border-neutral-200 bg-white px-4 text-left text-sm text-sky-800 underline hover:bg-neutral-50 ${focusRing}`}>
                         {item.title}
                       </button>
+                    ) : item.href ? (
+                      <a href={item.href} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-12 items-center rounded-full bg-neutral-100 px-4 text-sm text-neutral-800 underline ${focusRing}`}>
+                        {item.title}
+                        <span className="sr-only"> (O*NET OnLine, opens in a new tab)</span>
+                      </a>
                     ) : (
                       <span className="inline-flex min-h-12 items-center rounded-full bg-neutral-100 px-4 text-sm text-neutral-800">{item.title}</span>
                     )}

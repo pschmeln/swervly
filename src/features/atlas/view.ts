@@ -19,7 +19,7 @@ export const OCCUPATION_PENDING =
 export const TASKS_NOTE = "The five tasks O*NET rates most important for this occupation.";
 export const SKILLS_NOTE = "Skills O*NET rates important here and more important than in the average job.";
 export const NO_SKILLS_NOTE = "O*NET doesn't have usable skill ratings for this occupation.";
-export const RELATED_NOTE = "Occupations O*NET lists as most closely related. Ones in this map open here.";
+export const RELATED_NOTE = "Occupations O*NET lists as most closely related. Ones in this map open here; the rest open on O*NET OnLine.";
 export const SOFTWARE_NOTE = "Software O*NET flags as in demand in job postings for this occupation. Swervly leaves out common office tools.";
 export const NO_SOFTWARE_NOTE = "O*NET doesn't flag any software as in demand for this occupation.";
 
@@ -58,7 +58,7 @@ export type NodeModel = {
     skills: readonly string[];
     software: readonly string[];
     jobZone: (OnetJobZone & { zone: number }) | null;
-    related: readonly { title: string; id: AtlasNodeId | null }[];
+    related: readonly { title: string; id: AtlasNodeId | null; href: string | null }[];
   } | null;
   closestOnly: boolean;
   children: CardModel[];
@@ -215,7 +215,8 @@ export function nodeModel(
         jobZone: record.jobZone !== null && ONET_JOB_ZONES[record.jobZone] ? { zone: record.jobZone, ...ONET_JOB_ZONES[record.jobZone] } : null,
         related: record.related.map((item) => {
           const relatedId = `occ:onet:${item.onetCode}` as AtlasNodeId;
-          return { title: item.title, id: graph.nodes.has(relatedId) ? relatedId : null };
+          const inMap = graph.nodes.has(relatedId);
+          return { title: item.title, id: inMap ? relatedId : null, href: inMap ? null : onetOnlineHref(item.onetCode) };
         }),
       }
     : null;
