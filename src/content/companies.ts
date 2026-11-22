@@ -1543,7 +1543,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Chicago, IL",
     roleTypes: ["design", "manufacturing_process", "test_validation"],
     families: ["fam:electronics-hardware", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.littelfuse.com/about-us/careers", hostSuffix: "littelfuse.com" },
+    careers: { url: "https://www.littelfuse.com/Company/Careers", hostSuffix: "littelfuse.com" },
   },
   {
     id: "lockheed-martin",
@@ -1663,7 +1663,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: null,
     roleTypes: ["design", "test_validation", "manufacturing_process", "software"],
     families: ["fam:design-development", "fam:simulation-validation", "fam:manufacturing-automation", "fam:software-engineering"],
-    careers: { url: "https://jobs.medtronic.com/", hostSuffix: "medtronic.com" },
+    careers: { url: "https://www.medtronic.com/en-us/our-company/careers.html", hostSuffix: "medtronic.com" },
   },
   {
     id: "merck",
@@ -1683,7 +1683,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Cincinnati, OH",
     roleTypes: ["field_site"],
     families: ["fam:construction-field"],
-    careers: { url: "https://www.messer.com/careers", hostSuffix: "messer.com" },
+    careers: { url: "https://www.messer.com/culture/", hostSuffix: "messer.com" },
   },
   {
     id: "meta",
@@ -2673,7 +2673,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Durham, NC",
     roleTypes: ["manufacturing_process", "design", "test_validation"],
     families: ["fam:electronics-hardware", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.wolfspeed.com/company/careers/", hostSuffix: "wolfspeed.com" },
+    careers: { url: "https://www.wolfspeed.com/careers/", hostSuffix: "wolfspeed.com" },
   },
   {
     id: "woodward",
