@@ -56,7 +56,8 @@ export default function PrivacyPage() {
             Interested or Not interested, the one you choose as your direction,
             and your answers to its short preference questions. If you use
             Community, we store the posts and answers you write, comments you
-            leave on shared review notes, any company,
+            leave on shared review notes, which work-style card you share (if
+            you share it), any company,
             role or career area you tag them with, the posts and answers you mark
             Helpful, the reports you send, when you agreed to the Community rules,
             and hourly counts used to limit posting. If you use Action,
@@ -140,6 +141,11 @@ export default function PrivacyPage() {
             Helpful counts are shown; who marked them is not. Reports go only to
             the founders, who can hide, restore or remove reported posts. Hidden
             posts disappear for everyone except the founders.
+          </p>
+          <p>
+            If you share your work-style card, other students see its name and
+            description and the line you add, without your name. Your quiz
+            answers and trait readings are not shared.
           </p>
           <p>
             Comments on a shared review note follow the same rules. They are

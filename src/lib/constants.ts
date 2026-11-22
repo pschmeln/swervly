@@ -44,6 +44,7 @@ export const ROUTES = {
   communityPost: "/community/posts/[id]",
   communityTerms: "/api/community/terms",
   communityPosts: "/api/community/posts",
+  communityArchetypeShare: "/api/community/archetype",
   communityPostApi: "/api/community/posts/[id]",
   communityPostComments: "/api/community/posts/[id]/comments",
   communityReviewComments: "/api/community/reviews/[id]/comments",

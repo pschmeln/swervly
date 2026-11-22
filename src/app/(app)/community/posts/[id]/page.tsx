@@ -5,7 +5,7 @@ import { Card, PageShell } from "@/components/ui";
 import { focusRing } from "@/components/ui/focus-ring";
 import { AnswerComposer } from "@/features/community/components/answer-composer";
 import { ItemActions } from "@/features/community/components/item-actions";
-import { DELETED_POST, HIDDEN_NOTE, PostTags } from "@/features/community/components/post-card";
+import { DELETED_POST, HIDDEN_NOTE, PostTags, SharedCard } from "@/features/community/components/post-card";
 import { hasCommunityTerms, POST_KIND_LABELS, timeAgo } from "@/features/community/rules";
 import { getPost } from "@/features/community/server";
 import { requireOnboardedUser } from "@/lib/auth";
@@ -42,10 +42,12 @@ export default async function CommunityPostPage({ params }: { params: Promise<{ 
               {post.mine ? " · You" : ""}
             </p>
             <h2 className="mt-1 break-words font-serif text-2xl font-normal leading-tight">{post.title}</h2>
+            {post.archetype ? <SharedCard archetype={post.archetype} /> : null}
             {post.body ? <p className="mt-2 whitespace-pre-line break-words text-neutral-800">{post.body}</p> : null}
             <PostTags tags={post.tags} />
             {post.hidden ? null : <ItemActions target="post" id={post.id} helpfulCount={post.helpfulCount} helpedByMe={post.helpedByMe} mine={post.mine}
-              canEdit={post.canEdit} agreed={agreed} title={post.title} body={post.body} afterDelete={ROUTES.community} />}
+              canEdit={post.canEdit} agreed={agreed} title={post.title} body={post.body} afterDelete={ROUTES.community}
+              titleEditable={post.kind !== "archetype"} />}
           </>
         )}
       </Card>

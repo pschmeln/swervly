@@ -23,6 +23,7 @@ export function ItemActions({
   body,
   afterDelete,
   commentNoun = "answer",
+  titleEditable = true,
 }: {
   target: Target;
   id: string;
@@ -36,6 +37,8 @@ export function ItemActions({
   afterDelete?: string;
   /** What a comment is called where it appears: an answer on a post, a comment on a review note. */
   commentNoun?: "answer" | "comment";
+  /** A shared work-style card keeps its archetype name; only its line can be edited. */
+  titleEditable?: boolean;
 }) {
   const router = useRouter();
   const [helped, setHelped] = useState(helpedByMe);
@@ -146,12 +149,12 @@ export function ItemActions({
 
       {mode === "edit" ? (
         <div className="grid gap-2 rounded-2xl border border-neutral-200 bg-white p-3">
-          {target === "post" ? (
+          {target === "post" && titleEditable ? (
             <Field label="Title" htmlFor={`edit-title-${id}`}>
               <TextInput id={`edit-title-${id}`} value={editTitle} maxLength={TITLE_MAX} onChange={(event) => setEditTitle(event.target.value)} />
             </Field>
           ) : null}
-          <Field label={target === "post" ? "Details" : "Answer"} htmlFor={`edit-body-${id}`}>
+          <Field label={target === "post" ? (titleEditable ? "Details" : "Your line") : commentNoun === "comment" ? "Comment" : "Answer"} htmlFor={`edit-body-${id}`}>
             <Textarea id={`edit-body-${id}`} value={editBody} rows={4} maxLength={target === "post" ? BODY_MAX : COMMENT_MAX} onChange={(event) => setEditBody(event.target.value)} />
           </Field>
           <div><Button disabled={pending} onClick={saveEdit} className="w-full sm:w-auto">Save changes</Button></div>
