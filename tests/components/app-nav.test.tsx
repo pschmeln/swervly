@@ -26,4 +26,13 @@ describe("AppNav", () => {
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('id="main-menu"');
   });
+
+  it("uses the official on-light wordmark and links home to /home", () => {
+    const html = renderToStaticMarkup(<AppNav account={<span>ACCOUNT</span>} />);
+    expect(html).toContain("/brand/wordmark-on-light.svg");
+    expect(html).toContain('aria-label="Swervly home"');
+    expect(html).toContain('href="/home"');
+    expect(html).not.toContain("bg-gradient-to-br");
+    expect(html).not.toContain("wordmark-light.svg");
+  });
 });

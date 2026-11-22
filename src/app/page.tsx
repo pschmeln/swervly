@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button, Card } from "@/components/ui";
 import { focusRing } from "@/components/ui/controls";
 import { ProductDemo } from "@/features/landing/demo";
@@ -21,9 +22,19 @@ export function LandingPitch() {
       <div className="sky-band">
         <div className="mx-auto w-full max-w-5xl px-4 pb-40 pt-5">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-2 text-lg font-bold tracking-tight text-white">
-              <span aria-hidden="true" className="size-5 rounded-md bg-gradient-to-br from-white to-[#cdd9ff]" />
-              Swervly
+            <span
+              className="inline-flex items-center"
+              role="img"
+              aria-label="Swervly"
+            >
+              {/* on-dark wordmark: white icon + white type/dot for sky-band contrast */}
+              <BrandLogo
+                variant="dark"
+                wordmark
+                size={36}
+                sizeClassName="h-7 sm:h-9"
+                decorative
+              />
             </span>
           </div>
           <div className="mx-auto mt-12 max-w-2xl text-center sm:mt-16">
