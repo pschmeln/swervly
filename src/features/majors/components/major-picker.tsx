@@ -10,7 +10,7 @@ import {
   type MajorSearchContext,
 } from "@/features/majors/catalog";
 import type { MajorPickerValue } from "@/features/majors/selection";
-import { offersUndecided } from "@/lib/audience";
+import { offersUndecided, showsMajorCategory } from "@/lib/audience";
 
 type Option =
   | { kind: "undecided"; key: string; label: string; detail: string }
@@ -48,7 +48,7 @@ export function MajorPicker({
         : "";
   const shown = query ?? selectedLabel;
   const customMatch = value.source === "custom" ? matchCatalog(value.name, context ?? {}) : null;
-  const matchedListed = customMatch && !customMatch.legacy ? customMatch : null;
+  const matchedListed = customMatch && !customMatch.legacy && showsMajorCategory(customMatch.category) ? customMatch : null;
 
   function choose(option: Option) {
     if (option.kind === "undecided") onChange({ source: "undecided", name: "" });

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { FAMILIES } from "@/content/atlas/taxonomy";
 import { careerRoleLabel, EXTRA_CAREER_ROLE_IDS } from "@/features/direction/career-roles";
 import { ROLE_TYPE_VALUES } from "@/features/review/roles";
+import { showsFamily, showsRole } from "@/lib/audience";
 
 /**
  * Community rules (item 14, D3). Posts and answers appear at once to other signed-in students
@@ -44,10 +45,11 @@ const FAMILY_IDS = new Set(FAMILIES.map((family) => family.id));
 export const COMMUNITY_ROLE_IDS: readonly string[] = [...ROLE_TYPE_VALUES, ...EXTRA_CAREER_ROLE_IDS].filter(
   (id) => id !== "other" && id !== "insufficient",
 );
-export const COMMUNITY_ROLE_OPTIONS = COMMUNITY_ROLE_IDS.map((id) => ({ value: id, label: careerRoleLabel(id) })).sort((a, b) =>
+/** Picker options show only roles and areas for the current audience (src/lib/audience.ts); validation still accepts all. */
+export const COMMUNITY_ROLE_OPTIONS = COMMUNITY_ROLE_IDS.filter(showsRole).map((id) => ({ value: id, label: careerRoleLabel(id) })).sort((a, b) =>
   a.label.localeCompare(b.label),
 );
-export const COMMUNITY_AREA_OPTIONS = FAMILIES.map((family) => ({ value: family.id, label: family.title })).sort((a, b) =>
+export const COMMUNITY_AREA_OPTIONS = FAMILIES.filter((family) => showsFamily(family.id)).map((family) => ({ value: family.id, label: family.title })).sort((a, b) =>
   a.label.localeCompare(b.label),
 );
 

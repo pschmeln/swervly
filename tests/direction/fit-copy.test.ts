@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { QUIZ_INTRO } from "@/content/mini-ipip";
 import { INDUSTRY_MAJORS, GRAD_MAJORS } from "@/content/major-traits";
 import {
@@ -12,6 +12,9 @@ import {
 import { academicExploration } from "@/features/majors/selection";
 import type { TraitScores } from "@/features/profile/scoring";
 import { ATLAS_BANNER } from "@/features/atlas/view";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 /**
  * Founder rule for fit copy (Nov 21, 2026):

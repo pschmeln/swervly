@@ -1,10 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { OCCUPATIONS } from "@/content/atlas/occupations";
 import { ONET_DETAILS } from "@/content/atlas/onet-details";
 import { atlasGraph } from "@/features/atlas/graph";
 import { atlasEntry } from "@/features/atlas/entry";
 import { nodeModel } from "@/features/atlas/view";
 import type { AtlasNodeId } from "@/features/atlas/types";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const graph = atlasGraph();
 const codes = new Set(OCCUPATIONS.map((occupation) => occupation.onetCode));

@@ -26,6 +26,7 @@ import {
   type RateAction,
   type ReportReason,
 } from "./rules";
+import { showsCompany, showsFamily, showsRole } from "@/lib/audience";
 
 /**
  * Community data access. Every write takes the user from the session (apiOnboardedUser) and
@@ -117,7 +118,7 @@ export async function takeRateSlot(userId: string, action: RateAction, now = new
 
 /** Approved employers for the directory companies, for the composer and the company filter. */
 export async function directoryEmployers(): Promise<{ id: string; name: string; families: readonly FamilyId[] }[]> {
-  const byName = new Map(COMPANIES.map((company) => [normalizeEmployerName(company.name), company]));
+  const byName = new Map(COMPANIES.filter(showsCompany).map((company) => [normalizeEmployerName(company.name), company]));
   const found = await db
     .select({ id: employers.id, name: employers.name, normalizedName: employers.normalizedName })
     .from(employers)
@@ -136,11 +137,12 @@ async function requireApprovedEmployer(employerId: string): Promise<void> {
   if (!row) throw new ApiError(400, "invalid_body", "Choose a company from the list.", { employerId: "Choose a company from the list." });
 }
 
-function tagsFor(row: { employerName: string | null; roleType: string | null; atlasFamily: string | null }): PostTag[] {
+export function tagsFor(row: { employerName: string | null; roleType: string | null; atlasFamily: string | null }): PostTag[] {
   const tags: PostTag[] = [];
   if (row.employerName) tags.push({ kind: "company", label: row.employerName });
-  if (row.roleType) tags.push({ kind: "role", label: careerRoleLabel(row.roleType) });
-  if (row.atlasFamily) {
+  // Tags for roles and areas hidden for the current audience are left off.
+  if (row.roleType && showsRole(row.roleType)) tags.push({ kind: "role", label: careerRoleLabel(row.roleType) });
+  if (row.atlasFamily && showsFamily(row.atlasFamily)) {
     const title = FAMILY_TITLE.get(row.atlasFamily as FamilyId);
     if (title) tags.push({ kind: "area", label: title });
   }

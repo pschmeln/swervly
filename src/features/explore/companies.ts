@@ -1,7 +1,7 @@
 import { COMPANIES } from "@/content/companies";
 import { careerRoleLabel, type CareerRoleId } from "@/features/direction/career-roles";
 import { hasCareerLink, type CareerLinkId } from "@/features/explore/links";
-import { showsCompany } from "@/lib/audience";
+import { showsCompany, showsRole } from "@/lib/audience";
 
 export const DIRECTORY_WHY_SHOWN = "Included in this directory of official careers pages.";
 
@@ -27,8 +27,8 @@ export const CATALOG_COMPANIES: readonly CatalogCompany[] = COMPANIES.filter((co
     id: company.id,
     name: company.name,
     field: company.industry ?? "Industry not on file",
-    roleCategories: company.roleTypes.map(careerRoleLabel),
-    roleTypes: company.roleTypes,
+    roleCategories: company.roleTypes.filter(showsRole).map(careerRoleLabel),
+    roleTypes: company.roleTypes.filter(showsRole),
     whyShown: DIRECTORY_WHY_SHOWN,
     careerLinkId: company.id,
   }),
