@@ -20,6 +20,7 @@ const post: PostSummary = {
   id: "00000000-0000-4000-8000-000000000009",
   kind: "question",
   title: "What is the first week like at GE Aerospace?",
+  archetype: null,
   body: "Starting in January.",
   tags: [{ kind: "company", label: "GE Aerospace" }],
   createdAt: new Date("2026-11-21T10:00:00Z"),

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui";
+import type { SharedArchetype } from "@/features/community/archetype-view";
 import { focusRing } from "@/components/ui/focus-ring";
 import { POST_KIND_LABELS, timeAgo } from "@/features/community/rules";
 import type { PostSummary } from "@/features/community/server";
@@ -27,6 +28,17 @@ export function PostTags({ tags }: { tags: PostSummary["tags"] }) {
   );
 }
 
+/** A shared work-style card inside a post: the archetype's name and description, nothing personal. */
+export function SharedCard({ archetype }: { archetype: SharedArchetype }) {
+  return (
+    <div className="mt-2 rounded-2xl border border-neutral-200 bg-[#f4f8ff] p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">Work-style card</p>
+      <p className="mt-1 font-serif text-2xl font-normal leading-tight text-ink">{archetype.name}</p>
+      <p className="mt-1 text-ink-2">{archetype.description}</p>
+    </div>
+  );
+}
+
 /** One post in the list. No author is ever shown; "You" marks the viewer's own posts. */
 export function PostCard({ post, now }: { post: PostSummary; now: Date }) {
   const href = ROUTES.communityPost.replace("[id]", post.id);
@@ -41,6 +53,7 @@ export function PostCard({ post, now }: { post: PostSummary; now: Date }) {
           {post.title}
         </Link>
       </h3>
+      {post.archetype ? <SharedCard archetype={post.archetype} /> : null}
       {post.body ? <p className="break-words text-neutral-800">{excerpt(post.body)}</p> : null}
       <PostTags tags={post.tags} />
       <p className="mt-2 text-sm text-neutral-600">

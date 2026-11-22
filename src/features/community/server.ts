@@ -15,6 +15,7 @@ import {
 import type { FamilyId } from "@/features/atlas/types";
 import { careerRoleLabel } from "@/features/direction/career-roles";
 import { normalizeEmployerName } from "@/features/review/normalize";
+import { sharedArchetype, type SharedArchetype } from "./archetype-view";
 import { ApiError } from "@/lib/api";
 import {
   COMMUNITY_TERMS_VERSION,
@@ -40,6 +41,8 @@ export type PostSummary = {
   title: string;
   body: string;
   tags: PostTag[];
+  /** A shared work-style card (item 19): its name and description. Null for other posts. */
+  archetype: SharedArchetype | null;
   createdAt: Date;
   editedAt: Date | null;
   answerCount: number;
@@ -194,7 +197,13 @@ export async function editPost(user: User, postId: string, input: { title: strin
   const cutoff = new Date(Date.now() - EDIT_WINDOW_MS);
   const updated = await db
     .update(communityPosts)
-    .set({ title: input.title, body: input.body, editedAt: sql`now()`, updatedAt: sql`now()` })
+    .set({
+      // A shared card keeps its archetype name as the title; only the student's line can change.
+      title: sql`case when ${communityPosts.kind} = 'archetype' then ${communityPosts.title} else ${input.title} end`,
+      body: input.body,
+      editedAt: sql`now()`,
+      updatedAt: sql`now()`,
+    })
     .where(
       and(
         eq(communityPosts.id, postId),
@@ -260,6 +269,7 @@ export async function listPosts(
       authorUserId: communityPosts.authorUserId,
       roleType: communityPosts.roleType,
       atlasFamily: communityPosts.atlasFamily,
+      archetypeId: communityPosts.archetypeId,
       employerName: employers.name,
       createdAt: communityPosts.createdAt,
       editedAt: communityPosts.editedAt,
@@ -279,6 +289,7 @@ export async function listPosts(
     title: row.title,
     body: row.body,
     tags: tagsFor(row),
+    archetype: sharedArchetype(row.archetypeId),
     createdAt: row.createdAt,
     editedAt: row.editedAt,
     answerCount: Number(row.answerCount),
@@ -307,6 +318,7 @@ export async function getPost(viewer: User, postId: string, options: { founder?:
       authorUserId: communityPosts.authorUserId,
       roleType: communityPosts.roleType,
       atlasFamily: communityPosts.atlasFamily,
+      archetypeId: communityPosts.archetypeId,
       employerName: employers.name,
       createdAt: communityPosts.createdAt,
       editedAt: communityPosts.editedAt,
@@ -331,6 +343,7 @@ export async function getPost(viewer: User, postId: string, options: { founder?:
     title: deleted ? "" : row.title,
     body: deleted ? "" : row.body,
     tags: deleted ? [] : tagsFor(row),
+    archetype: deleted ? null : sharedArchetype(row.archetypeId),
     createdAt: row.createdAt,
     editedAt: row.editedAt,
     answerCount: comments.filter((comment) => comment.status === "visible").length,

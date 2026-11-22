@@ -11,27 +11,15 @@ import { ProfileEditor } from "@/features/profile/components/profile-editor";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { loadChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
+import { hasCommunityTerms } from "@/features/community/rules";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
 import { readTraits } from "@/features/profile/traits";
-import type { TraitScores } from "@/features/profile/scoring";
-import { TRAITS } from "@/content/mini-ipip";
+import { scoresFromStored } from "@/features/profile/scoring";
 import { requireUser } from "@/lib/auth";
 import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Profile" };
-
-function scoresFrom(value: unknown): TraitScores | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
-  const scores = {} as TraitScores;
-  for (const trait of TRAITS) {
-    const score = record[trait];
-    if (typeof score !== "number") return null;
-    scores[trait] = score;
-  }
-  return scores;
-}
 
 export default async function ProfilePage() {
   const user = await requireUser();
@@ -61,13 +49,13 @@ export default async function ProfilePage() {
   ]);
   const profile = profileRows[0];
   const latest = assessmentRows[0];
-  const parsedScores = latest?.instrument === INSTRUMENT ? scoresFrom(latest.scored) : null;
+  const parsedScores = latest?.instrument === INSTRUMENT ? scoresFromStored(latest.scored) : null;
   const readings = parsedScores ? readTraits(parsedScores) : null;
   const archetype = parsedScores ? archetypeFor(parsedScores) : null;
 
   return (
     <PageShell title="Profile">
-      {archetype ? <ArchetypeCard card={archetype} /> : null}
+      {archetype ? <ArchetypeCard card={archetype} share={{ agreed: hasCommunityTerms(user) }} /> : null}
       {atlasPrototypeEnabled() ? <ChosenDirectionCard chosen={chosen} /> : null}
       {user.school ? (
         <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
