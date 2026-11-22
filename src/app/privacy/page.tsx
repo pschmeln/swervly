@@ -94,18 +94,24 @@ export default function PrivacyPage() {
             least 2 different students in the major have authorized reviews for
             the company, so one student with several reviews cannot unlock it
             alone. Sharing is optional; you can keep reviews private and still use
-            the quiz and rule-based Direction. The page shows how many co-op
-            experiences were rated &quot;Would go back&quot; (counting Yes only, with
-            Maybe shown separately), with a separate count of reviews and students,
-            plus average ratings, top skills, and shared notes. It does not show
-            names. Pay is shown only as the lowest and highest figures, and only when
+            the quiz and rule-based Direction. The page shows what percent of
+            students would go back (each student counts once, by their latest co-op
+            there), with Maybe shown separately and the number of students, plus
+            average ratings, top skills, and shared notes. It does not show
+            names. When fewer than 2 students in a major have shared reviews of a
+            company, students in that major instead see an average across all
+            majors: ratings, would go back and top skills only, never pay or
+            written notes, and only once at least 2 different students
+            contribute. A short version of these figures also appears on each
+            company in Companies &amp; opportunities. Pay is shown only as the lowest and highest figures, and only when
             at least 3 different students in that group reported pay. A written note appears only if you ticked
             the share box for that note. The box is off until you type something. A
             threshold of two is a minimum, not a guarantee of anonymity: with
             only two students, each one may be able to work out what the other
             wrote, especially in a small major or unusual role. If you agreed to
-            sharing before November 18, 2026, when the minimum was three, your
-            reviews stop being shared until you turn sharing on again in Settings.
+            sharing before November 21, 2026, when the all-majors average was
+            added, your reviews stop being shared until you turn sharing on again
+            in Settings.
           </p>
           <p>
             Your home city, distance and the city where you worked are not shown

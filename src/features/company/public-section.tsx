@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui";
-import type { PublicMajorView } from "@/features/company/aggregate";
+import { ALL_MAJORS, type PublicMajorView } from "@/features/company/aggregate";
 
 function money(value: number): string {
   return `$${value}`;
@@ -71,6 +71,10 @@ export function PublicMajorSection({
           <p className="mt-1 text-sm text-neutral-600">No shared skills yet.</p>
         )}
       </div>
+      {view.major === ALL_MAJORS ? (
+        <p className="mt-4 text-sm text-neutral-600">Pay and written notes appear only within a student&apos;s own major.</p>
+      ) : (
+      <>
       <div className="mt-4">
         <h3 className="text-sm font-medium text-neutral-900">Pay</h3>
         {view.payRange ? (
@@ -99,6 +103,8 @@ export function PublicMajorSection({
           <p className="mt-1 text-sm text-neutral-600">No shared notes.</p>
         )}
       </div>
+      </>
+      )}
     </Card>
   );
 }

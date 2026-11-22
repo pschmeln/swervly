@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SKILLS } from "@/content/skills";
-import { aggregateForMajor, MIN_DISTINCT_PAY_CONTRIBUTORS, type ReviewForAggregate } from "@/features/company/aggregate";
+import { aggregateForMajor, ALL_MAJORS, companyAverages, MIN_DISTINCT_PAY_CONTRIBUTORS, type ReviewForAggregate } from "@/features/company/aggregate";
+import { CompanyAveragesSection, CompanyAveragesSummary, NOT_ENOUGH_MAJOR, NOTHING_YET } from "@/features/company/averages-section";
 import { PublicMajorSection } from "@/features/company/public-section";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -9,6 +10,7 @@ function review(overrides: Partial<ReviewForAggregate> = {}): ReviewForAggregate
     userId: "user-a",
     major: "Electrical Engineering",
     wouldReturn: "yes",
+    rotationNumber: 1,
     enjoyment: 4,
     learning: 4,
     mentorship: 4,
@@ -63,11 +65,10 @@ describe("aggregateForMajor", () => {
     );
     expect(threeStudents.visible).toBe(true);
     expect(threeStudents.contributorCount).toBe(3);
-    expect(threeStudents.headline).toBe(
-      '2 of 3 co-op experiences were rated "Would go back".',
-    );
+    expect(threeStudents.headline).toBe("67% would go back: 2 of 3 students said yes.");
+    expect(threeStudents.wouldGoBackPercent).toBe(67);
     expect(threeStudents.maybeLine).toBe("1 said maybe.");
-    expect(threeStudents.basisLine).toBe("Based on 3 reviews from 3 students.");
+    expect(threeStudents.basisLine).toBe("Based on 3 Electrical Engineering students.");
     // Only two different students reported pay (b and c): below the 3-student pay minimum.
     expect(threeStudents.payRange).toBeNull();
     expect(threeStudents.topSkills).toEqual(["CAD"]);
@@ -75,22 +76,22 @@ describe("aggregateForMajor", () => {
     expect(JSON.stringify(threeStudents)).not.toContain("@");
   });
 
-  it("counts experiences for would-go-back and students separately", () => {
+  it("counts each student once for would-go-back, by their latest co-op", () => {
     const shown = aggregateForMajor(
       [
         review({ userId: "a", payHourly: 20.2, wouldReturn: "maybe" }),
         review({ userId: "b", payHourly: 30.8, wouldReturn: "yes" }),
         review({ userId: "c", payHourly: 25, wouldReturn: "no" }),
-        review({ userId: "a", payHourly: 40, wouldReturn: "yes" }),
+        review({ userId: "a", payHourly: 40, wouldReturn: "yes", rotationNumber: 2 }),
       ],
       "Electrical Engineering",
       SKILLS,
     );
     expect(shown.visible).toBe(true);
     expect(shown.payRange).toEqual({ low: 20, high: 40 });
-    expect(shown.headline).toBe('2 of 4 co-op experiences were rated "Would go back".');
-    expect(shown.maybeLine).toBe("1 said maybe.");
-    expect(shown.basisLine).toBe("Based on 4 reviews from 3 students.");
+    expect(shown.headline).toBe("67% would go back: 2 of 3 students said yes.");
+    expect(shown.maybeLine).toBe("0 said maybe.");
+    expect(shown.basisLine).toBe("Based on 3 Electrical Engineering students (4 reviews).");
     expect(shown.reviewCount).toBe(4);
     expect(shown.contributorCount).toBe(3);
   });
@@ -144,9 +145,9 @@ describe("PublicMajorSection", () => {
       SKILLS,
     );
     const html = renderToStaticMarkup(<PublicMajorSection employerName="Test Employer A" view={view} />);
-    expect(html).toContain("1 of 3 co-op experiences were rated &quot;Would go back&quot;.");
+    expect(html).toContain("33% would go back: 1 of 3 students said yes.");
     expect(html).toContain("1 said maybe.");
-    expect(html).toContain("Based on 3 reviews from 3 students.");
+    expect(html).toContain("Based on 3 Electrical Engineering students.");
     expect(html).toContain("Bring boots.");
     expect(html).toContain("Anything a student should know");
     expect(html).not.toContain("22.4");
@@ -158,5 +159,49 @@ describe("PublicMajorSection", () => {
       />,
     );
     expect(hidden).toContain("different students");
+  });
+});
+
+describe("all-majors fallback (item 4)", () => {
+  it("shows the viewer's major when it passes, and no fallback", () => {
+    const result = companyAverages([review({ userId: "a" }), review({ userId: "b" })], "Electrical Engineering", SKILLS);
+    expect(result.mine.visible).toBe(true);
+    expect(result.allMajors).toBeNull();
+  });
+
+  it("falls back to all majors under the same 2-student minimum, without pay or notes", () => {
+    const reviews = [
+      review({ userId: "a", major: "Mechanical Engineering", payHourly: 20 }),
+      review({ userId: "b", major: "Computer Science", payHourly: 30 }),
+      review({ userId: "c", major: "Finance", payHourly: 25 }),
+    ];
+    const result = companyAverages(reviews, "Electrical Engineering", SKILLS);
+    expect(result.mine.visible).toBe(false);
+    expect(result.allMajors?.visible).toBe(true);
+    expect(result.allMajors?.major).toBe(ALL_MAJORS);
+    expect(result.allMajors?.payRange).toBeNull();
+    expect(result.allMajors?.sharedNotes).toEqual([]);
+    expect(result.allMajors?.basisLine).toBe("Based on 3 students across all majors.");
+    const html = renderToStaticMarkup(<CompanyAveragesSection employerName="Test Employer" viewerMajor="Electrical Engineering" averages={result} />);
+    expect(html).toContain(NOT_ENOUGH_MAJOR);
+    expect(html).toContain("Pay and written notes appear only within a student&#x27;s own major.");
+    expect(html).not.toContain("Bring boots.");
+  });
+
+  it("shows nothing when even all majors is below the minimum", () => {
+    const result = companyAverages([review({ userId: "a", major: "Finance" })], "Electrical Engineering", SKILLS);
+    expect(result.allMajors).toBeNull();
+    const html = renderToStaticMarkup(<CompanyAveragesSection employerName="Test Employer" viewerMajor="Electrical Engineering" averages={result} />);
+    expect(html).toContain(NOTHING_YET);
+  });
+
+  it("summarizes a card with ratings, would go back and the student count", () => {
+    const result = companyAverages([review({ userId: "a" }), review({ userId: "b", wouldReturn: "no", enjoyment: 2 })], "Electrical Engineering", SKILLS);
+    const html = renderToStaticMarkup(<CompanyAveragesSummary averages={result} href="/companies/x" hasMajor />);
+    expect(html).toContain("Your major: Electrical Engineering");
+    expect(html).toContain("Enjoyment 3.0");
+    expect(html).toContain("50% would go back");
+    expect(html).toContain("Based on 2 Electrical Engineering students.");
+    expect(html).toContain('href="/companies/x"');
   });
 });

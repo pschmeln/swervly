@@ -1,4 +1,8 @@
 import { eq } from "drizzle-orm";
+import { COMPANIES } from "@/content/companies";
+import { directoryAverages } from "@/features/company/server";
+import { publicAggregateMajor } from "@/features/majors/selection";
+import { normalizeEmployerName } from "@/features/review/normalize";
 import { Button, Card, PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
@@ -68,6 +72,17 @@ export default async function CareerExplorePage() {
   });
   // Companies headquartered in the student's area first; nothing is removed.
   model.companies = rankByHomeArea(model.companies, homeArea);
+  // Review averages for the viewer's major, or all majors when theirs is too small (item 4).
+  // Cards show ratings only; notes and pay stay on the company page.
+  const names = new Map(COMPANIES.map((company) => [company.id, normalizeEmployerName(company.name)]));
+  const averages = await directoryAverages(user, [...new Set(model.companies.map((company) => names.get(company.id)).filter((name): name is string => Boolean(name)))]);
+  const viewerHasMajor = publicAggregateMajor(user) !== null;
+  model.companies = model.companies.map((company) => {
+    const found = averages.get(names.get(company.id) ?? "");
+    return found
+      ? { ...company, averages: { mine: { ...found.mine, sharedNotes: [], payRange: null }, allMajors: found.allMajors }, reviewsHref: ROUTES.company.replace("[id]", found.employerId), viewerHasMajor }
+      : company;
+  });
 
   return (
     <PageShell title="Career exploration">

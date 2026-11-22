@@ -1,3 +1,4 @@
+import type { CompanyAverages } from "@/features/company/aggregate";
 export const PROTOTYPE_BANNER =
   "Prototype — sample content, not real student activity";
 
@@ -69,6 +70,12 @@ export type CompanyCardModel = {
   linkCheckedOn: string | null;
   /** "Headquartered within N miles of City, ST" when inside the student's area (item 3). */
   nearby?: string | null;
+  /** Review averages for the viewer's major, or the all-majors fallback (item 4). */
+  averages?: CompanyAverages | null;
+  /** The company page with the full view. */
+  reviewsHref?: string | null;
+  /** False when the viewer has no catalog major (custom or undecided). */
+  viewerHasMajor?: boolean;
 };
 
 export type FounderPreview = "hidden_on_screen" | "left_visible_on_screen";
