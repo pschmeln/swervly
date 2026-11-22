@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Card, PageShell } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { AnswerComposer } from "@/features/community/components/answer-composer";
 import { ItemActions } from "@/features/community/components/item-actions";
 import { DELETED_POST, PostTags } from "@/features/community/components/post-card";

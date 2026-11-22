@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import {
   DIRECTION_COLUMN_NOTE,
   EMPTY_SIDE_HINT,

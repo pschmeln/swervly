@@ -3,35 +3,13 @@
 import { Checkbox, Field, Select } from "@/components/ui";
 import { RADIUS_MILES } from "@/features/location/schemas";
 import { LOCATION_FIELD_COPY, type LocationInput } from "@/features/location/write";
-import { PlaceSearch, type PlaceOption } from "./place-search";
+import type { LocationValue } from "@/features/location/value";
+import { PlaceSearch } from "./place-search";
 
-export type LocationValue = {
-  home: PlaceOption | null;
-  /** "" until chosen, else "25" | "50" | "100" | "250". */
-  radiusMiles: string;
-  openToAnywhere: boolean;
-  openToRemote: boolean;
-};
-
-export const EMPTY_LOCATION: LocationValue = { home: null, radiusMiles: "", openToAnywhere: false, openToRemote: false };
+// Server pages import these from "@/features/location/value", never from this client module.
+export { EMPTY_LOCATION, type LocationValue } from "@/features/location/value";
 
 export const RADIUS_OPTIONS = RADIUS_MILES.map((miles) => ({ value: String(miles), label: `Within ${miles} miles` }));
-
-export function locationValueFrom(stored: {
-  homePlaceGeoid: string | null;
-  homeLabel: string | null;
-  radiusMiles: number | null;
-  openToAnywhere: boolean;
-  openToRemote: boolean;
-} | null | undefined): LocationValue {
-  if (!stored) return EMPTY_LOCATION;
-  return {
-    home: stored.homePlaceGeoid && stored.homeLabel ? { geoid: stored.homePlaceGeoid, label: stored.homeLabel } : null,
-    radiusMiles: stored.radiusMiles == null ? "" : String(stored.radiusMiles),
-    openToAnywhere: stored.openToAnywhere,
-    openToRemote: stored.openToRemote,
-  };
-}
 
 export function locationPayload(value: LocationValue): LocationInput {
   return {

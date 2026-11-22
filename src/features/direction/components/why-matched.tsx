@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { ROUTES } from "@/lib/constants";
 
 export const NO_PRIORITIES_HINT = "Pick what matters most to you in a co-op on your Profile to see more reasons here.";

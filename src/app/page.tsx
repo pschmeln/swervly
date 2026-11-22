@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button, Card } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { ProductDemo } from "@/features/landing/demo";
 import { ROUTES } from "@/lib/constants";
 
