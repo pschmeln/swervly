@@ -5,19 +5,24 @@ import type { TraitScores } from "@/features/profile/scoring";
 import { traitBand } from "@/features/profile/traits";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
 
-/** Shown for rule-based early hypotheses. */
-export const DIRECTION_RULES_LABEL =
-  "Worth exploring — early hypotheses from your quiz and major. Not a career diagnosis.";
+/**
+ * Direction copy (founder rule, Nov 21, 2026): speak confidently about how the
+ * student's own answers fit a role. Say nothing about what other students do
+ * unless the sentence carries a computed number and at least 2 students.
+ * Never claim certainty ("proven", "guaranteed", "this is your career").
+ */
+
+/** Shown for rule-based suggestions. */
+export const DIRECTION_RULES_LABEL = "Roles that fit how you work, based on your quiz and your major.";
 
 /** Shown when at least one role has enough independent student evidence. */
 export const DIRECTION_EVIDENCE_LABEL =
-  "Worth exploring — some roles below use student reviews; others are still early hypotheses.";
+  "Roles that fit how you work. Some are backed by co-op reviews from students with profiles like yours.";
 
-export const DIRECTION_QUIZ_LABEL =
-  "Worth exploring — early hypotheses from your quiz. Not a career diagnosis, and not a fit score.";
+export const DIRECTION_QUIZ_LABEL = "Roles that fit how you work, based on your quiz.";
 
 export const DIRECTION_INSUFFICIENT_LABEL =
-  "Not enough information for a role suggestion. Quiz scores are not a career-fit score.";
+  "No role stands out from your answers yet. Add your major on your profile, or browse the career map.";
 
 /** Shown when the student has set aside every role Swervly can suggest right now. */
 export const DIRECTION_EXHAUSTED_LABEL =
@@ -43,8 +48,8 @@ export const MIN_DISTINCT_STUDENTS_PER_ROLE = 2;
  */
 export const MIN_MEAN_ENJOYMENT = 4;
 
-export const RULES_REASON_PREFIX = "Early hypothesis:";
-export const EVIDENCE_REASON_PREFIX = "Worth exploring:";
+/** Label on suggestions that come from the quiz and major rules. */
+export const RULES_EVIDENCE_LABEL = "Matched to your quiz and major";
 
 export type Goal = "industry" | "grad_school" | "undecided";
 
@@ -167,7 +172,7 @@ const RULES: readonly Rule[] = [
     role: "software",
     points: 3,
     when: (context) => SOFTWARE.has(context.major),
-    reason: "Your major lines up with software, so that is the starting guess.",
+    reason: "Your major lines up directly with software work.",
   },
   {
     role: "software",
@@ -223,14 +228,14 @@ const RULES: readonly Rule[] = [
     role: "design",
     points: 1,
     when: (context) => traitBand(context.traits.openness) === "high",
-    reason: "You like unfamiliar problems, so design is a reasonable first guess.",
+    reason: "You like unfamiliar problems, which suits design work.",
   },
   {
     role: "test_validation",
     points: 1,
     when: () => true,
     fallback: true,
-    reason: "Checking whether something works is a common co-op, and a fair first guess.",
+    reason: "Test and validation is a core engineering co-op and a solid place to start.",
   },
 ];
 
@@ -244,23 +249,16 @@ const FILL_ORDER: readonly RoleType[] = [
   "field_site",
 ];
 
-function withRulesLabel(reason: string): string {
-  return `${RULES_REASON_PREFIX} ${reason}`;
-}
-
+/**
+ * Reasons for roles that fill the list when fewer than three rules matched.
+ * No rule matched these, so the reason talks about the role, never about the
+ * student's traits (except software, where openness is checked).
+ */
 function fillReason(role: RoleType, context: DirectionContext): string {
-  const open = traitBand(context.traits.openness);
-  if (role === "design") return "Design is a reasonable next guess from how you handle new problems.";
-  if (role === "test_validation") return "Test and validation is a reasonable next guess from how you like to check work.";
-  if (role === "software") {
-    return open === "high"
-      ? "Software is a reasonable next guess because you like unfamiliar problems."
-      : "Software is a reasonable next guess for the kind of work your major sees.";
+  if (role === "software" && traitBand(context.traits.openness) === "high") {
+    return "You like unfamiliar problems, and software work is full of them.";
   }
-  if (role === "manufacturing_process") return "Manufacturing and process work is a reasonable next guess from how you follow a plan.";
-  if (role === "data_analytics") return "Data and analytics is a reasonable next guess when you like both a method and a question.";
-  if (role === "research") return "Research is a reasonable next guess from how open you are to unfamiliar questions.";
-  return "Field and site work is a reasonable next guess from how you like being around the work itself.";
+  return `${roleLabel(role)} is a core engineering co-op and a good one to weigh against your top matches.`;
 }
 
 export function traitDistance(left: TraitScores, right: TraitScores): number {
@@ -276,50 +274,50 @@ const FAMILY_SUGGESTIONS: Partial<
   Record<MajorFamily, { role: RoleType | ExtraCareerRole; reason: string }[]>
 > = {
   business: [
-    { role: "business_operations", reason: "Your major is in business, so operations is a place to explore. This is not a fit score." },
-    { role: "marketing", reason: "Marketing is worth exploring from a business major. This is not a fit score." },
-    { role: "finance", reason: "Finance is worth exploring from a business major. This is not a fit score." },
+    { role: "business_operations", reason: "Operations is a natural path from a business major." },
+    { role: "marketing", reason: "Marketing is a natural path from a business major." },
+    { role: "finance", reason: "Finance is a natural path from a business major." },
   ],
   economics: [
-    { role: "finance", reason: "Your major lines up with finance work worth exploring. This is not a fit score." },
-    { role: "policy_research", reason: "Policy work is worth exploring from economics. This is not a fit score." },
-    { role: "business_operations", reason: "Operations is a related path worth exploring. This is not a fit score." },
+    { role: "finance", reason: "Your major lines up directly with finance work." },
+    { role: "policy_research", reason: "Policy work draws directly on your major." },
+    { role: "business_operations", reason: "Operations is a natural next step from your major." },
   ],
   healthcare: [
-    { role: "healthcare_clinical", reason: "Your major is in healthcare, so clinical work is a place to explore. This is not a fit score." },
-    { role: "healthcare_admin", reason: "Healthcare administration is worth exploring from your major. This is not a fit score." },
+    { role: "healthcare_clinical", reason: "Clinical work is the core path from a healthcare major." },
+    { role: "healthcare_admin", reason: "Healthcare administration builds on your major." },
   ],
   natural_science: [
-    { role: "laboratory", reason: "Your major is in the sciences, so laboratory work is a place to explore. This is not a fit score." },
-    { role: "research", reason: "Research is worth exploring from a science major. This is not a fit score." },
+    { role: "laboratory", reason: "Laboratory work is a core path from a science major." },
+    { role: "research", reason: "Research is a natural path from a science major." },
   ],
   social_science: [
-    { role: "policy_research", reason: "Policy and research-style work is worth exploring from your major. This is not a fit score." },
-    { role: "counseling_support", reason: "Counseling and support work is worth exploring from your major. This is not a fit score." },
+    { role: "policy_research", reason: "Policy and research work build directly on your major." },
+    { role: "counseling_support", reason: "Counseling and support work build on your major." },
   ],
   education: [
-    { role: "teaching", reason: "Your major is in education, so teaching is a place to explore. This is not a fit score." },
-    { role: "counseling_support", reason: "Student support work is worth exploring from an education major. This is not a fit score." },
+    { role: "teaching", reason: "Teaching is the core path from an education major." },
+    { role: "counseling_support", reason: "Student support work builds on an education major." },
   ],
   arts_humanities: [
-    { role: "writing_media", reason: "Writing and media work is worth exploring from your major. This is not a fit score." },
-    { role: "teaching", reason: "Teaching is a related path worth exploring. This is not a fit score." },
+    { role: "writing_media", reason: "Writing and media work build directly on your major." },
+    { role: "teaching", reason: "Teaching is a natural path from your major." },
   ],
   communication: [
-    { role: "writing_media", reason: "Your major lines up with writing and media work worth exploring. This is not a fit score." },
-    { role: "marketing", reason: "Marketing is a related path worth exploring. This is not a fit score." },
+    { role: "writing_media", reason: "Your major lines up directly with writing and media work." },
+    { role: "marketing", reason: "Marketing is a natural path from your major." },
   ],
   math: [
-    { role: "data_analytics", reason: "Your major lines up with data work worth exploring. This is not a fit score." },
-    { role: "research", reason: "Research is worth exploring from a math major. This is not a fit score." },
+    { role: "data_analytics", reason: "Your major lines up directly with data work." },
+    { role: "research", reason: "Research is a natural path from a math major." },
   ],
   interdisciplinary: [
-    { role: "policy_research", reason: "Research-style work is one place to explore from an interdisciplinary major. This is not a fit score." },
-    { role: "writing_media", reason: "Writing is another place to explore. This is not a fit score." },
+    { role: "policy_research", reason: "Research work suits an interdisciplinary major." },
+    { role: "writing_media", reason: "Writing is a natural path from an interdisciplinary major." },
   ],
   computing: [
-    { role: "software", reason: "Your major is in computing, so software is a place to explore. This is not a fit score." },
-    { role: "data_analytics", reason: "Data work is worth exploring from a computing major. This is not a fit score." },
+    { role: "software", reason: "Software is the core path from a computing major." },
+    { role: "data_analytics", reason: "Data work is a natural path from a computing major." },
   ],
 };
 
@@ -327,9 +325,9 @@ function asSuggestion(role: RoleType | ExtraCareerRole, reason: string): Directi
   return {
     roleType: role,
     roleLabel: careerRoleLabel(role),
-    reason: withRulesLabel(reason),
+    reason,
     source: "rules",
-    evidenceLabel: "Early hypothesis",
+    evidenceLabel: RULES_EVIDENCE_LABEL,
   };
 }
 
@@ -342,7 +340,8 @@ type QuizRule = {
 
 /**
  * Quiz rules for roles outside the engineering co-op table (editorial, like RULES).
- * Early hypotheses from Big Five bands, not a validated career assessment.
+ * Written by the founders from Big Five bands. Not a validated career assessment,
+ * so the copy describes the student's answers and never cites outcomes.
  */
 const EXTRA_RULES: readonly QuizRule[] = [
   {
@@ -423,8 +422,6 @@ const EXTRA_ROLE_ORDER: readonly ExtraCareerRole[] = EXTRA_CAREER_ROLE_IDS.filte
   (role): role is ExtraCareerRole => role !== "insufficient",
 );
 
-const NOT_A_FIT_SCORE = "This is not a fit score.";
-
 /** The strongest quiz rule that matches each role. Engineering rules only when asked. */
 function quizMatches(
   context: DirectionContext,
@@ -464,7 +461,7 @@ function majorFamilySuggestions(
 
   const familyReason = (row: { role: RoleType | ExtraCareerRole; reason: string }) => {
     const match = quiz.get(row.role);
-    return match ? `${match.reason} Your major points here too. ${NOT_A_FIT_SCORE}` : row.reason;
+    return match ? `${match.reason} Your major points here too.` : row.reason;
   };
 
   const chosen = ordered.slice(0, 2).map((row) => asSuggestion(row.role, familyReason(row)));
@@ -479,7 +476,7 @@ function majorFamilySuggestions(
     ...outside.map((role) => ({
       role,
       points: pointsOf(role),
-      reason: `${quiz.get(role)?.reason ?? ""} It's outside your major's usual paths. ${NOT_A_FIT_SCORE}`,
+      reason: `${quiz.get(role)?.reason ?? ""} It's outside your major's usual paths, but it fits how you work.`,
     })),
   ];
   while (chosen.length < 3 && candidates.length > 0) {
@@ -501,16 +498,14 @@ function quizOnlySuggestions(context: DirectionContext, hidden: ReadonlySet<stri
     .filter(([role]) => !hidden.has(role))
     .sort((left, right) => right[1].points - left[1].points || order.indexOf(left[0]) - order.indexOf(right[0]))
     .slice(0, 3)
-    .map(([role, match]) => asSuggestion(role, `${match.reason} ${NOT_A_FIT_SCORE}`));
+    .map(([role, match]) => asSuggestion(role, match.reason));
 }
 
 function insufficientSuggestion(): DirectionSuggestion {
   return {
     roleType: "insufficient",
     roleLabel: careerRoleLabel("insufficient"),
-    reason: withRulesLabel(
-      "There isn't enough information to suggest a role yet. Quiz scores are not a career-fit score.",
-    ),
+    reason: "No role stands out from your answers yet. Add your major on your profile, or browse the career map.",
     source: "rules",
     evidenceLabel: "Not enough information",
   };
@@ -574,9 +569,9 @@ export function suggestionsFromRules(
     chosen.push({
       roleType,
       roleLabel: roleLabel(roleType),
-      reason: withRulesLabel(row.reason),
+      reason: row.reason,
       source: "rules",
-      evidenceLabel: "Early hypothesis",
+      evidenceLabel: RULES_EVIDENCE_LABEL,
     });
     if (chosen.length === 3) return chosen;
   }
@@ -587,9 +582,9 @@ export function suggestionsFromRules(
     chosen.push({
       roleType,
       roleLabel: roleLabel(roleType),
-      reason: withRulesLabel(fillReason(roleType, context)),
+      reason: fillReason(roleType, context),
       source: "rules",
-      evidenceLabel: "Early hypothesis",
+      evidenceLabel: RULES_EVIDENCE_LABEL,
     });
     if (chosen.length === 3) break;
   }
@@ -651,10 +646,10 @@ export function suggestionsFromSimilar(
   return evidenceBackedRoles(self, reviews).map((row) => ({
     roleType: row.roleType,
     roleLabel: roleLabel(row.roleType),
-    reason: `${EVIDENCE_REASON_PREFIX} ${row.sampleSize} students with profiles near yours rated this role highly. Similarity is not proof of career fit.`,
+    reason: `${row.sampleSize} students with profiles like yours rated co-ops in this role ${row.meanEnjoyment.toFixed(1)}/5 for enjoyment.`,
     source: "similar_students" as const,
     sampleSize: row.sampleSize,
-    evidenceLabel: `Student evidence · n=${row.sampleSize}`,
+    evidenceLabel: `Backed by ${row.sampleSize} students`,
   }));
 }
 
@@ -740,6 +735,3 @@ export function buildDirection(
 
 /** @deprecated Prefer DIRECTION_RULES_LABEL / DIRECTION_EVIDENCE_LABEL. */
 export const DIRECTION_LABEL = DIRECTION_RULES_LABEL;
-/** @deprecated Prefer evidence wording with sample size. */
-export const SIMILAR_STUDENT_REASON =
-  "Worth exploring: students with profiles near yours rated this role highly. Similarity is not proof of career fit.";

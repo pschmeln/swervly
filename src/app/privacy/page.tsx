@@ -60,13 +60,15 @@ export default function PrivacyPage() {
           <p>
             We use this information to create your profile, let you save co-op
             reviews, show other signed-in students an anonymous company view when
-            you have agreed to share, and offer Direction, labelled ideas of role
-            types worth exploring. Direction starts from a written rules table.
-            When enough distinct students with nearby quiz profiles have reviewed
-            a role, that role can also show a sample size. Similarity is not proof
-            of career fit. Swervly does not send your text to an AI model. The quiz
-            uses lightly reworded Mini-IPIP items; treat scores as exploratory, not
-            as having the same validation evidence as the original instrument.
+            you have agreed to share, and offer Direction: role types matched to
+            how you work. Direction starts from a written rules table that
+            connects quiz answers and majors to roles. When at least 2 different
+            students with nearby quiz profiles have reviewed a role, that role
+            shows how many students and their average rating. Swervly does not
+            send your text to an AI model. The quiz uses lightly reworded
+            Mini-IPIP items, so its scores do not carry the validation evidence of
+            the original instrument, and they are not a clinical or hiring
+            assessment.
             The career map uses your major, your Direction results and your own
             career map choices to order what you see first. It never shows a fit
             score, and you can change or clear those choices at any time.

@@ -3,7 +3,7 @@ import type { Trait } from "@/content/mini-ipip";
 /**
  * Majors Direction can suggest, each tied to one quiz trait, so the
  * description speaks to the student's own result (founder request, Nov 18,
- * 2026). The trait is a clue, not a fit score.
+ * 2026). The copy describes the student's own answer and never cites a score.
  *
  * `fits` is the band that usually suits the major. `why` finishes the sentence
  * "<Major> ..." and says what the work is like.

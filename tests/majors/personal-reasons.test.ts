@@ -25,7 +25,7 @@ describe("personal major reasons", () => {
     expect(new Set(list.map((item) => item.reason)).size).toBe(list.length);
     const nursing = list.find((item) => item.name === "Nursing");
     expect(nursing?.reason).toContain("You look out for the people around you");
-    expect(nursing?.reason).toContain("may suit you");
+    expect(nursing?.reason).toContain("fits how you work");
   });
 
   it("gives two different students different text for the same major", () => {
@@ -46,10 +46,12 @@ describe("personal major reasons", () => {
     expect(reasons(mixed).slice(0, 2).map((item) => item.name)).toEqual(["Nursing", "Psychology"]);
   });
 
-  it("never calls it a fit score or proof", () => {
+  it("speaks confidently without claiming certainty or a score", () => {
     const result = academicExploration({ source: "undecided", exploringMajors: false, goal: "grad_school", traits: high });
-    expect(result.note).toContain("not a fit score");
-    for (const item of result.suggestions) expect(item.reason.toLowerCase()).not.toMatch(/fit score|proof|guarantee/);
+    expect(result.note).toBe("Picked from your goal and matched to your quiz.");
+    for (const item of result.suggestions) {
+      expect(item.reason.toLowerCase()).not.toMatch(/fit score|proof|proven|guarantee|this is your career|\d+\s*%/);
+    }
   });
 
   it("falls back to the goal text without quiz results", () => {
