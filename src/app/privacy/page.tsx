@@ -60,7 +60,9 @@ export default function PrivacyPage() {
             you share it), any company,
             role or career area you tag them with, the posts and answers you mark
             Helpful, the reports you send, when you agreed to the Community rules,
-            and hourly counts used to limit posting. If you use Action,
+            and hourly counts used to limit posting. If you ask for advisor access, we store
+            the name you give, your school (from your sign-in email) and the
+            founders&apos; decision. If you use Action,
             we store your plan&apos;s career goal, the tasks you add or accept,
             optional weekly-hours and horizon settings, and how you rate progress
             on listed skills. Action data is private to you as the student. Authorized

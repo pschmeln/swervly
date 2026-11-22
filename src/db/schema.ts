@@ -328,7 +328,73 @@ export const communityRateBuckets = pgTable("community_rate_buckets", {
   count: integer("count").notNull().default(0),
 }, (t) => [primaryKey({ columns: [t.userId, t.action, t.windowStart], name: "community_rate_buckets_pk" })]);
 
+// ---- Advisors (item 15, Stage 6, D9) -----------------------------------------------------------
+// A school is a name plus the email domains its people sign in with (UC staff use uc.edu, students
+// mail.uc.edu). Founders create schools and approve advisors. Roster emails are stored only as a
+// keyed hash. Advisors see an individual student only with that student's grant, and every such
+// view is logged for the student to see.
+
+export const schools = pgTable("schools", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  createdAt,
+}, (t) => [check("schools_name_len", sql`char_length(${t.name}) between 2 and 120`)]);
+
+export const schoolDomains = pgTable("school_domains", {
+  domain: text("domain").primaryKey(),
+  schoolId: uuid("school_id").notNull().references(() => schools.id, { onDelete: "cascade" }),
+  createdAt,
+}, (t) => [
+  check("school_domains_format", sql`${t.domain} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'`),
+  index("school_domains_school_idx").on(t.schoolId),
+]);
+
+export const advisorAccounts = pgTable("advisor_accounts", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  schoolId: uuid("school_id").notNull().references(() => schools.id, { onDelete: "cascade" }),
+  displayName: text("display_name").notNull(),
+  status: text("status").notNull().default("pending"), // pending | approved | revoked
+  requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decidedByUserId: uuid("decided_by_user_id").references(() => users.id, { onDelete: "set null" }),
+}, (t) => [
+  check("advisor_accounts_status", sql`${t.status} in ('pending', 'approved', 'revoked')`),
+  check("advisor_accounts_name_len", sql`char_length(${t.displayName}) between 2 and 80`),
+  index("advisor_accounts_school_idx").on(t.schoolId),
+]);
+
+export const advisorRoster = pgTable("advisor_roster", {
+  schoolId: uuid("school_id").notNull().references(() => schools.id, { onDelete: "cascade" }),
+  emailHmac: text("email_hmac").notNull(),
+  addedByUserId: uuid("added_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt,
+}, (t) => [primaryKey({ columns: [t.schoolId, t.emailHmac], name: "advisor_roster_pk" })]);
+
+export const advisorGrants = pgTable("advisor_grants", {
+  studentUserId: uuid("student_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  schoolId: uuid("school_id").notNull().references(() => schools.id, { onDelete: "cascade" }),
+  consentVersion: integer("consent_version").notNull(),
+  grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+}, (t) => [
+  primaryKey({ columns: [t.studentUserId, t.schoolId], name: "advisor_grants_pk" }),
+  index("advisor_grants_school_active_idx").on(t.schoolId).where(sql`${t.revokedAt} is null`),
+]);
+
+export const advisorViewLog = pgTable("advisor_view_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  advisorUserId: uuid("advisor_user_id").references(() => users.id, { onDelete: "set null" }),
+  /** Kept when the advisor's account is deleted, so the student's log still says who looked. */
+  advisorName: text("advisor_name").notNull(),
+  studentUserId: uuid("student_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  schoolId: uuid("school_id").notNull().references(() => schools.id, { onDelete: "cascade" }),
+  viewedAt: timestamp("viewed_at", { withTimezone: true }).notNull().defaultNow(),
+  fields: text("fields").array().notNull().default(sql`'{}'::text[]`),
+}, (t) => [index("advisor_view_log_student_idx").on(t.studentUserId, t.viewedAt.desc())]);
+
 export type User = typeof users.$inferSelect;
+export type School = typeof schools.$inferSelect;
+export type AdvisorAccount = typeof advisorAccounts.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Assessment = typeof assessments.$inferSelect;
 export type Employer = typeof employers.$inferSelect;

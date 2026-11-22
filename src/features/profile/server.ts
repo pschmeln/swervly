@@ -1,3 +1,4 @@
+import { exportAdvisor } from "@/features/advisors/server";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { communityAccountDeletion, exportCommunity } from "@/features/community/server";
 import { clerkClient } from "@clerk/nextjs/server";
@@ -368,6 +369,8 @@ export type AccountExport = {
   community: Awaited<ReturnType<typeof exportCommunity>>;
   /** Action plans, tasks, and skill progress. Empty when migration 0009 is not applied. Private only. */
   action: { plans: ActionPlan[]; tasks: ActionTask[]; skillProgress: ActionSkillProgress[] };
+  /** The person's advisor account, if they asked for one (item 15). */
+  advisor: Awaited<ReturnType<typeof exportAdvisor>>;
 };
 
 async function exportCareerAtlas(userId: string): Promise<AccountExport["careerAtlas"]> {
@@ -416,6 +419,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
     careerAtlas: await exportCareerAtlas(userId),
     community: await exportCommunity(userId),
     action: await exportActionData(userId),
+    advisor: await exportAdvisor(userId),
     assessments: assessmentRows,
     rotations: rotationRows.map((row) => ({
       ...row.rotation,

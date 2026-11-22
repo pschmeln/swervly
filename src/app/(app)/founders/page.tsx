@@ -7,6 +7,8 @@ import { SKILL_CATALOG } from "@/content/skills";
 import { listPublicMajorNames } from "@/features/majors/catalog";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { MajorQueue } from "@/features/majors/components/major-queue";
+import { FounderAdvisors } from "@/features/advisors/components/founder-advisors";
+import { founderAdvisorOverview } from "@/features/advisors/server";
 import { ModerationQueue } from "@/features/community/components/moderation-queue";
 import { loadModerationQueue } from "@/features/community/moderation";
 import { FounderQueue } from "@/features/moderation/founder-queue";
@@ -19,7 +21,7 @@ export default async function FoundersPage() {
   const user = await requireUser();
   if (!isFounderEmail(user.email)) notFound();
 
-  const [pendingSkills, pendingEmployers, approvedEmployers, approvedCustom, pendingMajors, majorSearch, community] = await Promise.all([
+  const [pendingSkills, pendingEmployers, approvedEmployers, approvedCustom, pendingMajors, majorSearch, community, advisorOverview] = await Promise.all([
     db.select().from(skills).where(eq(skills.status, "pending")),
     db.select().from(employers).where(eq(employers.status, "pending")),
     db.select({ id: employers.id, name: employers.name }).from(employers).where(eq(employers.status, "approved")),
@@ -27,6 +29,7 @@ export default async function FoundersPage() {
     db.select().from(majorSubmissions).where(eq(majorSubmissions.status, "pending")),
     loadMajorSearchContext(),
     loadModerationQueue(),
+    founderAdvisorOverview(),
   ]);
 
   const skillTargets = [
@@ -41,6 +44,7 @@ export default async function FoundersPage() {
         Check this once a day.
       </p>
       <ModerationQueue reported={community.reported} hidden={community.hidden} />
+      <FounderAdvisors schools={advisorOverview.schools} advisors={advisorOverview.advisors} />
       <MajorQueue
         submissions={pendingMajors.map((row) => ({ id: row.id, rawName: row.rawName }))}
         targets={listPublicMajorNames(majorSearch)}
