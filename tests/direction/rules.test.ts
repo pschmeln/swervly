@@ -39,13 +39,14 @@ describe("direction rules", () => {
   });
 
   it("labels a generic fill as a place to start, not a quiz match", () => {
+    // Materials Engineering stays on the engineering table but matches no major-band rule
+    // with middle traits, so only the always-on fallback and fills remain.
     const suggestions = suggestionsFromRules({
       traits: balanced,
-      major: "Mechanical Engineering",
-      goal: "industry",
+      major: "Materials Engineering",
+      goal: "undecided",
     });
     expect(suggestions.length).toBe(3);
-    // Balanced traits only fire the always-on fallback; the rest are fills.
     expect(suggestions.every((item) => item.evidenceLabel === FALLBACK_EVIDENCE_LABEL)).toBe(true);
     expect(suggestions.some((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(false);
   });
