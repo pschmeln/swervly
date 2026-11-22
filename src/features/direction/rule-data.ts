@@ -97,8 +97,17 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
   {
     role: "manufacturing_process",
     points: 3,
-    when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) !== "low",
+    // High conscientiousness is a real quiz signal with a process major: keep "Matched to your quiz and major".
+    when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) === "high",
     reason: "Your major and the way you follow a plan line up with process work.",
+  },
+  {
+    role: "manufacturing_process",
+    points: 1,
+    // Middle conscientiousness + process major is only a soft major hint, not a quiz match.
+    when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) === "middle",
+    reason: "Manufacturing and process work is a common engineering co-op path and a solid place to start.",
+    fallback: true,
   },
   {
     role: "manufacturing_process",

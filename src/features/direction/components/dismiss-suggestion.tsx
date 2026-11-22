@@ -1,31 +1,27 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Button } from "@/components/ui";
-import { ROUTES } from "@/lib/constants";
 
-export function DismissSuggestion({ roleType }: { roleType: string }) {
-  const router = useRouter();
-  const [pending, setPending] = useState(false);
-
-  async function dismiss() {
-    if (pending) return;
-    setPending(true);
-    try {
-      const response = await fetch(ROUTES.directionDismiss, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ roleType }),
-      });
-      if (response.ok) router.refresh();
-    } finally {
-      setPending(false);
-    }
-  }
-
+/** Presentational Not for me control; parent serializes dismisses for the whole list. */
+export function DismissSuggestion({
+  roleType,
+  disabled = false,
+  pending = false,
+  onDismiss,
+}: {
+  roleType: string;
+  disabled?: boolean;
+  pending?: boolean;
+  onDismiss: (roleType: string) => void;
+}) {
   return (
-    <Button type="button" variant="secondary" className="w-full sm:w-auto" disabled={pending} onClick={() => void dismiss()}>
+    <Button
+      type="button"
+      variant="secondary"
+      className="w-full sm:w-auto"
+      disabled={disabled || pending}
+      onClick={() => onDismiss(roleType)}
+    >
       {pending ? "Saving…" : "Not for me"}
     </Button>
   );

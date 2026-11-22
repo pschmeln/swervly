@@ -3,7 +3,6 @@ import { careerRoleLabel, EXTRA_CAREER_ROLE_IDS, type ExtraCareerRole } from "@/
 import { majorFamily, usesEngineeringDirection, type MajorFamily } from "@/features/majors/catalog";
 import { showsRole } from "@/lib/audience";
 import type { TraitScores } from "@/features/profile/scoring";
-import { traitBand } from "@/features/profile/traits";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
 import {
   DATA,
@@ -43,6 +42,10 @@ export const DIRECTION_INSUFFICIENT_LABEL =
 export const DIRECTION_EXHAUSTED_LABEL =
   "You've set aside every role Swervly can suggest from your quiz and major right now.";
 
+/** Empty-state body on Direction and Home when every suggestion was dismissed. */
+export const DIRECTION_EXHAUSTED_ACTION =
+  "Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.";
+
 export type DirectionResult = {
   label: string;
   basis: "rules" | "similar_students" | "mixed";
@@ -65,6 +68,9 @@ export const MIN_MEAN_ENJOYMENT = 4;
 
 /** Label on suggestions that come from the quiz and major rules. */
 export const RULES_EVIDENCE_LABEL = "Matched to your quiz and major";
+
+/** Label when the role is only a generic fill / always-on fallback, not a quiz signal. */
+export const FALLBACK_EVIDENCE_LABEL = "A solid place to start";
 
 export type Goal = "industry" | "grad_school" | "undecided";
 
@@ -94,15 +100,23 @@ export type SimilarReview = {
 };
 
 /**
- * Reasons for roles that fill the list when fewer than three rules matched.
- * No rule matched these, so the reason talks about the role, never about the
- * student's traits (except software, where openness is checked).
+ * Neutral reasons for roles that fill the list when fewer than three rules matched.
+ * No rule matched these, so the copy describes the role only: never the student's
+ * quiz answers, major, or "top matches".
  */
-function fillReason(role: RoleType, context: DirectionContext): string {
-  if (role === "software" && traitBand(context.traits.openness) === "high") {
-    return "You like unfamiliar problems, and software work is full of them.";
-  }
-  return `${roleLabel(role)} is a core engineering co-op and a good one to weigh against your top matches.`;
+const FILL_REASONS: Partial<Record<RoleType, string>> = {
+  design: "Design work is a common engineering co-op path and a solid place to start.",
+  test_validation: "Test and validation is a core engineering co-op and a solid place to start.",
+  software: "Software work is a common engineering co-op path and a solid place to start.",
+  manufacturing_process: "Manufacturing and process work is a common engineering co-op path and a solid place to start.",
+  data_analytics: "Data and analytics work shows up across many engineering co-ops and is a solid place to start.",
+  research: "Research roles appear in many engineering paths and are a solid place to start.",
+  field_site: "Field and site work is a common engineering co-op path and a solid place to start.",
+};
+
+/** Exported for tests: fill copy must stay role-neutral (no quiz/major matching claims). */
+export function fillReason(role: RoleType): string {
+  return FILL_REASONS[role] ?? `${roleLabel(role)} is a common engineering co-op path and a solid place to start.`;
 }
 
 export function traitDistance(left: TraitScores, right: TraitScores): number {
@@ -114,8 +128,8 @@ export function traitDistance(left: TraitScores, right: TraitScores): number {
   return Math.sqrt(sum);
 }
 
-function asSuggestion(role: CareerRole, reason: string): DirectionSuggestion {
-  return { roleType: role, roleLabel: careerRoleLabel(role), reason, source: "rules", evidenceLabel: RULES_EVIDENCE_LABEL };
+function asSuggestion(role: CareerRole, reason: string, evidenceLabel = RULES_EVIDENCE_LABEL): DirectionSuggestion {
+  return { roleType: role, roleLabel: careerRoleLabel(role), reason, source: "rules", evidenceLabel };
 }
 
 const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
@@ -127,7 +141,8 @@ const EXTRA_ROLE_ORDER: readonly ExtraCareerRole[] = EXTRA_CAREER_ROLE_IDS.filte
 /** Tie-break order when two roles score the same: co-op roles, then the other career roles. */
 const ROLE_ORDER: readonly CareerRole[] = [...ROLE_TYPE_VALUES.filter((role) => role !== "other"), ...EXTRA_ROLE_ORDER];
 
-type Match = { points: number; reason: string };
+/** `fallback`: the rule is a generic fallback, not a quiz signal (see QuizRule.fallback). */
+type Match = { points: number; reason: string; fallback: boolean };
 
 /**
  * The strongest matching rule for each role. Skips roles in `skip` (dismissed) and
@@ -138,7 +153,7 @@ function bestByRole(rules: readonly QuizRule[], context: DirectionContext, skip:
   for (const rule of rules) {
     if (skip.has(rule.role) || !showsRole(rule.role) || !rule.when(context)) continue;
     const current = best.get(rule.role);
-    if (!current || rule.points > current.points) best.set(rule.role, { points: rule.points, reason: rule.reason });
+    if (!current || rule.points > current.points) best.set(rule.role, { points: rule.points, reason: rule.reason, fallback: rule.fallback === true });
   }
   return best;
 }
@@ -251,12 +266,12 @@ export function suggestionsFromRules(context: DirectionContext, dismissed: reado
 
   const chosen = ranked(bestByRole(RULES, context, hidden))
     .slice(0, 3)
-    .map(([role, match]) => asSuggestion(role, match.reason));
+    .map(([role, match]) => asSuggestion(role, match.reason, match.fallback ? FALLBACK_EVIDENCE_LABEL : RULES_EVIDENCE_LABEL));
   // Fewer than three matched: fill from the core co-op roles.
   for (const role of FILL_ORDER) {
     if (chosen.length === 3) break;
     if (hidden.has(role) || chosen.some((item) => item.roleType === role)) continue;
-    chosen.push(asSuggestion(role, fillReason(role, context)));
+    chosen.push(asSuggestion(role, fillReason(role), FALLBACK_EVIDENCE_LABEL));
   }
   return chosen;
 }

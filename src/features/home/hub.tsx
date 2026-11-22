@@ -3,6 +3,7 @@ import { Button, Card } from "@/components/ui";
 import type { ChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionLine } from "@/features/direction/components/chosen-direction";
 import { InterestedButton } from "@/features/direction/components/interested-button";
+import { DIRECTION_EXHAUSTED_ACTION, DIRECTION_EXHAUSTED_LABEL } from "@/features/direction/rules";
 import { CycleGraphic } from "@/features/home/cycle-graphic";
 import type { User } from "@/db/schema";
 import { UNDECIDED_LABEL } from "@/features/majors/catalog";
@@ -22,7 +23,7 @@ export type HomeHubProps = {
   suggestions: { roleType: string; roleLabel: string; reason: string }[];
   interested: { roleType: string; label: string }[];
   /** The career map node the student chose. Undefined hides the line (career map off). */
-  chosen?: ChosenDirection | null;
+  chosen: ChosenDirection | null;
   /** Optional full-width note above the two windows (the advisor roster prompt, item 15). */
   notice?: React.ReactNode;
 };
@@ -157,31 +158,42 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
   return (
     <Card>
       <WindowHead title="Your direction" href={ROUTES.direction} linkLabel="See all" />
-      {chosen !== undefined ? <ChosenDirectionLine chosen={chosen} /> : null}
+      <ChosenDirectionLine chosen={chosen} />
       {quizDone ? (
         <>
-          <p className="mt-1 text-sm text-ink-3">Top suggestions. Mark the ones you want to explore.</p>
           {top.length > 0 ? (
-            <ul className="mt-4 grid gap-2.5">
-              {top.map((item) => (
-                <li
-                  key={item.roleType}
-                  className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">{item.roleLabel}</p>
-                    <p className="line-clamp-2 text-sm text-ink-3">{item.reason}</p>
-                  </div>
-                  {item.roleType !== "insufficient" ? (
-                    <InterestedButton roleType={item.roleType} initial={interestedIds.has(item.roleType)} />
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="mt-1 text-sm text-ink-3">Top suggestions. Mark the ones you want to explore.</p>
+              <ul className="mt-4 grid gap-2.5">
+                {top.map((item) => (
+                  <li
+                    key={item.roleType}
+                    className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-ink">{item.roleLabel}</p>
+                      <p className="line-clamp-2 text-sm text-ink-3">{item.reason}</p>
+                    </div>
+                    {item.roleType !== "insufficient" ? (
+                      <InterestedButton roleType={item.roleType} initial={interestedIds.has(item.roleType)} />
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : (
-            <p className="mt-4 text-ink-2">
-              You&apos;ve said &ldquo;Not for me&rdquo; to every role Swervly can suggest right now. Open Direction to retake the quiz or browse the career map.
-            </p>
+            <div className="mt-4">
+              <p className="font-medium text-ink">{DIRECTION_EXHAUSTED_LABEL}</p>
+              <p className="mt-1 text-ink-2">{DIRECTION_EXHAUSTED_ACTION}</p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
+                  Retake the quiz
+                </Button>
+                <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
+                  Browse the career map
+                </Button>
+              </div>
+            </div>
           )}
           {interested.length > 0 ? (
             <div className="mt-4">

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
 
+import { DIRECTION_EXHAUSTED_ACTION, DIRECTION_EXHAUSTED_LABEL } from "@/features/direction/rules";
 import { CYCLE_STEPS } from "@/features/home/cycle-graphic";
 import { HomeHub, homeTraits, majorLine, type HomeHubProps } from "@/features/home/hub";
 import { readTraits } from "@/features/profile/traits";
@@ -22,10 +23,17 @@ const base: HomeHubProps = {
     { roleType: "research", roleLabel: "Research", reason: "Open questions." },
   ],
   interested: [{ roleType: "design", label: "Hardware design" }],
+  chosen: null,
 };
 
 function text(html: string) {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x27;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&rdquo;/g, "”")
+    .replace(/\s+/g, " ");
 }
 
 describe("Home cycle graphic", () => {
@@ -73,6 +81,33 @@ describe("Home profile and direction windows", () => {
     const html = renderToStaticMarkup(<HomeHub {...base} rotationCount={0} />);
     expect(html).toContain('href="/reviews/new"');
     expect(text(html)).toContain("No co-ops logged yet.");
+  });
+
+  it("hides the Top suggestions heading when the list is empty, and keeps exhausted copy plus nav", () => {
+    const html = renderToStaticMarkup(<HomeHub {...base} suggestions={[]} interested={[]} />);
+    const t = text(html);
+    expect(t).not.toContain("Top suggestions");
+    expect(t).toContain(DIRECTION_EXHAUSTED_LABEL);
+    expect(t).toContain(DIRECTION_EXHAUSTED_ACTION);
+    expect(t.indexOf(DIRECTION_EXHAUSTED_LABEL)).toBeLessThan(t.indexOf(DIRECTION_EXHAUSTED_ACTION));
+    expect(t).not.toContain("Not for me");
+    expect(html).toContain('href="/direction"');
+    expect(t).toContain("See all");
+    expect(t).toContain("2 co-ops and internships logged.");
+    expect(html).toContain('href="/onboarding?retake=1"');
+    expect(t).toContain("Retake the quiz");
+  });
+
+  it("on exhausted with atlas on, offers Retake and Browse without duplicating See all", () => {
+    const html = renderToStaticMarkup(
+      <HomeHub {...base} suggestions={[]} interested={[]} chosen={null} />,
+    );
+    const t = text(html);
+    expect(html).toContain('href="/onboarding?retake=1"');
+    expect(html).toContain('href="/direction/atlas"');
+    expect(t).toContain("Retake the quiz");
+    expect(t).toContain("Browse the career map");
+    expect(t.split("See all").length - 1).toBe(1);
   });
 });
 

@@ -17,6 +17,7 @@ const hub: HomeHubProps = {
   traits: [],
   suggestions: [],
   interested: [],
+  chosen: null,
 };
 
 describe("chosen direction", () => {
@@ -47,11 +48,10 @@ describe("chosen direction", () => {
     expect(renderToStaticMarkup(<ChosenDirectionLine chosen={chosen} />)).toContain(">Change<");
   });
 
-  it("appears on Home only when the career map is on", () => {
+  it("appears on Home, with a prompt when none is chosen", () => {
     const withDirection = renderToStaticMarkup(<HomeHub {...hub} chosen={chosenDirectionView(MECH)} />);
     expect(withDirection).toContain("Your chosen direction");
     expect(withDirection).toContain("Mechanical Engineers");
     expect(renderToStaticMarkup(<HomeHub {...hub} chosen={null} />)).toContain("Choose one in the career map");
-    expect(renderToStaticMarkup(<HomeHub {...hub} />)).not.toContain("Your chosen direction");
   });
 });
