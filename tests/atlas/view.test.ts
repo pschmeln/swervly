@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/features/explore/local-state";
+import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/lib/copy-rules";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";

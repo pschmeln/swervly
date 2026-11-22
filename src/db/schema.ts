@@ -34,6 +34,9 @@ export const users = pgTable("users", {
   shareReviewsConsentVersion: integer("share_reviews_consent_version"),
   // Version of the privacy policy last agreed to (PRIVACY_POLICY_VERSION). Below current: asked again.
   privacyPolicyVersion: integer("privacy_policy_version"),
+  // Community rules agreed to (COMMUNITY_TERMS_VERSION). Needed before posting, answering or reporting.
+  communityTermsVersion: integer("community_terms_version"),
+  communityTermsAt: timestamp("community_terms_at", { withTimezone: true }),
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   source: text("source").notNull().default("early"),   // 'early' | 'launch'
   invitedByUserId: uuid("invited_by_user_id").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
@@ -242,6 +245,89 @@ export const careerAtlasAnswers = pgTable("career_atlas_answers", {
   check("career_atlas_answers_question", sql`${t.questionId} ~ '^[a-z0-9-]{1,64}$'`),
 ]);
 
+// Community (Stage 4, migration 0011). Shown to other students without author names.
+export const communityPosts = pgTable("community_posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // SET NULL so a post others replied to survives its author's account deletion as an erased tombstone (D11).
+  authorUserId: uuid("author_user_id").references(() => users.id, { onDelete: "set null" }),
+  kind: text("kind").notNull(),                     // question | advice | archetype
+  title: text("title").notNull(),
+  body: text("body").notNull().default(""),
+  employerId: uuid("employer_id").references(() => employers.id, { onDelete: "set null" }),
+  roleType: text("role_type"),
+  atlasFamily: text("atlas_family"),
+  archetypeId: text("archetype_id"),
+  archetypeVersion: integer("archetype_version"),
+  status: text("status").notNull().default("visible"), // visible | hidden | removed | deleted
+  statusVersion: integer("status_version").notNull().default(1),
+  createdAt,
+  updatedAt,
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+}, (t) => [
+  check("community_posts_kind", sql`${t.kind} in ('question', 'advice', 'archetype')`),
+  check("community_posts_status", sql`${t.status} in ('visible', 'hidden', 'removed', 'deleted')`),
+  check("community_posts_title_len", sql`char_length(${t.title}) <= 140`),
+  check("community_posts_body_len", sql`char_length(${t.body}) <= 4000`),
+  index("community_posts_visible_created_idx").on(t.createdAt.desc()).where(sql`${t.status} = 'visible'`),
+  index("community_posts_employer_idx").on(t.employerId).where(sql`${t.status} = 'visible'`),
+  index("community_posts_author_idx").on(t.authorUserId),
+]);
+
+export const communityComments = pgTable("community_comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
+  reviewId: uuid("review_id").references(() => reviews.id, { onDelete: "cascade" }),
+  authorUserId: uuid("author_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("visible"), // visible | hidden | removed
+  statusVersion: integer("status_version").notNull().default(1),
+  createdAt,
+  updatedAt,
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+}, (t) => [
+  check("community_comments_one_target", sql`(${t.postId} is null) <> (${t.reviewId} is null)`),
+  check("community_comments_status", sql`${t.status} in ('visible', 'hidden', 'removed')`),
+  check("community_comments_body_len", sql`char_length(${t.body}) between 1 and 2000`),
+  index("community_comments_post_idx").on(t.postId, t.createdAt),
+  index("community_comments_review_idx").on(t.reviewId, t.createdAt),
+  index("community_comments_author_idx").on(t.authorUserId),
+]);
+
+export const communityHelpful = pgTable("community_helpful", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  postId: uuid("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
+  commentId: uuid("comment_id").references(() => communityComments.id, { onDelete: "cascade" }),
+  createdAt,
+}, (t) => [
+  check("community_helpful_one_target", sql`(${t.postId} is null) <> (${t.commentId} is null)`),
+  uniqueIndex("community_helpful_post_uq").on(t.userId, t.postId).where(sql`${t.postId} is not null`),
+  uniqueIndex("community_helpful_comment_uq").on(t.userId, t.commentId).where(sql`${t.commentId} is not null`),
+]);
+
+export const communityReports = pgTable("community_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reporterUserId: uuid("reporter_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  postId: uuid("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
+  commentId: uuid("comment_id").references(() => communityComments.id, { onDelete: "cascade" }),
+  reason: text("reason").notNull(), // spam | private_info | unsafe | off_topic
+  createdAt,
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, (t) => [
+  check("community_reports_one_target", sql`(${t.postId} is null) <> (${t.commentId} is null)`),
+  check("community_reports_reason", sql`${t.reason} in ('spam', 'private_info', 'unsafe', 'off_topic')`),
+  uniqueIndex("community_reports_post_uq").on(t.reporterUserId, t.postId).where(sql`${t.postId} is not null`),
+  uniqueIndex("community_reports_comment_uq").on(t.reporterUserId, t.commentId).where(sql`${t.commentId} is not null`),
+  index("community_reports_open_idx").on(t.createdAt).where(sql`${t.resolvedAt} is null`),
+]);
+
+export const communityRateBuckets = pgTable("community_rate_buckets", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+}, (t) => [primaryKey({ columns: [t.userId, t.action, t.windowStart], name: "community_rate_buckets_pk" })]);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Assessment = typeof assessments.$inferSelect;
@@ -254,3 +340,5 @@ export type MajorCatalogRow = typeof majorCatalog.$inferSelect;
 export type MajorSubmission = typeof majorSubmissions.$inferSelect;
 export type CareerAtlasMark = typeof careerAtlasMarks.$inferSelect;
 export type CareerAtlasAnswer = typeof careerAtlasAnswers.$inferSelect;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+export type CommunityComment = typeof communityComments.$inferSelect;

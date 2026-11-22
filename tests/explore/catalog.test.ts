@@ -6,19 +6,8 @@ import {
   VERIFIED_CAREER_LINKS,
   careerPageHref,
 } from "@/features/explore/links";
-import { COMPANY_ROLE_FILTERS, prototypeModel } from "@/features/explore/view-model";
-import { MOCK_EXPERIENCES, UNCONSENTED_SAMPLE_MARKER } from "@/features/community/mock/data";
-import {
-  FORBIDDEN_PROTOTYPE_CLAIM,
-  PROTOTYPE_NOTICES,
-  addQuestion,
-  companiesForRole,
-  filterQuestions,
-  markPreview,
-  noteReport,
-  toggleHelpful,
-  toggleSaved,
-} from "@/features/explore/local-state";
+import { buildExploreModel, COMPANY_ROLE_FILTERS } from "@/features/explore/view-model";
+import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/lib/copy-rules";
 
 // Career links expire 90 days after their check; pin "today" so this test does not.
 beforeAll(() => {
@@ -99,75 +88,13 @@ describe("company catalog", () => {
   });
 });
 
-describe("sample consent", () => {
-  it("drops experiences that are not marked as shared", () => {
-    expect(MOCK_EXPERIENCES.some((item) => item.body.includes(UNCONSENTED_SAMPLE_MARKER))).toBe(true);
-    expect(MOCK_EXPERIENCES.some((item) => item.sharingConsent === false)).toBe(true);
-    const model = prototypeModel(true);
-    expect(model).not.toBeNull();
+describe("company directory model", () => {
+  it("has no sample or invented content, and every company has a role filter", () => {
+    const model = buildExploreModel();
     const serialized = JSON.stringify(model);
-    expect(serialized).not.toContain(UNCONSENTED_SAMPLE_MARKER);
-    expect(serialized).not.toContain("Hidden Sample");
+    expect(serialized).not.toMatch(/sample|invented|placeholder/i);
     expect(serialized).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-    expect(model?.companies.find((company) => company.id === "mayo")?.experienceCount).toBe(0);
-    expect(model?.companies.find((company) => company.id === "cchmc")?.experienceCount).toBe(1);
-    expect(model?.experiences.map((item) => item.companyName)).toEqual(["Cincinnati Children's Hospital Medical Center"]);
-    expect(prototypeModel(false)).toBeNull();
-  });
-});
-
-describe("local prototype actions", () => {
-  it("keeps notices free of publish or moderation claims", () => {
-    for (const notice of PROTOTYPE_NOTICES) {
-      expect(notice).not.toMatch(FORBIDDEN_PROTOTYPE_CLAIM);
-    }
-  });
-
-  it("filters, adds, and toggles without a success claim", () => {
-    const model = prototypeModel(true);
-    if (!model) throw new Error("expected prototype model");
-    expect(filterQuestions(model.questions, "company:mayo")).toEqual([]);
-    expect(filterQuestions(model.questions, "role:clinical-operations")).toHaveLength(1);
-    const finance = companiesForRole(model.companies, "Finance");
+    const finance = model.companies.filter((company) => company.roleCategories.includes("Finance"));
     expect(finance.map((company) => company.id)).toEqual(expect.arrayContaining(["cleveland-fed", "pnc"]));
-    expect(finance.every((company) => company.roleCategories.includes("Finance"))).toBe(true);
-    expect(companiesForRole(model.companies, "Missing category")).toEqual([]);
-
-    const missing = addQuestion(model.questions, { scopeValue: "role:nope", title: "Hi", body: "Details", id: "x" }, model.scopes);
-    expect(missing.ok).toBe(false);
-    const added = addQuestion(
-      model.questions,
-      { scopeValue: "role:finance", title: "  Sample title  ", body: "  Sample details  ", id: "local-1" },
-      model.scopes,
-    );
-    expect(added.ok).toBe(true);
-    if (!added.ok) return;
-    expect(added.notice).toBe("Only on this screen. Nothing was sent.");
-    expect(added.questions[0]?.localOnly).toBe(true);
-    expect(added.questions[0]?.title).toBe("Sample title");
-
-    const marked = toggleHelpful([], "q-clinic-week");
-    expect(marked.notice).toBe("Marked on this screen. Not saved.");
-    expect(toggleHelpful(marked.ids, "q-clinic-week").notice).toBe("Cleared on this screen. Not saved.");
-
-    const saved = toggleSaved([], "pnc");
-    expect(saved.notice).toBe("Kept on this screen. Not saved.");
-    expect(toggleSaved(saved.ids, "pnc").notice).toBe("Removed from this screen. Not saved.");
-
-    const badReport = noteReport(model.reports, { id: "r", targetLabel: "A question", reasonValue: "" });
-    expect(badReport.ok).toBe(false);
-    const report = noteReport(model.reports, { id: "r", targetLabel: "A question", reasonValue: "private" });
-    expect(report.ok).toBe(true);
-    if (!report.ok) return;
-    expect(report.notice).toBe("Noted on this screen. Nothing was sent.");
-    expect(report.reports[0]?.reason).toBe("Private information");
-
-    const missingPreview = markPreview(model.reports, "missing", "hidden_on_screen");
-    expect(missingPreview.ok).toBe(false);
-    const preview = markPreview(model.reports, "report-sample-1", "hidden_on_screen");
-    expect(preview.ok).toBe(true);
-    if (!preview.ok) return;
-    expect(preview.notice).toBe("Preview only. Nothing was changed for anyone else.");
-    expect(preview.reports.find((item) => item.id === "report-sample-1")?.preview).toBe("hidden_on_screen");
   });
 });

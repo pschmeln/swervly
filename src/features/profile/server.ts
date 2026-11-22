@@ -1,4 +1,5 @@
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
+import { communityAccountDeletion, exportCommunity } from "@/features/community/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -359,6 +360,8 @@ export type AccountExport = {
   rotations: AccountExportRotation[];
   /** Career Atlas marks and answers. Empty when the tables don't exist yet on this database. */
   careerAtlas: { marks: CareerAtlasMark[]; answers: CareerAtlasAnswer[] };
+  /** Posts and answers the student wrote in Community. */
+  community: Awaited<ReturnType<typeof exportCommunity>>;
 };
 
 async function exportCareerAtlas(userId: string): Promise<AccountExport["careerAtlas"]> {
@@ -405,6 +408,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
     user,
     profile: profileRows[0] ?? null,
     careerAtlas: await exportCareerAtlas(userId),
+    community: await exportCommunity(userId),
     assessments: assessmentRows,
     rotations: rotationRows.map((row) => ({
       ...row.rotation,
@@ -456,7 +460,8 @@ export async function deleteAccount(user: User): Promise<void> {
   // rotations and reviews for this user id. Driver errors can include the SQL
   // text, so a failure is logged as the user id only.
   try {
-    await db.delete(users).where(eq(users.id, user.id));
+    // Community first (D11), in one batch with the users row so nothing is left half done.
+    await db.batch([...communityAccountDeletion(user.id), db.delete(users).where(eq(users.id, user.id))]);
   } catch {
     const failure = new ApiError(
       500,

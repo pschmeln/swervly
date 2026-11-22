@@ -30,7 +30,7 @@ describe("direction explore integration", () => {
     expect(model.profile.majorLabel).toBe(PRIVATE_MAJOR);
     expect(model.profile.note).not.toContain(PRIVATE_MAJOR);
     expect(model.paths.map((path) => path.id)).toEqual(["insufficient"]);
-    expect(JSON.stringify({ paths: model.paths, companies: model.companies, questions: model.questions })).not.toContain(
+    expect(JSON.stringify({ paths: model.paths, companies: model.companies })).not.toContain(
       PRIVATE_MAJOR,
     );
     expect(model.companies.every((company) => company.whyShown === DIRECTORY_WHY_SHOWN)).toBe(true);

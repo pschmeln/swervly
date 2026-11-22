@@ -71,6 +71,13 @@
       "when": 1795800000000,
       "tag": "0010_location_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795900000000,
+      "tag": "0011_community",
+      "breakpoints": true
     }
   ]
 }

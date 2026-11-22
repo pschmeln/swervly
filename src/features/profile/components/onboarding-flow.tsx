@@ -39,7 +39,7 @@ const PAGE_SIZE = 5;
 const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
 
 export const DATA_USE_CONSENT_LABEL =
-  "I agree that my profile (including where I want to work), quiz answers and co-op reviews are stored so Swervly can show them to me, match me with roles, list companies in my area first, and so the founders can operate the service.";
+  "I agree that my profile (including where I want to work), quiz answers, co-op reviews and anything I post in Community are stored so Swervly can show them to me, match me with roles, list companies in my area first, and so the founders can operate the service.";
 
 export { SHARE_REVIEWS_CONSENT_LABEL };
 
