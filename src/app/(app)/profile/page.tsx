@@ -6,6 +6,9 @@ import { assessments, profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
+import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
+import { loadChosenDirection } from "@/features/direction/chosen";
+import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
 import { readTraits } from "@/features/profile/traits";
@@ -43,7 +46,7 @@ export default async function ProfilePage() {
     );
   }
 
-  const [profileRows, assessmentRows, majorSearch] = await Promise.all([
+  const [profileRows, assessmentRows, majorSearch, chosen] = await Promise.all([
     db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1),
     db
       .select({ instrument: assessments.instrument, scored: assessments.scored })
@@ -52,6 +55,7 @@ export default async function ProfilePage() {
       .orderBy(desc(assessments.takenAt))
       .limit(1),
     loadMajorSearchContext(),
+    loadChosenDirection(user.id),
   ]);
   const profile = profileRows[0];
   const latest = assessmentRows[0];
@@ -62,6 +66,7 @@ export default async function ProfilePage() {
   return (
     <PageShell title="Profile">
       {archetype ? <ArchetypeCard card={archetype} /> : null}
+      {atlasPrototypeEnabled() ? <ChosenDirectionCard chosen={chosen} /> : null}
       {user.school ? (
         <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
       ) : null}
