@@ -1,7 +1,9 @@
 import { Card, PageShell } from "@/components/ui";
+import { AdvisorDashboardView } from "@/features/advisors/components/advisor-dashboard";
 import { AdvisorRequestForm } from "@/features/advisors/components/advisor-request-form";
 import { ADVISOR_INTRO, APPROVED, NO_SCHOOL, PENDING, REVOKED } from "@/features/advisors/copy";
-import { advisorStateFor } from "@/features/advisors/server";
+import { advisorDashboard } from "@/features/advisors/roster";
+import { advisorStateFor, requireApprovedAdvisor } from "@/features/advisors/server";
 import { requireUser } from "@/lib/auth";
 
 export const metadata = { title: "Advisors" };
@@ -10,6 +12,8 @@ export const metadata = { title: "Advisors" };
 export default async function AdvisorsPage() {
   const user = await requireUser();
   const state = await advisorStateFor(user);
+  // The same server-side role check the advisor endpoints use.
+  const dashboard = state.kind === "approved" ? await advisorDashboard(await requireApprovedAdvisor(user)) : null;
   return (
     <PageShell title="Advisors">
       <Card>
@@ -25,6 +29,7 @@ export default async function AdvisorsPage() {
           </div>
         ) : null}
       </Card>
+      {dashboard ? <AdvisorDashboardView dashboard={dashboard} /> : null}
     </PageShell>
   );
 }

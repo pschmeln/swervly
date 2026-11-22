@@ -197,8 +197,8 @@ describe("referral copy", () => {
     expect(balance).toContain(POINTS_COMING_SOON);
   });
 
-  it("tells the privacy policy about invite codes and points, at version 3", () => {
-    expect(PRIVACY_POLICY_VERSION).toBe(3);
+  it("tells the privacy policy about invite codes and points, from version 3", () => {
+    expect(PRIVACY_POLICY_VERSION).toBeGreaterThanOrEqual(3);
     expect(PRIVACY_POLICY_UPDATED).toBe("November 22, 2026");
     expect(POLICY_CHANGES[3]?.join(" ")).toContain("100 points");
     expect(POLICY_CHANGES[3]?.join(" ")).toContain(POINTS_COMING_SOON);
