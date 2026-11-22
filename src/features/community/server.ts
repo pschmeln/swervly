@@ -319,16 +319,7 @@ export async function getPost(viewer: User, postId: string, options: { founder?:
     .limit(1);
   if (!row) return null;
   const comments = await db
-    .select({
-      id: communityComments.id,
-      body: communityComments.body,
-      status: communityComments.status,
-      authorUserId: communityComments.authorUserId,
-      createdAt: communityComments.createdAt,
-      editedAt: communityComments.editedAt,
-      helpfulCount: sql<number>`(select count(*)::int from community_helpful h where h.comment_id = ${communityComments.id})`,
-      helpedByMe: sql<boolean>`exists (select 1 from community_helpful h where h.comment_id = ${communityComments.id} and h.user_id = ${viewer.id}::uuid)`,
-    })
+    .select(commentFields(viewer))
     .from(communityComments)
     .where(and(eq(communityComments.postId, postId), inArray(communityComments.status, commentStatuses)))
     .orderBy(communityComments.createdAt);
@@ -349,18 +340,79 @@ export async function getPost(viewer: User, postId: string, options: { founder?:
     canEdit: !deleted && row.authorUserId === viewer.id && editWindowOpen(row.createdAt, now),
     deleted,
     hidden: row.status === "hidden",
-    comments: comments.map((comment) => ({
-      id: comment.id,
-      body: comment.body,
-      hidden: comment.status === "hidden",
-      createdAt: comment.createdAt,
-      editedAt: comment.editedAt,
-      helpfulCount: Number(comment.helpfulCount),
-      helpedByMe: Boolean(comment.helpedByMe),
-      mine: comment.authorUserId === viewer.id,
-      canEdit: comment.authorUserId === viewer.id && editWindowOpen(comment.createdAt, now),
-    })),
+    comments: comments.map((comment) => commentView(viewer, comment, now)),
   };
+}
+
+function commentFields(viewer: User) {
+  return {
+    id: communityComments.id,
+    body: communityComments.body,
+    status: communityComments.status,
+    reviewId: communityComments.reviewId,
+    authorUserId: communityComments.authorUserId,
+    createdAt: communityComments.createdAt,
+    editedAt: communityComments.editedAt,
+    helpfulCount: sql<number>`(select count(*)::int from community_helpful h where h.comment_id = ${communityComments.id})`,
+    helpedByMe: sql<boolean>`exists (select 1 from community_helpful h where h.comment_id = ${communityComments.id} and h.user_id = ${viewer.id}::uuid)`,
+  };
+}
+
+type CommentRow = {
+  id: string;
+  body: string;
+  status: string;
+  authorUserId: string;
+  createdAt: Date;
+  editedAt: Date | null;
+  helpfulCount: number;
+  helpedByMe: boolean;
+};
+
+function commentView(viewer: User, comment: CommentRow, now: number): CommentView {
+  return {
+    id: comment.id,
+    body: comment.body,
+    hidden: comment.status === "hidden",
+    createdAt: comment.createdAt,
+    editedAt: comment.editedAt,
+    helpfulCount: Number(comment.helpfulCount),
+    helpedByMe: Boolean(comment.helpedByMe),
+    mine: comment.authorUserId === viewer.id,
+    canEdit: comment.authorUserId === viewer.id && editWindowOpen(comment.createdAt, now),
+  };
+}
+
+/**
+ * Visible comments on shared review notes (item 16), grouped by review id. The caller passes only
+ * the review ids whose notes this viewer can see right now (see company/review-comments.ts).
+ */
+export async function loadReviewComments(viewer: User, reviewIds: readonly string[]): Promise<Record<string, CommentView[]>> {
+  const grouped: Record<string, CommentView[]> = {};
+  if (reviewIds.length === 0) return grouped;
+  const found = await db
+    .select(commentFields(viewer))
+    .from(communityComments)
+    .where(and(inArray(communityComments.reviewId, [...reviewIds]), eq(communityComments.status, "visible")))
+    .orderBy(communityComments.createdAt);
+  const now = Date.now();
+  for (const row of found) {
+    if (!row.reviewId) continue;
+    (grouped[row.reviewId] ??= []).push(commentView(viewer, row, now));
+  }
+  return grouped;
+}
+
+/** Inserts a comment on a review. Only call after checking the viewer can see that review's note. */
+export async function insertReviewComment(user: User, reviewId: string, body: string): Promise<{ id: string }> {
+  requireCommunityTerms(user);
+  await takeRateSlot(user.id, "comment");
+  const [row] = await db
+    .insert(communityComments)
+    .values({ reviewId, authorUserId: user.id, body })
+    .returning({ id: communityComments.id });
+  if (!row) throw new Error("community_comment_insert_failed");
+  return row;
 }
 
 // ---- Answers ------------------------------------------------------------------------------

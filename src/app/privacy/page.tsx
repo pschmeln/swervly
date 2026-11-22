@@ -55,7 +55,8 @@ export default function PrivacyPage() {
             pages. If you use the career map, we store the careers you mark
             Interested or Not interested, the one you choose as your direction,
             and your answers to its short preference questions. If you use
-            Community, we store the posts and answers you write, any company,
+            Community, we store the posts and answers you write, comments you
+            leave on shared review notes, any company,
             role or career area you tag them with, the posts and answers you mark
             Helpful, the reports you send, when you agreed to the Community rules,
             and hourly counts used to limit posting. If you use Action,
@@ -139,6 +140,13 @@ export default function PrivacyPage() {
             Helpful counts are shown; who marked them is not. Reports go only to
             the founders, who can hide, restore or remove reported posts. Hidden
             posts disappear for everyone except the founders.
+          </p>
+          <p>
+            Comments on a shared review note follow the same rules. They are
+            shown, without your name, only to students who can see that note:
+            students in the note writer&apos;s major, once the company page for that
+            major is shown. If the writer stops sharing, the note and its
+            comments are no longer shown.
           </p>
           <p>
             The two Swervly founders can see records because they operate the
