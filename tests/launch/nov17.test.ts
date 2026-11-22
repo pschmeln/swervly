@@ -1,19 +1,28 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { inviteTarget } from "@/lib/invites";
+import { inviteTarget, referrerForNewUser } from "@/lib/invites";
 import { isFounderEmail } from "@/lib/founders";
 
 const self = "11111111-1111-4111-8111-111111111111";
 const friend = "22222222-2222-4222-8222-222222222222";
 
 describe("inviteTarget", () => {
-  const known = new Set([self, friend]);
+  const friendCode = "ab".repeat(16);
+  const selfCode = "cd".repeat(16);
+  const known = new Map<string, string>([
+    [friendCode, friend],
+    [selfCode, self],
+  ]);
 
-  it("counts a friend and ignores self, junk, and unknown ids", () => {
-    expect(inviteTarget(friend, self, known)).toBe(friend);
-    expect(inviteTarget(self, self, known)).toBeNull();
-    expect(inviteTarget("not-a-uuid", self, known)).toBeNull();
+  it("counts a friend's code and ignores self, a user id, and unknown codes", () => {
+    expect(inviteTarget(friendCode, self, known)).toBe(friend);
+    expect(inviteTarget(selfCode, self, known)).toBeNull();
+    expect(inviteTarget(friend, self, known)).toBeNull();
+    expect(inviteTarget("not-a-code", self, known)).toBeNull();
     expect(inviteTarget("33333333-3333-4333-8333-333333333333", self, known)).toBeNull();
+    expect(referrerForNewUser(self, friend)).toBe(friend);
+    expect(referrerForNewUser(self, self)).toBeNull();
+    expect(referrerForNewUser(self, null)).toBeNull();
   });
 });
 

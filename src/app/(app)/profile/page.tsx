@@ -13,6 +13,8 @@ import { loadChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
+import { PointsBalance } from "@/features/profile/components/points-balance";
+import { referralSummary } from "@/features/profile/referrals";
 import { readTraits } from "@/features/profile/traits";
 import type { TraitScores } from "@/features/profile/scoring";
 import { TRAITS } from "@/content/mini-ipip";
@@ -35,6 +37,7 @@ function scoresFrom(value: unknown): TraitScores | null {
 
 export default async function ProfilePage() {
   const user = await requireUser();
+  const summary = await referralSummary(user.id);
   if (!user.onboardedAt) {
     return (
       <PageShell title="Profile">
@@ -44,6 +47,7 @@ export default async function ProfilePage() {
             <Button href={ROUTES.onboarding} className="w-full sm:w-auto">Finish your profile</Button>
           </div>
         </Card>
+        <PointsBalance points={summary.points} />
       </PageShell>
     );
   }
@@ -69,6 +73,7 @@ export default async function ProfilePage() {
     <PageShell title="Profile">
       {archetype ? <ArchetypeCard card={archetype} /> : null}
       {atlasPrototypeEnabled() ? <ChosenDirectionCard chosen={chosen} /> : null}
+      <PointsBalance points={summary.points} />
       {user.school ? (
         <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
       ) : null}

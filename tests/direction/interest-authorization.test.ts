@@ -53,6 +53,7 @@ function userRow(id: string, clerkId: string, email: string): User {
     onboardedAt: createdAt,
     school: "mail.uc.edu",
     invitedByUserId: null,
+    referralCode: "0123456789abcdef0123456789abcdef",
     shareFreeTextDefault: false,
     source: "early",
     createdAt,

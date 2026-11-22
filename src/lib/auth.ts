@@ -1,6 +1,6 @@
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
@@ -19,7 +19,7 @@ import {
   isAbortedRender,
   isDatabaseError,
 } from "@/lib/failure-chain";
-import { INVITE_COOKIE, normalizeInviteId } from "@/lib/invites";
+import { createReferralCode, INVITE_COOKIE, normalizeReferralCode, referrerForNewUser } from "@/lib/invites";
 import { markReported, reportFailure, setInternalUser } from "@/lib/sentry";
 
 export { isAllowedEmail } from "@/lib/email-eligibility";
@@ -55,7 +55,12 @@ async function ensureUser(
   try {
     const inserted = await db
       .insert(users)
-      .values({ clerkId, email, school: schoolDomainFromEmail(email) })
+      .values({
+        clerkId,
+        email,
+        school: schoolDomainFromEmail(email),
+        referralCode: createReferralCode(),
+      })
       .onConflictDoNothing()
       .returning({ id: users.id });
     const createdId = Array.isArray(inserted) ? inserted[0]?.id : undefined;
@@ -85,20 +90,21 @@ async function attachInvite(userId: string): Promise<void> {
   } catch {
     return;
   }
-  const inviteId = normalizeInviteId(raw);
-  if (!inviteId || inviteId === userId) return;
+  const code = normalizeReferralCode(raw);
+  if (!code) return;
 
   const [inviter] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.id, inviteId))
+    .where(eq(users.referralCode, code))
     .limit(1);
-  if (!inviter || inviter.id === userId) return;
+  const inviterId = referrerForNewUser(userId, inviter?.id);
+  if (!inviterId) return;
 
   await db
     .update(users)
-    .set({ invitedByUserId: inviter.id, updatedAt: new Date() })
-    .where(eq(users.id, userId));
+    .set({ invitedByUserId: inviterId, updatedAt: new Date() })
+    .where(and(eq(users.id, userId), isNull(users.invitedByUserId)));
 }
 
 async function findUserByClerkId(clerkId: string): Promise<User | undefined> {
