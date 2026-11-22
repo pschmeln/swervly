@@ -309,7 +309,8 @@ export function OnboardingFlow({
       parsed.data,
     );
     if (result.ok) {
-      router.push(ROUTES.direction);
+      // Direction opens with the new work-style card when it sees quiz=done.
+      router.push(`${ROUTES.direction}?quiz=done`);
       return;
     }
     setFormError(result.error.message);
