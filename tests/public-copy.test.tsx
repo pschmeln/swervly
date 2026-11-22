@@ -27,6 +27,9 @@ describe("public copy", () => {
     expect(html).toContain('href="/sign-up"');
     expect(html).toContain("Sign in");
     expect(html).toContain('href="/sign-in"');
+    expect(html).toContain('role="img"');
+    expect(html).toContain('aria-label="Swervly"');
+    expect(html).toContain("/brand/wordmark-on-dark.svg");
     expect(html.match(/Sign in/g)?.length).toBe(1);
     expect(text).not.toContain("30 interest questions");
     expect(text).not.toContain("UC students");
