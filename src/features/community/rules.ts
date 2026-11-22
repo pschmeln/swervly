@@ -74,6 +74,12 @@ export const PostInput = z
 export type PostInput = z.infer<typeof PostInput>;
 
 export const PostEditInput = z.object({ title, body });
+
+/** Optional line a student adds when sharing their work-style card (item 19). */
+export const SHARE_LINE_MAX = 280;
+export const ArchetypeShareInput = z.object({
+  text: z.string().trim().max(SHARE_LINE_MAX, { error: `Use ${SHARE_LINE_MAX} characters or fewer.` }).default(""),
+});
 export const CommentInput = z.object({
   body: z.string().trim().min(1, { error: "Write an answer first." }).max(COMMENT_MAX, { error: `Use ${COMMENT_MAX} characters or fewer.` }),
 });

@@ -72,7 +72,7 @@ describe("aggregateForMajor", () => {
     // Only two different students reported pay (b and c): below the 3-student pay minimum.
     expect(threeStudents.payRange).toBeNull();
     expect(threeStudents.topSkills).toEqual(["CAD"]);
-    expect(threeStudents.sharedNotes).toEqual(["Bring boots."]);
+    expect(threeStudents.sharedNotes.map((note) => note.text)).toEqual(["Bring boots."]);
     expect(JSON.stringify(threeStudents)).not.toContain("@");
   });
 

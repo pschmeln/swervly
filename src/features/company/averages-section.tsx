@@ -3,6 +3,7 @@ import { Card } from "@/components/ui";
 import { focusRing } from "@/components/ui/focus-ring";
 import { ALL_MAJORS, type CompanyAverages, type PublicMajorView } from "@/features/company/aggregate";
 import { PublicMajorSection } from "@/features/company/public-section";
+import type { CommentView } from "@/features/community/server";
 
 export const NOT_ENOUGH_MAJOR = "Not enough reviews from your major yet.";
 export const NO_MAJOR_LINE = "Reviews are grouped by major. Add your major on your Profile to see your major's view.";
@@ -14,11 +15,15 @@ export function CompanyAveragesSection({
   employerName,
   viewerMajor,
   averages,
+  threads,
 }: {
   employerName: string;
   viewerMajor: string | null;
-} & { averages: CompanyAverages }) {
-  if (averages.mine.visible) return <PublicMajorSection employerName={employerName} view={averages.mine} />;
+  averages: CompanyAverages;
+  /** Comments on the viewer's major's shared notes (item 16). Notes never appear in the all-majors view. */
+  threads?: { comments: Record<string, CommentView[]>; agreed: boolean };
+}) {
+  if (averages.mine.visible) return <PublicMajorSection employerName={employerName} view={averages.mine} threads={threads} />;
   return (
     <>
       <Card>

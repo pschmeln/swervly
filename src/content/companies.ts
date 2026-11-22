@@ -43,7 +43,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Saint Paul, MN",
     roleTypes: ["design", "manufacturing_process", "research", "laboratory"],
     families: ["fam:manufacturing-automation", "fam:engineering-rd", "fam:chemical-process", "fam:laboratory-science"],
-    careers: { url: "https://www.3m.com/3M/en_US/careers-us/", hostSuffix: "3m.com" },
+    careers: { url: "https://careers.3m.com/en", hostSuffix: "3m.com" },
   },
   {
     id: "84-51",
@@ -283,7 +283,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: null,
     roleTypes: ["design", "test_validation", "software", "manufacturing_process"],
     families: ["fam:design-development", "fam:electronics-hardware", "fam:software-engineering", "fam:simulation-validation"],
-    careers: { url: "https://careers.baesystems.com/", hostSuffix: "baesystems.com" },
+    careers: { url: "https://jobs.baesystems.com/global/en", hostSuffix: "baesystems.com" },
   },
   {
     id: "barton-malow",
@@ -313,7 +313,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Columbus, OH",
     roleTypes: ["research", "laboratory"],
     families: ["fam:engineering-rd", "fam:laboratory-science"],
-    careers: { url: "https://www.battelle.org/careers", hostSuffix: "battelle.org" },
+    careers: { url: "https://jobs.battelle.org/us/en/home", hostSuffix: "battelle.org" },
   },
   {
     id: "baxter",
@@ -483,7 +483,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Dublin, OH",
     roleTypes: ["business_operations", "data_analytics", "manufacturing_process"],
     families: ["fam:business-operations", "fam:data-analytics", "fam:manufacturing-automation"],
-    careers: { url: "https://www.cardinalhealth.com/en/about-us/careers.html", hostSuffix: "cardinalhealth.com" },
+    careers: { url: "https://jobs.cardinalhealth.com/", hostSuffix: "cardinalhealth.com" },
   },
   {
     id: "cargill",
@@ -633,7 +633,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Charlotte, NC",
     roleTypes: ["design", "test_validation", "software", "manufacturing_process"],
     families: ["fam:design-development", "fam:electronics-hardware", "fam:simulation-validation", "fam:software-engineering"],
-    careers: { url: "https://www.collinsaerospace.com/careers", hostSuffix: "collinsaerospace.com" },
+    careers: { url: "https://www.rtx.com/collinsaerospace/careers/engineering", hostSuffix: "rtx.com" },
   },
   {
     id: "constellation-energy",
@@ -643,7 +643,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Baltimore, MD",
     roleTypes: ["field_site", "design", "test_validation"],
     families: ["fam:energy-thermal", "fam:construction-field", "fam:simulation-validation"],
-    careers: { url: "https://www.constellationenergy.com/careers.html", hostSuffix: "constellationenergy.com" },
+    careers: { url: "https://jobs.constellationenergy.com/careers-home/", hostSuffix: "constellationenergy.com" },
   },
   {
     id: "consumers-energy",
@@ -683,7 +683,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Corning, NY",
     roleTypes: ["research", "manufacturing_process", "design"],
     families: ["fam:engineering-rd", "fam:manufacturing-automation", "fam:chemical-process"],
-    careers: { url: "https://www.corning.com/worldwide/en/careers.html", hostSuffix: "corning.com" },
+    careers: { url: "https://careers.corning.com/us/en", hostSuffix: "corning.com" },
   },
   {
     id: "crown-equipment",
@@ -703,7 +703,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Columbus, IN",
     roleTypes: ["design", "test_validation", "manufacturing_process"],
     families: ["fam:design-development", "fam:energy-thermal", "fam:simulation-validation", "fam:manufacturing-automation"],
-    careers: { url: "https://www.cummins.com/careers", hostSuffix: "cummins.com" },
+    careers: { url: "https://cummins.jobs/", hostSuffix: "cummins.jobs" },
   },
   {
     id: "dana-incorporated",
@@ -873,7 +873,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Indianapolis, IN",
     roleTypes: ["manufacturing_process", "research", "laboratory"],
     families: ["fam:chemical-process", "fam:laboratory-science", "fam:engineering-rd"],
-    careers: { url: "https://careers.lilly.com/", hostSuffix: "lilly.com" },
+    careers: { url: "https://careers.lilly.com/us/en", hostSuffix: "lilly.com" },
   },
   {
     id: "emerson",
@@ -903,7 +903,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "New Orleans, LA",
     roleTypes: ["field_site", "design", "data_analytics"],
     families: ["fam:energy-thermal", "fam:construction-field", "fam:data-analytics"],
-    careers: { url: "https://www.entergy.com/careers/", hostSuffix: "entergy.com" },
+    careers: { url: "https://jobs.entergy.com/", hostSuffix: "entergy.com" },
   },
   {
     id: "epic-systems",
@@ -933,7 +933,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Chicago, IL",
     roleTypes: ["field_site", "design", "data_analytics"],
     families: ["fam:energy-thermal", "fam:construction-field", "fam:data-analytics"],
-    careers: { url: "https://www.exeloncorp.com/careers", hostSuffix: "exeloncorp.com" },
+    careers: { url: "https://jobs.exeloncorp.com/careers-home/jobs", hostSuffix: "exeloncorp.com" },
   },
   {
     id: "exxonmobil",
@@ -1073,7 +1073,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Detroit, MI",
     roleTypes: ["design", "test_validation", "manufacturing_process", "software"],
     families: ["fam:design-development", "fam:manufacturing-automation", "fam:simulation-validation", "fam:software-engineering"],
-    careers: { url: "https://search-careers.gm.com/", hostSuffix: "gm.com" },
+    careers: { url: "https://search-careers.gm.com/en/teams/engineering/?utm_source=gm.com&utm_medium=referral&utm_campaign=Engineering_Home", hostSuffix: "gm.com" },
   },
   {
     id: "gentex",
@@ -1163,7 +1163,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Savannah, GA",
     roleTypes: ["design", "test_validation", "manufacturing_process"],
     families: ["fam:design-development", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.gulfstream.com/en/careers/", hostSuffix: "gulfstream.com" },
+    careers: { url: "https://jobfeed.gulfstream.com/en/", hostSuffix: "gulfstream.com" },
   },
   {
     id: "harley-davidson",
@@ -1233,7 +1233,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Charlotte, NC",
     roleTypes: ["design", "software", "test_validation", "manufacturing_process"],
     families: ["fam:design-development", "fam:software-engineering", "fam:electronics-hardware", "fam:manufacturing-automation"],
-    careers: { url: "https://careers.honeywell.com/", hostSuffix: "honeywell.com" },
+    careers: { url: "https://www.honeywell.com/us/en/careers", hostSuffix: "honeywell.com" },
   },
   {
     id: "honeywell-intelligrated",
@@ -1263,7 +1263,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Shelton, CT",
     roleTypes: ["design", "manufacturing_process", "test_validation"],
     families: ["fam:electronics-hardware", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.hubbell.com/hubbell/en/careers", hostSuffix: "hubbell.com" },
+    careers: { url: "https://careers.hubbell.com/", hostSuffix: "hubbell.com" },
   },
   {
     id: "ibm",
@@ -1313,7 +1313,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Davidson, NC",
     roleTypes: ["design", "manufacturing_process", "test_validation"],
     families: ["fam:design-development", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.irco.com/en-us/careers", hostSuffix: "irco.com" },
+    careers: { url: "https://careers.irco.com/", hostSuffix: "irco.com" },
   },
   {
     id: "intel",
@@ -1363,7 +1363,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Moline, IL",
     roleTypes: ["design", "test_validation", "manufacturing_process", "software"],
     families: ["fam:design-development", "fam:manufacturing-automation", "fam:simulation-validation", "fam:software-engineering"],
-    careers: { url: "https://www.deere.com/en/our-company/careers/", hostSuffix: "deere.com" },
+    careers: { url: "https://www.deere.com/en-us/our-company/careers", hostSuffix: "deere.com" },
   },
   {
     id: "johnson-and-johnson",
@@ -1463,7 +1463,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: null,
     roleTypes: ["manufacturing_process", "business_operations"],
     families: ["fam:manufacturing-automation", "fam:chemical-process", "fam:business-operations"],
-    careers: { url: "https://www.kraftheinz.com/careers", hostSuffix: "kraftheinz.com" },
+    careers: { url: "https://careers.kraftheinzcompany.com/", hostSuffix: "kraftheinzcompany.com" },
   },
   {
     id: "kroger",
@@ -1513,7 +1513,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Reston, VA",
     roleTypes: ["software", "data_analytics", "design"],
     families: ["fam:software-engineering", "fam:data-analytics", "fam:security-it"],
-    careers: { url: "https://careers.leidos.com/", hostSuffix: "leidos.com" },
+    careers: { url: "https://www.leidos.com/careers/life", hostSuffix: "leidos.com" },
   },
   {
     id: "lg-and-e-and-ku-energy",
@@ -1533,7 +1533,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Cleveland, OH",
     roleTypes: ["design", "manufacturing_process", "test_validation"],
     families: ["fam:design-development", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.lincolnelectric.com/en/careers", hostSuffix: "lincolnelectric.com" },
+    careers: { url: "https://jobs.lincolnelectric.com/", hostSuffix: "lincolnelectric.com" },
   },
   {
     id: "littelfuse",
@@ -1553,7 +1553,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Bethesda, MD",
     roleTypes: ["design", "test_validation", "software", "manufacturing_process"],
     families: ["fam:design-development", "fam:simulation-validation", "fam:software-engineering", "fam:electronics-hardware"],
-    careers: { url: "https://www.lockheedmartinjobs.com/", hostSuffix: "lockheedmartinjobs.com" },
+    careers: { url: "https://www.lockheedmartin.com/en-us/careers/index.html", hostSuffix: "lockheedmartin.com" },
   },
   {
     id: "lubrizol",
@@ -1563,7 +1563,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Wickliffe, OH",
     roleTypes: ["manufacturing_process", "research", "laboratory"],
     families: ["fam:chemical-process", "fam:engineering-rd", "fam:laboratory-science"],
-    careers: { url: "https://www.lubrizol.com/Careers", hostSuffix: "lubrizol.com" },
+    careers: { url: "https://jobs.lubrizol.com/", hostSuffix: "lubrizol.com" },
   },
   {
     id: "magna-international",
@@ -1643,7 +1643,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Florence, KY",
     roleTypes: ["design", "manufacturing_process"],
     families: ["fam:design-development", "fam:manufacturing-automation"],
-    careers: { url: "https://www.mazakusa.com/about-us/careers/", hostSuffix: "mazakusa.com" },
+    careers: { url: "https://www.mazak.com/us-en/Careers/", hostSuffix: "mazak.com" },
   },
   {
     id: "medpace",
@@ -1703,7 +1703,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: null,
     roleTypes: ["design", "test_validation", "software"],
     families: ["fam:electronics-hardware", "fam:simulation-validation", "fam:software-engineering"],
-    careers: { url: "https://www.mt.com/us/en/home/site_content/careers.html", hostSuffix: "mt.com" },
+    careers: { url: "https://jobs.mt.com/en", hostSuffix: "mt.com" },
   },
   {
     id: "michael-baker-international",
@@ -1923,7 +1923,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Austin, TX",
     roleTypes: ["software", "data_analytics"],
     families: ["fam:software-engineering", "fam:data-analytics"],
-    careers: { url: "https://careers.oracle.com/", hostSuffix: "oracle.com" },
+    careers: { url: "https://www.oracle.com/careers/", hostSuffix: "oracle.com" },
   },
   {
     id: "oshkosh-corporation",
@@ -1943,7 +1943,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Toledo, OH",
     roleTypes: ["manufacturing_process", "design", "research"],
     families: ["fam:manufacturing-automation", "fam:chemical-process", "fam:engineering-rd"],
-    careers: { url: "https://www.owenscorning.com/en-us/corporate/careers", hostSuffix: "owenscorning.com" },
+    careers: { url: "https://careers.owenscorning.com/", hostSuffix: "owenscorning.com" },
   },
   {
     id: "paccar",
@@ -2063,7 +2063,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "East Hartford, CT",
     roleTypes: ["design", "test_validation", "manufacturing_process"],
     families: ["fam:design-development", "fam:energy-thermal", "fam:manufacturing-automation", "fam:simulation-validation"],
-    careers: { url: "https://www.prattwhitney.com/en/careers", hostSuffix: "prattwhitney.com" },
+    careers: { url: "https://careers.rtx.com/global/en/pratt-whitney", hostSuffix: "rtx.com" },
   },
   {
     id: "pg",
@@ -2313,7 +2313,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Atlanta, GA",
     roleTypes: ["field_site", "design", "data_analytics"],
     families: ["fam:energy-thermal", "fam:construction-field", "fam:data-analytics"],
-    careers: { url: "https://www.southerncompany.com/careers.html", hostSuffix: "southerncompany.com" },
+    careers: { url: "https://southerncompany.jobs/", hostSuffix: "southerncompany.jobs" },
   },
   {
     id: "spacex",
@@ -2703,7 +2703,7 @@ export const COMPANIES: readonly CompanyEntry[] = [
     city: "Minneapolis, MN",
     roleTypes: ["field_site", "design", "data_analytics"],
     families: ["fam:energy-thermal", "fam:construction-field", "fam:data-analytics"],
-    careers: { url: "https://www.xcelenergy.com/company/careers", hostSuffix: "xcelenergy.com" },
+    careers: { url: "https://jobs.xcelenergy.com/", hostSuffix: "xcelenergy.com" },
   },
   {
     id: "xylem",

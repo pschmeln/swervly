@@ -1,5 +1,6 @@
 import { PageShell } from "@/components/ui";
 import { CompanyAveragesSection } from "@/features/company/averages-section";
+import { hasCommunityTerms } from "@/features/community/rules";
 import { companyViewForUser } from "@/features/company/server";
 import { requireOnboardedUser } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
@@ -23,7 +24,12 @@ export default async function CompanyPage({
   }
   return (
     <PageShell title="Company">
-      <CompanyAveragesSection employerName={result.employerName} viewerMajor={result.viewerMajor} averages={{ mine: result.mine, allMajors: result.allMajors }} />
+      <CompanyAveragesSection
+        employerName={result.employerName}
+        viewerMajor={result.viewerMajor}
+        averages={{ mine: result.mine, allMajors: result.allMajors }}
+        threads={{ comments: result.noteComments, agreed: hasCommunityTerms(user) }}
+      />
     </PageShell>
   );
 }

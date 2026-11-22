@@ -4,6 +4,19 @@ export const VECTOR_VERSION = 2;
 
 export type TraitScores = Record<Trait, number>;
 
+/** Trait sums from a stored `assessments.scored` value, or null when any trait is missing. */
+export function scoresFromStored(value: unknown): TraitScores | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const scores = {} as TraitScores;
+  for (const trait of TRAITS) {
+    const score = record[trait];
+    if (typeof score !== "number") return null;
+    scores[trait] = score;
+  }
+  return scores;
+}
+
 function keyedValue(answer: number, keyed: "forward" | "reverse"): number {
   return keyed === "reverse" ? 6 - answer : answer;
 }
