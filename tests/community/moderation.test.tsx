@@ -87,17 +87,18 @@ describe("moderation statements", () => {
 });
 
 describe("founder-only route", () => {
+  const CTX = { params: Promise.resolve({}) };
   const body = JSON.stringify({ target: "post", id: ID, action: "remove", statusVersion: 1 });
 
   it("answers 404 to a student and runs no SQL", async () => {
-    const response = await POST(new Request("http://test/api/founders/community", { method: "POST", body, headers: { "content-type": "application/json" } }));
+    const response = await POST(new Request("http://test/api/founders/community", { method: "POST", body, headers: { "content-type": "application/json" } }), CTX);
     expect(response.status).toBe(404);
     expect(captured).toEqual([]);
   });
 
   it("lets a founder through (here the item is already gone, so 409)", async () => {
     session.email = "Founder@Swervly.com";
-    const response = await POST(new Request("http://test/api/founders/community", { method: "POST", body, headers: { "content-type": "application/json" } }));
+    const response = await POST(new Request("http://test/api/founders/community", { method: "POST", body, headers: { "content-type": "application/json" } }), CTX);
     expect(response.status).toBe(409);
     expect(captured.length).toBe(1);
   });
