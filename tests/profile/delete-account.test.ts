@@ -74,6 +74,7 @@ function userRow(overrides: Partial<User> = {}): User {
     onboardedAt: null,
     school: null,
     invitedByUserId: null,
+    referralCode: "0123456789abcdef0123456789abcdef",
     shareFreeTextDefault: false,
     majorSource: null,
     customMajorText: null,

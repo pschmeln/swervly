@@ -16,7 +16,8 @@ export function SettingsForm({
   shareReviewsConsent,
   shareReviewsConsentOutdated = false,
   inviteHref,
-  inviteCount,
+  finishedCount,
+  points,
   founder,
 }: {
   shareFreeTextDefault: boolean;
@@ -24,7 +25,8 @@ export function SettingsForm({
   /** Agreed to older sharing terms; sharing is off until they agree again. */
   shareReviewsConsentOutdated?: boolean;
   inviteHref: string;
-  inviteCount: number;
+  finishedCount: number;
+  points: number;
   founder: boolean;
 }) {
   const { signOut } = useClerk();
@@ -201,10 +203,10 @@ export function SettingsForm({
       <Card>
         <h2 className="text-lg font-semibold">Invite a classmate</h2>
         <p className="mt-1 text-neutral-700">
-          Anyone with a .edu email can join. We count who arrives through your link.
+          Anyone with a .edu email can join. You earn points when a friend finishes onboarding.
         </p>
         <div className="mt-4">
-          <InviteLink href={inviteHref} count={inviteCount} />
+          <InviteLink href={inviteHref} finishedCount={finishedCount} points={points} />
         </div>
       </Card>
       {founder ? (
@@ -224,7 +226,7 @@ export function SettingsForm({
       <Card>
         <h2 className="text-lg font-semibold">Download my data</h2>
         <p className="mt-1 text-neutral-700">
-          Download a JSON file of your account, profile, quiz answers, and co-ops.
+          Download a JSON file of your account, profile, quiz answers, co-ops, and points.
         </p>
         <div className="mt-4">
           <Button

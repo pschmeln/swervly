@@ -19,6 +19,7 @@ import {
   reviews,
   rotations,
   users,
+  type PointsLedger,
   type Assessment,
   type Profile,
   type Review,
@@ -36,6 +37,7 @@ import { PRIVACY_POLICY_VERSION } from "@/features/privacy/policy-version";
 import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
 import { type AssessmentInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
+import { pointsLedgerExportQuery, referralOnboardingAward } from "./referrals";
 import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
 
 const CLERK_ERROR_CODE = /^[a-z0-9_]{1,64}$/;
@@ -323,6 +325,8 @@ export async function saveAssessment(
             .set({ exploringMajors: input.exploringMajors, updatedAt: sql`now()` })
             .where(and(eq(users.id, userId), sql`${users.majorSource} is distinct from 'undecided'`)),
         ]),
+    // Before onboarded_at is set, so a retake (already set) matches no award row.
+    referralOnboardingAward(userId),
     db
       .update(users)
       .set({
@@ -369,6 +373,8 @@ export type AccountExport = {
   community: Awaited<ReturnType<typeof exportCommunity>>;
   /** Action plans, tasks, and skill progress. Empty when migration 0009 is not applied. Private only. */
   action: { plans: ActionPlan[]; tasks: ActionTask[]; skillProgress: ActionSkillProgress[] };
+  /** This student's points. user.referralCode is the invite code. Requires migration 0012. */
+  points: PointsLedger[];
   /** The person's advisor account, if they asked for one (item 15). */
   advisor: Awaited<ReturnType<typeof exportAdvisor>>;
 };
@@ -387,7 +393,7 @@ async function exportCareerAtlas(userId: string): Promise<AccountExport["careerA
 }
 
 export async function exportAccount(userId: string): Promise<AccountExport> {
-  const [userRows, profileRows, assessmentRows, rotationRows] = await db.batch([
+  const [userRows, profileRows, assessmentRows, rotationRows, pointRows] = await db.batch([
     db.select().from(users).where(eq(users.id, userId)).limit(1),
     db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
     db
@@ -406,6 +412,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
       .leftJoin(reviews, eq(reviews.rotationId, rotations.id))
       .where(eq(rotations.userId, userId))
       .orderBy(asc(rotations.rotationNumber)),
+    pointsLedgerExportQuery(userId),
   ]);
 
   const user = userRows[0];
@@ -419,6 +426,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
     careerAtlas: await exportCareerAtlas(userId),
     community: await exportCommunity(userId),
     action: await exportActionData(userId),
+    points: pointRows,
     advisor: await exportAdvisor(userId),
     assessments: assessmentRows,
     rotations: rotationRows.map((row) => ({
@@ -468,8 +476,9 @@ export async function deleteAccount(user: User): Promise<void> {
   }
 
   // The sign-in account is gone. This cascades to profile, assessments,
-  // rotations and reviews for this user id. Driver errors can include the SQL
-  // text, so a failure is logged as the user id only.
+  // rotations, reviews, and this user's points_ledger rows. Awards that name
+  // this user as the friend stay, with referred_user_id set null. Driver errors
+  // can include the SQL text, so a failure is logged as the user id only.
   try {
     // Community first (D11), in one batch with the users row so nothing is left half done.
     await db.batch([...communityAccountDeletion(user.id), db.delete(users).where(eq(users.id, user.id))]);

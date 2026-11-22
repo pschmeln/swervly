@@ -73,7 +73,7 @@ export const ROUTES = {
   advisorRequest: "/api/advisors/request",
   password: "/api/account/password",
   preferences: "/api/account/preferences",
-  invite: "/invite/[userId]",
+  invite: "/invite/[code]",
 } as const;
 
 // Legacy onboarding enum. The searchable catalog lives in src/features/majors/catalog.ts.

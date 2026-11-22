@@ -43,7 +43,7 @@ vi.mock("@clerk/nextjs/errors", async () => {
 vi.mock("@/db", () => ({
     db: {
       insert: () => ({
-        values: (values: { clerkId: string; email: string }) => ({
+        values: (values: { clerkId: string; email: string; referralCode?: string }) => ({
           onConflictDoNothing: (config?: unknown) => ({
             returning: () => mocks.insert(values, config),
           }),
@@ -78,6 +78,7 @@ function userRow(overrides: Pick<User, "clerkId" | "email"> & Partial<User>): Us
     onboardedAt: null,
     school: null,
     invitedByUserId: null,
+    referralCode: "0123456789abcdef0123456789abcdef",
     shareFreeTextDefault: false,
     majorSource: null,
     customMajorText: null,
@@ -154,9 +155,12 @@ describe("apiUser first sign-in", () => {
   it("returns the new row when a concurrent insert loses on users_email_unique", async () => {
     const row = userRow({ clerkId, email });
     let attempts = 0;
-    mocks.insert.mockImplementation(async (values: { clerkId: string; email: string }, config?: unknown) => {
+    mocks.insert.mockImplementation(async (values: { clerkId: string; email: string; school?: string; referralCode?: string }, config?: unknown) => {
       expect(config).toBeUndefined();
-      expect(values).toEqual({ clerkId, email, school: "mail.uc.edu" });
+      expect(values.clerkId).toBe(clerkId);
+      expect(values.email).toBe(email);
+      expect(values.school).toBe("mail.uc.edu");
+      expect(values.referralCode).toMatch(/^[0-9a-f]{32}$/);
       attempts += 1;
       if (attempts === 1) {
         rows.set(values.clerkId, row);
