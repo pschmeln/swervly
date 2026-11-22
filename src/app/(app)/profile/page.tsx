@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { assessments, profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
+import { locationValueFrom } from "@/features/location/components/location-fields";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { loadChosenDirection } from "@/features/direction/chosen";
@@ -80,7 +81,7 @@ export default async function ProfilePage() {
             year: user.year == null ? "" : String(user.year),
             goal: profile.goal,
             goalNotes: profile.goalNotes ?? "",
-            locationConstraint: profile.locationConstraint,
+            location: locationValueFrom(profile),
             constraintsNotes: profile.constraintsNotes ?? "",
           }}
         />

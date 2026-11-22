@@ -12,12 +12,6 @@ export const GOAL_OPTIONS = [
   { value: "undecided", label: "Undecided" },
 ] as const;
 
-export const LOCATION_OPTIONS = [
-  { value: "cincinnati_only", label: "Cincinnati only" },
-  { value: "within_drive", label: "Within a drive" },
-  { value: "anywhere", label: "Anywhere" },
-] as const;
-
 export const RIASEC_SCORES = [
   { key: "R", label: "Realistic (R)" },
   { key: "I", label: "Investigative (I)" },

@@ -9,6 +9,9 @@ export type RotationListItem = {
   payHourly: string | null;
   roleType: string;
   wouldReturn: string;
+  /** Optional city where the co-op was. Private to the student. */
+  workPlaceGeoid?: string | null;
+  workLabel?: string | null;
   employer: { id: string; name: string };
   review: {
     enjoyment: number;

@@ -72,6 +72,7 @@ function userRow(overrides: Pick<User, "clerkId" | "email"> & Partial<User>): Us
     consentDataUseAt: null,
     shareReviewsConsentAt: null,
     shareReviewsConsentVersion: null,
+    privacyPolicyVersion: null,
     onboardedAt: null,
     school: null,
     invitedByUserId: null,

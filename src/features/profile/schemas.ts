@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { INSTRUMENT, QUIZ_ITEMS } from "@/content/mini-ipip";
 import { PASSWORD_TOO_LONG_BYTES, utf8ByteLength } from "@/features/auth/password-messages";
+import { PlaceGeoid, RadiusInput } from "@/features/location/schemas";
 import { MAJORS } from "@/lib/constants";
 
 const quizItemIds = QUIZ_ITEMS.map((item) => item.id) as [string, ...string[]];
@@ -11,7 +12,12 @@ export const ProfileInput = z.object({
   year: z.int().min(1).max(5),
   goal: z.enum(["industry", "grad_school", "undecided"]),
   goalNotes: z.string().max(500).optional(),
-  locationConstraint: z.enum(["cincinnati_only", "within_drive", "anywhere"]),
+  // Location (item 3). A home city and radius are required unless openToAnywhere;
+  // resolveLocationWrite enforces that on the server.
+  homePlaceGeoid: PlaceGeoid.nullable().optional(),
+  radiusMiles: RadiusInput.nullable().optional(),
+  openToAnywhere: z.boolean(),
+  openToRemote: z.boolean(),
   constraintsNotes: z.string().max(500).optional(),
   consentPrivacy: z.literal(true),
   consentDataUse: z.literal(true),

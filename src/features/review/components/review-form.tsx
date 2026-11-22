@@ -36,6 +36,7 @@ import {
   EmployerAutocomplete,
   type EmployerOption,
 } from "@/features/review/components/employer-autocomplete";
+import { PlaceSearch, type PlaceOption } from "@/features/location/components/place-search";
 import type { RotationListItem } from "@/features/review/components/types";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -108,6 +109,7 @@ type FormFields = {
   termYear: string;
   rotationNumber: string;
   payHourly: string;
+  workPlace: PlaceOption | null;
   roleType: string;
   wouldReturn: string;
   enjoyment: number | null;
@@ -138,6 +140,8 @@ function initialFromRotation(rotation: RotationListItem): FormFields {
     termYear: String(rotation.termYear),
     rotationNumber: String(rotation.rotationNumber),
     payHourly: rotation.payHourly ?? "",
+    workPlace:
+      rotation.workPlaceGeoid && rotation.workLabel ? { geoid: rotation.workPlaceGeoid, label: rotation.workLabel } : null,
     roleType: rotation.roleType,
     wouldReturn: rotation.wouldReturn,
     enjoyment: rotation.review.enjoyment,
@@ -160,6 +164,7 @@ function initialForCreate(usedRotationNumbers: number[]): FormFields {
     termYear: String(CURRENT_YEAR),
     rotationNumber: String(lowestUnusedRotationNumber(usedRotationNumbers)),
     payHourly: "",
+    workPlace: null,
     roleType: "",
     wouldReturn: "",
     enjoyment: null,
@@ -443,6 +448,7 @@ export function ReviewForm({
       termYear: Number(form.termYear),
       rotationNumber: Number(form.rotationNumber),
       ...(payHourly !== undefined ? { payHourly } : {}),
+      workPlaceGeoid: form.workPlace?.geoid ?? null,
       roleType: form.roleType,
       wouldReturn: form.wouldReturn,
       review: {
@@ -601,6 +607,16 @@ export function ReviewForm({
           onChange={(event) => update("payHourly", event.target.value)}
         />
       </Field>
+
+      <PlaceSearch
+        id="workPlaceGeoid"
+        label="Where did you work?"
+        hint="Optional. The city of your office or site. Only you see it for now."
+        value={form.workPlace}
+        disabled={saving}
+        error={fieldError(fieldErrors, "workPlaceGeoid")}
+        onChange={(workPlace) => update("workPlace", workPlace)}
+      />
 
       <Field
         label="Role type"

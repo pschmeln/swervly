@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/ui";
+import { PRIVACY_POLICY_UPDATED } from "@/features/privacy/policy-version";
 import { ROUTES } from "@/lib/constants";
 
 export default function PrivacyPage() {
@@ -9,7 +10,7 @@ export default function PrivacyPage() {
         <header className="flex flex-col gap-1 text-sm text-neutral-600">
           <p>
             <span className="font-medium text-neutral-900">Last updated:</span>{" "}
-            November 21, 2026
+            {PRIVACY_POLICY_UPDATED}
           </p>
           <p>
             <span className="font-medium text-neutral-900">Contact:</span>{" "}
@@ -41,8 +42,11 @@ export default function PrivacyPage() {
             and your year; your goals; your personality quiz answers and the five
             scores we calculate from them; and the employers, role type, role
             title, term, ratings, whether you would go back, optional pay, skills,
-            and optional free text you enter for co-ops and internships. Your
-            profile can include location preferences or constraints, and notes. If you join through another student&apos;s
+            optional free text and the optional city where you worked that you
+            enter for co-ops and internships. Your profile includes where you want
+            to work: a home city (any US city or town) and how far you would go, or
+            that you are open to anywhere, and whether you are open to remote work.
+            It can also include notes. If you join through another student&apos;s
             invite link, we store that connection. Our sign-in provider processes
             the information needed to authenticate you, including a password if
             you set one. We also store when you consent to the Privacy Policy,
@@ -72,6 +76,10 @@ export default function PrivacyPage() {
             The career map uses your major, your Direction results and your own
             career map choices to order what you see first. It never shows a fit
             score, and you can change or clear those choices at any time.
+            Company lists show organizations headquartered within your chosen
+            distance of your home city first, with a line saying so. Nothing is
+            hidden, and a headquarters is not always where co-ops are. City
+            locations come from U.S. Census Bureau public data.
           </p>
         </section>
 
@@ -98,6 +106,10 @@ export default function PrivacyPage() {
             wrote, especially in a small major or unusual role. If you agreed to
             sharing before November 18, 2026, when the minimum was three, your
             reviews stop being shared until you turn sharing on again in Settings.
+          </p>
+          <p>
+            Your home city, distance and the city where you worked are not shown
+            to other students.
           </p>
           <p>
             The two Swervly founders can see records because they operate the
@@ -149,7 +161,9 @@ export default function PrivacyPage() {
             Changes and questions
           </h2>
           <p>
-            We may update this policy as Swervly changes. Questions and privacy
+            We may update this policy as Swervly changes. When a change affects
+            what we collect, who can see it or how it is used, we ask you to agree
+            again before you keep using Swervly. Questions and privacy
             requests go to{" "}
             <a
               className="font-semibold text-neutral-900 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"

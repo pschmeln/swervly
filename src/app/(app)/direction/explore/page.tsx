@@ -3,6 +3,8 @@ import { Button, Card, PageShell } from "@/components/ui";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { loadDirection } from "@/features/direction/server";
+import { rankByHomeArea } from "@/features/location/area";
+import { loadHomeArea } from "@/features/location/server";
 import { CareerExplore } from "@/features/explore/career-explore";
 import { buildExploreModel } from "@/features/explore/view-model";
 import { CAREER_EXPLORE_PROTOTYPE_ENABLED } from "@/features/explore/prototype";
@@ -32,13 +34,14 @@ export default async function CareerExplorePage() {
     );
   }
 
-  const [direction, profileRows] = await Promise.all([
+  const [direction, profileRows, homeArea] = await Promise.all([
     loadDirection(user),
     db
       .select({ goal: profiles.goal })
       .from(profiles)
       .where(eq(profiles.userId, user.id))
       .limit(1),
+    loadHomeArea(user.id),
   ]);
   const goalValue = profileRows[0]?.goal;
   const goal = goalValue === "industry" || goalValue === "grad_school" || goalValue === "undecided" ? goalValue : null;
@@ -63,6 +66,8 @@ export default async function CareerExplorePage() {
       : null,
     dismissedRoleIds: user.dismissedCareerRoles,
   });
+  // Companies headquartered in the student's area first; nothing is removed.
+  model.companies = rankByHomeArea(model.companies, homeArea);
 
   return (
     <PageShell title="Career exploration">

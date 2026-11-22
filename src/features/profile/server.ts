@@ -20,10 +20,13 @@ import {
   type Rotation,
   type User,
 } from "@/db/schema";
+import { placeByGeoid } from "@/features/location/places";
+import { resolveLocationWrite } from "@/features/location/write";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { resolveMajorWrite, type ProfileWriteInput } from "@/features/majors/selection";
 import { ApiError } from "@/lib/api";
 import { reportFailure } from "@/lib/sentry";
+import { PRIVACY_POLICY_VERSION } from "@/features/privacy/policy-version";
 import { SHARE_REVIEWS_CONSENT_VERSION } from "@/features/privacy/share-consent";
 import { type AssessmentInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
@@ -54,7 +57,6 @@ function profileFields(input: ProfileWriteInput) {
     school: input.school,
     goal: input.goal,
     goalNotes: input.goalNotes ?? null,
-    locationConstraint: input.locationConstraint,
     constraintsNotes: input.constraintsNotes ?? null,
     updatedAt: sql`now()`,
   };
@@ -65,6 +67,15 @@ function profileFields(input: ProfileWriteInput) {
  * Keeps the original time only for consent to the current terms; consent to
  * older terms (a lower version) is replaced with now() and the current version.
  */
+/**
+ * SET fragment recording agreement to the current privacy policy. Every profile save sends
+ * consentPrivacy: true (onboarding asks for it; Profile can only be reached after it).
+ * Agreement to an older version is replaced with now() and the current version.
+ */
+export function privacyPolicySql() {
+  return sql`, consent_privacy_at = case when privacy_policy_version = ${PRIVACY_POLICY_VERSION} then coalesce(consent_privacy_at, now()) else now() end, privacy_policy_version = ${PRIVACY_POLICY_VERSION}`;
+}
+
 export function shareReviewsConsentSql(consenting: boolean) {
   if (!consenting) return sql``;
   return sql`, share_reviews_consent_at = case when share_reviews_consent_version = ${SHARE_REVIEWS_CONSENT_VERSION} then coalesce(share_reviews_consent_at, now()) else now() end, share_reviews_consent_version = ${SHARE_REVIEWS_CONSENT_VERSION}`;
@@ -74,6 +85,11 @@ export async function saveProfile(
   userId: string,
   input: ProfileWriteInput,
 ): Promise<{ user: User; profile: Profile }> {
+  const location = resolveLocationWrite(input, placeByGeoid);
+  if (!location.ok) {
+    throw new ApiError(400, "invalid_body", "Check the fields below and try again.", location.fields);
+  }
+  const place = location.write;
   const context = await loadMajorSearchContext();
   const resolved = resolveMajorWrite(input, context);
   if (!resolved.ok) {
@@ -93,31 +109,45 @@ export async function saveProfile(
     custom_major_text = ${write.customMajorText},
     exploring_majors = ${write.exploringMajors},
     year = ${input.year},
-    consent_privacy_at = coalesce(consent_privacy_at, now()),
     consent_data_use_at = coalesce(consent_data_use_at, now()),
     updated_at = now()
+    ${privacyPolicySql()}
     ${shareSql}
   `;
   // The profile write is the statement's main query, so it runs only when `changed` has a row.
   const profileWrite = sql`
     insert into profiles (
-      user_id, school, goal, goal_notes, location_constraint, constraints_notes, updated_at
+      user_id, school, goal, goal_notes, constraints_notes,
+      home_place_geoid, home_label, home_lat, home_lng, radius_miles, open_to_anywhere, open_to_remote,
+      updated_at
     )
     select
       ${userId}::uuid,
       ${fields.school},
       ${fields.goal},
       ${fields.goalNotes},
-      ${fields.locationConstraint},
       ${fields.constraintsNotes},
+      ${place.homePlaceGeoid},
+      ${place.homeLabel},
+      ${place.homeLat}::double precision,
+      ${place.homeLng}::double precision,
+      ${place.radiusMiles}::integer,
+      ${place.openToAnywhere},
+      ${place.openToRemote},
       now()
     from changed
     on conflict (user_id) do update set
       school = excluded.school,
       goal = excluded.goal,
       goal_notes = excluded.goal_notes,
-      location_constraint = excluded.location_constraint,
       constraints_notes = excluded.constraints_notes,
+      home_place_geoid = excluded.home_place_geoid,
+      home_label = excluded.home_label,
+      home_lat = excluded.home_lat,
+      home_lng = excluded.home_lng,
+      radius_miles = excluded.radius_miles,
+      open_to_anywhere = excluded.open_to_anywhere,
+      open_to_remote = excluded.open_to_remote,
       updated_at = now()
     returning user_id as id
   `;

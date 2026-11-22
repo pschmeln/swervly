@@ -64,6 +64,13 @@
       "when": 1795600000000,
       "tag": "0008_role_types_all_majors",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795800000000,
+      "tag": "0010_location_policy",
+      "breakpoints": true
     }
   ]
 }

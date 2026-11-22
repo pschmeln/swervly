@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
-  boolean, check, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp,
+  boolean, check, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp,
   uniqueIndex, uuid, vector,
 } from "drizzle-orm/pg-core";
 
@@ -32,6 +32,8 @@ export const users = pgTable("users", {
   // Versioned opt-in for anonymous company aggregates and Direction evidence.
   shareReviewsConsentAt: timestamp("share_reviews_consent_at", { withTimezone: true }),
   shareReviewsConsentVersion: integer("share_reviews_consent_version"),
+  // Version of the privacy policy last agreed to (PRIVACY_POLICY_VERSION). Below current: asked again.
+  privacyPolicyVersion: integer("privacy_policy_version"),
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   source: text("source").notNull().default("early"),   // 'early' | 'launch'
   invitedByUserId: uuid("invited_by_user_id").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
@@ -51,13 +53,34 @@ export const profiles = pgTable("profiles", {
   school: text("school"),                                     // self-reported; null until onboarding saves it
   goal: text("goal").notNull(),                               // 'industry' | 'grad_school' | 'undecided'
   goalNotes: text("goal_notes"),
-  locationConstraint: text("location_constraint").notNull(),  // 'cincinnati_only' | 'within_drive' | 'anywhere'
+  // Legacy, no longer written (0010). 'cincinnati_only' | 'within_drive' | 'anywhere'. Drop in a later cleanup.
+  locationConstraint: text("location_constraint"),
   constraintsNotes: text("constraints_notes"),
+  // Home city: a Census place (src/content/places). Label and point copied from the place on save.
+  homePlaceGeoid: text("home_place_geoid"),
+  homeLabel: text("home_label"),
+  homeLat: doublePrecision("home_lat"),
+  homeLng: doublePrecision("home_lng"),
+  radiusMiles: integer("radius_miles"),                       // 25 | 50 | 100 | 250
+  openToAnywhere: boolean("open_to_anywhere").notNull().default(false),
+  openToRemote: boolean("open_to_remote").notNull().default(false),
+  // Up to 3 of mentorship, learning, enjoyment, clarity, pay, would_return (collected from PR 3.5).
+  priorities: text("priorities").array().notNull().default(sql`'{}'::text[]`),
   profileVector: vector("profile_vector", { dimensions: 20 }),// 20 Mini-IPIP item answers, in content order
   vectorVersion: integer("vector_version"),
   createdAt,
   updatedAt,
-});
+}, (t) => [
+  check("profiles_radius_miles", sql`${t.radiusMiles} is null or ${t.radiusMiles} in (25, 50, 100, 250)`),
+  check(
+    "profiles_home_complete",
+    sql`(${t.homePlaceGeoid} is null and ${t.homeLabel} is null and ${t.homeLat} is null and ${t.homeLng} is null) or (${t.homePlaceGeoid} is not null and ${t.homeLabel} is not null and ${t.homeLat} is not null and ${t.homeLng} is not null)`,
+  ),
+  check(
+    "profiles_priorities",
+    sql`cardinality(${t.priorities}) <= 3 and ${t.priorities} <@ array['mentorship', 'learning', 'enjoyment', 'clarity', 'pay', 'would_return']::text[]`,
+  ),
+]);
 
 export const assessments = pgTable("assessments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -95,6 +118,9 @@ export const rotations = pgTable("rotations", {
   rotationNumber: integer("rotation_number").notNull(),
   payHourly: numeric("pay_hourly", { precision: 6, scale: 2 }),  // optional
   wouldReturn: text("would_return").notNull(),        // 'yes' | 'maybe' | 'no' — "Would you go back?"
+  // Optional: where the co-op was, a Census place. Private to the student for now.
+  workPlaceGeoid: text("work_place_geoid"),
+  workLabel: text("work_label"),
   source: text("source").notNull().default("early"),
   createdAt,
   updatedAt,
@@ -103,6 +129,7 @@ export const rotations = pgTable("rotations", {
   index("rotations_employer_idx").on(t.employerId),
   check("rotations_number_range", sql`${t.rotationNumber} between 1 and 8`),
   check("rotations_would_return", sql`${t.wouldReturn} in ('yes', 'maybe', 'no')`),
+  check("rotations_work_place_complete", sql`(${t.workPlaceGeoid} is null) = (${t.workLabel} is null)`),
   check(
     "rotations_role_type",
     sql`${t.roleType} in ('design', 'test_validation', 'manufacturing_process', 'software', 'data_analytics', 'research', 'field_site', 'business_operations', 'finance', 'marketing', 'healthcare_clinical', 'healthcare_admin', 'laboratory', 'teaching', 'counseling_support', 'policy_research', 'writing_media', 'other')`,

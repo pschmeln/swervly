@@ -13,7 +13,7 @@ const baseProfile = {
   school: "University of Cincinnati",
   year: 2,
   goal: "industry" as const,
-  locationConstraint: "anywhere" as const,
+  openToAnywhere: true, openToRemote: false,
   consentPrivacy: true as const,
   consentDataUse: true as const,
 };

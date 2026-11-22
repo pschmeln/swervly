@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useReducer, useState } from "react";
+import { rankByHomeArea, type HomeArea } from "@/features/location/area";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ONET_CREDIT } from "@/content/atlas/occupations";
 import { COMPANY_NOTE } from "@/content/atlas/company-links";
@@ -114,6 +115,7 @@ export function AtlasExplorer({
   initialAnswers = {},
   initialCompare = [],
   saved,
+  homeArea = null,
 }: {
   entry: AtlasEntry;
   /** Direction role ids the student dismissed. Read only. */
@@ -130,6 +132,8 @@ export function AtlasExplorer({
   initialCompare?: AtlasNodeId[];
   /** Choices saved to the account. When absent or unavailable, nothing is saved. */
   saved?: InitialSaved;
+  /** Home city and radius: organizations headquartered inside it are listed first. */
+  homeArea?: HomeArea | null;
 }) {
   const persist = saved?.available === true;
   const graph = atlasGraph();
@@ -174,7 +178,10 @@ export function AtlasExplorer({
 
   // The chosen direction is the fixed third column: it depends on `pursuing` only.
   const comparison = useMemo(() => comparePanel(graph, compare, pursuing), [graph, compare, pursuing]);
-  const companies = useMemo(() => (current ? companiesFor(graph, current) : []), [graph, current]);
+  const companies = useMemo(
+    () => rankByHomeArea(current ? companiesFor(graph, current) : [], homeArea),
+    [graph, current, homeArea],
+  );
 
   function pickForCompare(id: AtlasNodeId) {
     dispatchCompare({ type: "pick", id });
@@ -521,6 +528,7 @@ export function AtlasExplorer({
                   <li key={company.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
                     <p className="font-medium text-neutral-900">{company.name}</p>
                     <p className="text-sm text-neutral-600">{company.field} · Listed under {company.areas.join(" and ")}</p>
+                    {company.nearby ? <p className="mt-1 text-sm font-medium text-emerald-800">{company.nearby}</p> : null}
                     {company.careersUrl ? (
                       <p className="mt-1 text-sm">
                         <a href={company.careersUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-sky-800 underline">
