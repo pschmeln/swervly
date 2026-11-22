@@ -1,12 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { ROUTES } from "@/lib/constants";
 
-export function DismissSuggestion({ roleType }: { roleType: string }) {
-  const router = useRouter();
+export function DismissSuggestion({
+  roleType,
+  onDismissed,
+}: {
+  roleType: string;
+  /** Called after a successful save so the parent can update the list immediately. */
+  onDismissed?: (roleType: string) => void;
+}) {
   const [pending, setPending] = useState(false);
 
   async function dismiss() {
@@ -18,7 +23,7 @@ export function DismissSuggestion({ roleType }: { roleType: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ roleType }),
       });
-      if (response.ok) router.refresh();
+      if (response.ok) onDismissed?.(roleType);
     } finally {
       setPending(false);
     }

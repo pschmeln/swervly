@@ -3,7 +3,7 @@ import { Button, Card } from "@/components/ui";
 import type { ChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionLine } from "@/features/direction/components/chosen-direction";
 import { InterestedButton } from "@/features/direction/components/interested-button";
-import { DIRECTION_EXHAUSTED_ACTION } from "@/features/direction/rules";
+import { DIRECTION_EXHAUSTED_ACTION, DIRECTION_EXHAUSTED_LABEL } from "@/features/direction/rules";
 import { CycleGraphic } from "@/features/home/cycle-graphic";
 import type { User } from "@/db/schema";
 import { UNDECIDED_LABEL } from "@/features/majors/catalog";
@@ -179,7 +179,10 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
               </ul>
             </>
           ) : (
-            <p className="mt-4 text-ink-2">{DIRECTION_EXHAUSTED_ACTION}</p>
+            <div className="mt-4">
+              <p className="font-medium text-ink">{DIRECTION_EXHAUSTED_LABEL}</p>
+              <p className="mt-1 text-ink-2">{DIRECTION_EXHAUSTED_ACTION}</p>
+            </div>
           )}
           {interested.length > 0 ? (
             <div className="mt-4">

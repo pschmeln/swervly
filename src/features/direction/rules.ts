@@ -177,7 +177,7 @@ const RULES: readonly Rule[] = [
     points: 1,
     // Middle conscientiousness + process major is only a soft major hint, not a quiz match.
     when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) === "middle",
-    reason: "Manufacturing and process work is a common path from your major and a solid place to start.",
+    reason: "Manufacturing and process work is a common engineering co-op path and a solid place to start.",
     fallback: true,
   },
   {
@@ -268,15 +268,23 @@ const FILL_ORDER: readonly RoleType[] = [
 ];
 
 /**
- * Reasons for roles that fill the list when fewer than three rules matched.
- * No rule matched these, so the reason talks about the role, never about the
- * student's traits (except software, where openness is checked).
+ * Neutral reasons for roles that fill the list when fewer than three rules matched.
+ * No rule matched these, so the copy describes the role only — never the student's
+ * quiz answers, major, or "top matches".
  */
-function fillReason(role: RoleType, context: DirectionContext): string {
-  if (role === "software" && traitBand(context.traits.openness) === "high") {
-    return "You like unfamiliar problems, and software work is full of them.";
-  }
-  return `${roleLabel(role)} is a core engineering co-op and a good one to weigh against your top matches.`;
+const FILL_REASONS: Partial<Record<RoleType, string>> = {
+  design: "Design work is a common engineering co-op path and a solid place to start.",
+  test_validation: "Test and validation is a core engineering co-op and a solid place to start.",
+  software: "Software work is a common engineering co-op path and a solid place to start.",
+  manufacturing_process: "Manufacturing and process work is a common engineering co-op path and a solid place to start.",
+  data_analytics: "Data and analytics work shows up across many engineering co-ops and is a solid place to start.",
+  research: "Research roles appear in many engineering paths and are a solid place to start.",
+  field_site: "Field and site work is a common engineering co-op path and a solid place to start.",
+};
+
+/** Exported for tests: fill copy must stay role-neutral (no quiz/major matching claims). */
+export function fillReason(role: RoleType): string {
+  return FILL_REASONS[role] ?? `${roleLabel(role)} is a common engineering co-op path and a solid place to start.`;
 }
 
 export function traitDistance(left: TraitScores, right: TraitScores): number {
@@ -600,7 +608,7 @@ export function suggestionsFromRules(
     chosen.push({
       roleType,
       roleLabel: roleLabel(roleType),
-      reason: fillReason(roleType, context),
+      reason: fillReason(roleType),
       source: "rules",
       evidenceLabel: FALLBACK_EVIDENCE_LABEL,
     });

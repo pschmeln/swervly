@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
 
-import { DIRECTION_EXHAUSTED_ACTION } from "@/features/direction/rules";
+import { DIRECTION_EXHAUSTED_ACTION, DIRECTION_EXHAUSTED_LABEL } from "@/features/direction/rules";
 import { CYCLE_STEPS } from "@/features/home/cycle-graphic";
 import { HomeHub, homeTraits, majorLine, type HomeHubProps } from "@/features/home/hub";
 import { readTraits } from "@/features/profile/traits";
@@ -26,7 +26,13 @@ const base: HomeHubProps = {
 };
 
 function text(html: string) {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x27;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&rdquo;/g, "”")
+    .replace(/\s+/g, " ");
 }
 
 describe("Home cycle graphic", () => {
@@ -79,7 +85,9 @@ describe("Home profile and direction windows", () => {
     const html = renderToStaticMarkup(<HomeHub {...base} suggestions={[]} interested={[]} />);
     const t = text(html);
     expect(t).not.toContain("Top suggestions");
+    expect(t).toContain(DIRECTION_EXHAUSTED_LABEL);
     expect(t).toContain(DIRECTION_EXHAUSTED_ACTION);
+    expect(t.indexOf(DIRECTION_EXHAUSTED_LABEL)).toBeLessThan(t.indexOf(DIRECTION_EXHAUSTED_ACTION));
     expect(t).not.toContain("Not for me");
     expect(html).toContain('href="/direction"');
     expect(t).toContain("See all");
