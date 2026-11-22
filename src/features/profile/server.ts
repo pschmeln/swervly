@@ -1,3 +1,4 @@
+import { exportAdvisor } from "@/features/advisors/server";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { communityAccountDeletion, exportCommunity } from "@/features/community/server";
 import { clerkClient } from "@clerk/nextjs/server";
@@ -374,6 +375,8 @@ export type AccountExport = {
   action: { plans: ActionPlan[]; tasks: ActionTask[]; skillProgress: ActionSkillProgress[] };
   /** This student's points. user.referralCode is the invite code. Requires migration 0012. */
   points: PointsLedger[];
+  /** The person's advisor account, if they asked for one (item 15). */
+  advisor: Awaited<ReturnType<typeof exportAdvisor>>;
 };
 
 async function exportCareerAtlas(userId: string): Promise<AccountExport["careerAtlas"]> {
@@ -424,6 +427,7 @@ export async function exportAccount(userId: string): Promise<AccountExport> {
     community: await exportCommunity(userId),
     action: await exportActionData(userId),
     points: pointRows,
+    advisor: await exportAdvisor(userId),
     assessments: assessmentRows,
     rotations: rotationRows.map((row) => ({
       ...row.rotation,
