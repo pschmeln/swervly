@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/api";
 import { captureEvent } from "@/lib/analytics";
 import { clerkFailureDetail, isClerkPrerenderFailure } from "@/lib/clerk-failure";
 import { EMAIL_CONFLICT_MESSAGE, ROUTES } from "@/lib/constants";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { isAllowedEmail } from "@/lib/email-eligibility";
 import {
   databaseFailureDetail,
@@ -29,19 +30,6 @@ type GateResult =
   | { status: "signed_out" }
   | { status: "not_eligible" }
   | { status: "email_conflict" };
-
-// Postgres puts the email in the unique-violation detail. Recognize the
-// error by SQLSTATE only, and never log the driver error.
-function isUniqueViolation(error: unknown): boolean {
-  const seen = new Set<unknown>();
-  let current: unknown = error;
-  while (typeof current === "object" && current !== null && !seen.has(current)) {
-    seen.add(current);
-    if ("code" in current && current.code === "23505") return true;
-    current = "cause" in current ? current.cause : undefined;
-  }
-  return false;
-}
 
 async function ensureUser(
   clerkId: string,
@@ -69,6 +57,7 @@ async function ensureUser(
       await captureEvent("sign_up", createdId);
     }
   } catch (error) {
+    // Postgres puts the email in the violation's detail: match by SQLSTATE only, never log it.
     if (!isUniqueViolation(error)) throw error;
   }
 
