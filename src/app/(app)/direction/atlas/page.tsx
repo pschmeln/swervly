@@ -1,4 +1,4 @@
-import { Button, Card, PageShell } from "@/components/ui";
+import { PageShell } from "@/components/ui";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
@@ -7,7 +7,6 @@ import { loadDirection } from "@/features/direction/server";
 import { loadHomeArea } from "@/features/location/server";
 import { isAtlasNodeId } from "@/features/atlas/view";
 import { requireOnboardedUser } from "@/lib/auth";
-import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Career map" };
 
