@@ -54,3 +54,10 @@ export const RosterInput = z.discriminatedUnion("action", [
   z.object({ action: z.literal("clear") }),
 ]);
 export type RosterInput = z.infer<typeof RosterInput>;
+
+/** A student turning advisor sharing on or off (PR 6.3). The school must be their own; version is the consent they read. */
+export const AdvisorGrantInput = z.object({
+  schoolId: z.uuid(),
+  share: z.boolean(),
+  version: z.number().int().optional(),
+});

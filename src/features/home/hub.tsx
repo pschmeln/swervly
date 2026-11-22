@@ -23,6 +23,8 @@ export type HomeHubProps = {
   interested: { roleType: string; label: string }[];
   /** The career map node the student chose. Undefined hides the line (career map off). */
   chosen?: ChosenDirection | null;
+  /** Optional full-width note above the two windows (the advisor roster prompt, item 15). */
+  notice?: React.ReactNode;
 };
 
 /** "Electrical Engineering · Year 3" for the profile window. */
@@ -86,6 +88,7 @@ export function HomeHub(props: HomeHubProps) {
       </div>
 
       <div className="relative mx-auto -mt-8 grid w-full max-w-5xl items-start gap-5 px-4 pb-10 md:grid-cols-2">
+        {props.notice ? <div className="md:col-span-2">{props.notice}</div> : null}
         <ProfileWindow {...props} />
         <DirectionWindow {...props} />
       </div>

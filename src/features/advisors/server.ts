@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { advisorAccounts, schoolDomains, schools, users, type User } from "@/db/schema";
 import { PRIVACY_POLICY_VERSION } from "@/features/privacy/policy-version";
 import { ApiError } from "@/lib/api";
+import { exportAdvisorAccess } from "./access";
 import type { AdvisorRequestInput, FounderAdvisorInput } from "./schemas";
 
 /**
@@ -224,5 +225,6 @@ export async function exportAdvisor(userId: string) {
     .innerJoin(schools, eq(schools.id, advisorAccounts.schoolId))
     .where(eq(advisorAccounts.userId, userId))
     .limit(1);
-  return { account: account ?? null };
+  // As a student: which schools they shared with, and every advisor view of their details (PR 6.3).
+  return { account: account ?? null, ...(await exportAdvisorAccess(userId)) };
 }

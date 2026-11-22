@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   advisorAccounts,
@@ -15,6 +15,7 @@ import {
 import { chosenDirectionView } from "@/features/direction/chosen";
 import { ApiError } from "@/lib/api";
 import { emailHashSecret, emailHmac } from "@/lib/email-hash";
+import { activeGrant, advisorStudentList, type SharedStudent } from "./access";
 import { ROSTER_MAX } from "./emails";
 import type { RosterInput } from "./schemas";
 import type { ApprovedAdvisor } from "./server";
@@ -164,13 +165,13 @@ export async function loadStudentFacts(filter: StudentFilter): Promise<StudentFa
   }));
 }
 
-/** Students with an active grant for this school whose email hash is on the roster. */
+/** Students with an active grant for this school (current consent version) whose email hash is on the roster. */
 export async function optedInRosterIds(schoolId: string, secret: string): Promise<string[]> {
   const granted = await db
     .select({ id: users.id, email: users.email })
     .from(advisorGrants)
     .innerJoin(users, eq(users.id, advisorGrants.studentUserId))
-    .where(and(eq(advisorGrants.schoolId, schoolId), isNull(advisorGrants.revokedAt)));
+    .where(activeGrant(schoolId));
   if (granted.length === 0) return [];
   const byHash = new Map(granted.map((row) => [emailHmac(row.email, secret), row.id]));
   const onRoster = await db
@@ -188,6 +189,8 @@ export type AdvisorDashboard = {
   rosterSize: number;
   roster: GroupStats;
   school: GroupStats;
+  /** Roster students who share their details with this school right now (PR 6.3). */
+  students: SharedStudent[];
 };
 
 export async function advisorDashboard(advisor: ApprovedAdvisor): Promise<AdvisorDashboard> {
@@ -196,15 +199,17 @@ export async function advisorDashboard(advisor: ApprovedAdvisor): Promise<Adviso
     .select({ domain: schoolDomains.domain })
     .from(schoolDomains)
     .where(eq(schoolDomains.schoolId, advisor.school.id));
-  const [size, schoolFacts, rosterIds] = await Promise.all([
+  const [size, schoolFacts, rosterIds, students] = await Promise.all([
     rosterSize(advisor.school.id),
     loadStudentFacts({ domains: domains.map((row) => row.domain) }),
     secret ? optedInRosterIds(advisor.school.id, secret) : Promise.resolve([]),
+    advisorStudentList(advisor),
   ]);
   return {
     rosterEnabled: secret !== null,
     rosterSize: size,
     roster: groupStats(await loadStudentFacts({ ids: rosterIds })),
     school: groupStats(schoolFacts),
+    students,
   };
 }

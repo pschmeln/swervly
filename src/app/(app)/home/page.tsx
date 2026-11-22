@@ -2,6 +2,8 @@ import { count, desc, eq } from "drizzle-orm";
 import { INSTRUMENT } from "@/content/mini-ipip";
 import { db } from "@/db";
 import { assessments, rotations } from "@/db/schema";
+import { shouldPromptRoster } from "@/features/advisors/access";
+import { RosterPrompt } from "@/features/advisors/components/roster-prompt";
 import { careerRoleLabel } from "@/features/direction/career-roles";
 import { loadChosenDirection } from "@/features/direction/chosen";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
@@ -25,9 +27,10 @@ export default async function HomePage() {
   const rotationCount = Number(countRows[0]?.value ?? 0);
   const quizDone = assessmentRows[0]?.instrument === INSTRUMENT;
   const canReview = user.onboardedAt != null;
-  const [direction, chosen] = await Promise.all([
+  const [direction, chosen, rosterPrompt] = await Promise.all([
     quizDone ? loadDirection(user) : Promise.resolve(null),
     loadChosenDirection(user.id),
+    canReview ? shouldPromptRoster(user) : Promise.resolve(false),
   ]);
 
   return (
@@ -40,6 +43,7 @@ export default async function HomePage() {
       suggestions={direction?.suggestions ?? []}
       interested={(direction?.interestedRoles ?? []).map((roleType) => ({ roleType, label: careerRoleLabel(roleType) }))}
       chosen={atlasPrototypeEnabled() ? chosen : undefined}
+      notice={rosterPrompt ? <RosterPrompt /> : undefined}
     />
   );
 }

@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { Card } from "@/components/ui";
+import { focusRing } from "@/components/ui/focus-ring";
+import { ROUTES } from "@/lib/constants";
 import type { AdvisorDashboard, GroupStats, SafeCount } from "@/features/advisors/roster";
 import { RosterManager } from "./roster-manager";
 
@@ -7,6 +10,9 @@ export const ROSTER_STATS_NOTE =
   "Counts only students on your roster who chose to share their details with your school's advisors. Anything from fewer than 2 students is hidden.";
 export const SCHOOL_STATS_NOTE =
   "Every student who signed up with your school's email domains, whether or not they're on your roster. Anything from fewer than 2 students is hidden.";
+export const STUDENTS_NOTE =
+  "Roster students who chose to share their details with your school's advisors. Opening one is shown to that student, with your name and the date.";
+export const NO_STUDENTS = "No student on your roster is sharing with your school's advisors yet.";
 export const ROSTER_OFF = "Roster upload isn't turned on yet. The founders need to finish setting it up.";
 
 function show(value: SafeCount): string {
@@ -65,6 +71,23 @@ export function AdvisorDashboardView({ dashboard }: { dashboard: AdvisorDashboar
       <Card>
         <h2 className="text-lg font-semibold">Your roster</h2>
         {dashboard.rosterEnabled ? <RosterManager rosterSize={dashboard.rosterSize} /> : <p className="mt-2 text-neutral-800">{ROSTER_OFF}</p>}
+      </Card>
+      <Card>
+        <h2 className="text-lg font-semibold">Students sharing with you</h2>
+        <p className="mt-1 text-sm text-neutral-700">{STUDENTS_NOTE}</p>
+        {dashboard.students.length === 0 ? (
+          <p className="mt-3 text-neutral-800">{NO_STUDENTS}</p>
+        ) : (
+          <ul className="mt-3 grid gap-1">
+            {dashboard.students.map((student) => (
+              <li key={student.id}>
+                <Link href={ROUTES.advisorStudent.replace("[id]", student.id)} prefetch={false} className={`inline-flex min-h-12 items-center break-all font-medium underline ${focusRing}`}>
+                  {student.email}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
       <StatsBlock title="Your roster" note={ROSTER_STATS_NOTE} stats={dashboard.roster} studentsLabel="Sharing with your school's advisors" />
       <StatsBlock title="Your whole school" note={SCHOOL_STATS_NOTE} stats={dashboard.school} studentsLabel="Signed up" />
