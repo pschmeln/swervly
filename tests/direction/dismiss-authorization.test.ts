@@ -41,7 +41,6 @@ function userRow(id: string, clerkId: string, email: string): User {
     dismissedCareerRoles: [],
     interestedCareerRoles: [],
     year: 3,
-    coopTrack: null,
     consentPrivacyAt: createdAt,
     consentDataUseAt: createdAt,
     shareReviewsConsentAt: null,

@@ -26,7 +26,6 @@ export const users = pgTable("users", {
   dismissedCareerRoles: text("dismissed_career_roles").array().notNull().default(sql`'{}'::text[]`),
   interestedCareerRoles: text("interested_career_roles").array().notNull().default(sql`'{}'::text[]`),
   year: integer("year"),                      // 1-5; null until onboarding
-  coopTrack: text("coop_track"),              // optional free label
   consentPrivacyAt: timestamp("consent_privacy_at", { withTimezone: true }),
   consentDataUseAt: timestamp("consent_data_use_at", { withTimezone: true }),
   // Versioned opt-in for anonymous company aggregates and Direction evidence.
@@ -58,8 +57,6 @@ export const profiles = pgTable("profiles", {
   school: text("school"),                                     // self-reported; null until onboarding saves it
   goal: text("goal").notNull(),                               // 'industry' | 'grad_school' | 'undecided'
   goalNotes: text("goal_notes"),
-  // Legacy, no longer written (0010). 'cincinnati_only' | 'within_drive' | 'anywhere'. Drop in a later cleanup.
-  locationConstraint: text("location_constraint"),
   constraintsNotes: text("constraints_notes"),
   // Home city: a Census place (src/content/places). Label and point copied from the place on save.
   homePlaceGeoid: text("home_place_geoid"),

@@ -53,7 +53,6 @@ function userRow(id: string, clerkId: string, email: string, onboardedAt: Date |
     email,
     major: "Computer Engineering",
     year: 3,
-    coopTrack: null,
     consentPrivacyAt: new Date("2026-02-01T00:00:00.000Z"),
     consentDataUseAt: new Date("2026-02-01T00:00:00.000Z"),
     shareReviewsConsentAt: new Date("2026-02-01T00:00:00.000Z"),
