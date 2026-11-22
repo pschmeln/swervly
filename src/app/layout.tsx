@@ -23,11 +23,15 @@ export const metadata: Metadata = {
   title: "Swervly",
   description:
     "Most students pick co-ops with almost no information about what they'll actually enjoy. Swervly turns a short quiz and real reviews into a direction.",
-  // App Router also serves src/app/icon.svg (blue mark). Explicit icons cover
-  // older clients and keep /brand/icon-blue.svg as the canonical public asset.
+  // App Router also serves src/app/icon.svg, src/app/favicon.ico, and
+  // src/app/apple-icon.png. Explicit entries keep /favicon.ico and Apple touch
+  // working for clients that do not pick up file conventions alone.
   icons: {
-    icon: [{ url: "/brand/icon-blue.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/brand/icon-blue.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/brand/icon-blue.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

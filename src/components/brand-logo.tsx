@@ -4,13 +4,17 @@ import type { CSSProperties } from "react";
 export const BRAND = {
   blue: "#1D42D8",
   navy: "#0F172A",
-  /** Brighter blue for dark-background accents (wordmark-dark). */
-  blueBright: "#4F74FF",
 } as const;
 
 export const BRAND_ICON_SIZES = [16, 32, 64] as const;
 export type BrandIconSize = (typeof BRAND_ICON_SIZES)[number];
 
+/**
+ * Surface context (not ink color):
+ * - light → glass / white surfaces → `wordmark-on-light.svg`
+ * - dark → sky / navy banners → `wordmark-on-dark.svg` (high-contrast white mark)
+ * - navy → navy icon only
+ */
 export type BrandLogoVariant = "light" | "dark" | "navy";
 
 const ICON_SRC: Record<BrandLogoVariant, string> = {
@@ -19,60 +23,76 @@ const ICON_SRC: Record<BrandLogoVariant, string> = {
   navy: "/brand/icon-navy.svg",
 };
 
-const WORDMARK_SRC = {
-  light: "/brand/wordmark-light.svg",
-  dark: "/brand/wordmark-dark.svg",
+/**
+ * File names describe the *surface* they sit on (on-light / on-dark), not the
+ * ink color. Avoid the ambiguous wordmark-light/dark pairing.
+ */
+export const WORDMARK_SRC = {
+  onLight: "/brand/wordmark-on-light.svg",
+  onDark: "/brand/wordmark-on-dark.svg",
 } as const;
 
 /** Wordmark SVG is 280×64; icon square is 64×64 of that canvas. */
 const WORDMARK_ASPECT = 280 / 64;
 
 type BrandLogoProps = {
-  /** Background context: light surfaces, dark/sky bands, or navy mark. */
+  /** Background surface: light (glass/white), dark (sky/banner), or navy mark. */
   variant?: BrandLogoVariant;
   /**
-   * Icon edge length in CSS pixels. Prefer 16 / 32 / 64 for brand checks;
-   * nav may use 20 to match the previous size-5 slot.
+   * Icon edge length in CSS pixels. Prefer 16 / 32 / 64 for brand checks.
+   * Overridden when `sizeClassName` is set (responsive height utilities).
    */
   size?: BrandIconSize | number;
-  /** When true, render the official wordmark SVG (icon + Swervly + blue dot). */
+  /**
+   * Responsive height classes (e.g. `h-6 sm:h-8`). When set, width follows the
+   * wordmark/icon aspect ratio via CSS; `size` is used only for width/height attrs.
+   */
+  sizeClassName?: string;
+  /** When true, render the official wordmark SVG (icon + Swervly + brand dot). */
   wordmark?: boolean;
   className?: string;
-  /** Decorative when adjacent visible "Swervly" text exists; otherwise name the brand. */
+  /** Decorative when a parent supplies the accessible name. */
   decorative?: boolean;
 };
 
 /**
  * Official Swervly mark. Uses the SVG files under /public/brand.
- * Keep adjacent text out of the tree when `wordmark` is true (the SVG already says Swervly).
+ * Wordmark lettering is outlined paths (no live font dependency).
  */
 export function BrandLogo({
   variant = "light",
   size = 32,
+  sizeClassName,
   wordmark = false,
   className,
   decorative = false,
 }: BrandLogoProps) {
-  const style: CSSProperties = wordmark
-    ? { height: size, width: size * WORDMARK_ASPECT }
-    : { height: size, width: size };
-
   const src = wordmark
     ? variant === "dark"
-      ? WORDMARK_SRC.dark
-      : WORDMARK_SRC.light
+      ? WORDMARK_SRC.onDark
+      : WORDMARK_SRC.onLight
     : ICON_SRC[variant];
 
+  const width = wordmark ? size * WORDMARK_ASPECT : size;
+  const height = size;
+
+  const style: CSSProperties | undefined = sizeClassName
+    ? wordmark
+      ? { aspectRatio: `${280} / ${64}`, width: "auto" }
+      : { aspectRatio: "1 / 1", width: "auto" }
+    : { height, width };
+
   const hideFromAt = decorative;
+  const classes = [sizeClassName, className].filter(Boolean).join(" ") || undefined;
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- brand SVGs are static public assets
     <img
       src={src}
       alt={hideFromAt ? "" : "Swervly"}
-      width={wordmark ? size * WORDMARK_ASPECT : size}
-      height={size}
-      className={className}
+      width={width}
+      height={height}
+      className={classes}
       style={style}
       aria-hidden={hideFromAt ? true : undefined}
       draggable={false}

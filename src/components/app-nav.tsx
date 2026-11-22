@@ -33,7 +33,14 @@ export function AppNav({ account }: { account: ReactNode }) {
             aria-label="Swervly home"
             className={`inline-flex min-h-12 items-center rounded-full px-3 ${focusRing}`}
           >
-            <BrandLogo variant="light" wordmark size={20} decorative />
+            {/* on-light wordmark for glass; h-6 mobile / h-8 desktop (~140×32) */}
+            <BrandLogo
+              variant="light"
+              wordmark
+              size={32}
+              sizeClassName="h-6 sm:h-8"
+              decorative
+            />
           </Link>
 
           <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
