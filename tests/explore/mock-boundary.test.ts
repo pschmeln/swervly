@@ -28,22 +28,24 @@ function text(relative: string): string {
 }
 
 describe("community mock boundary", () => {
-  it("links Direction to explore without importing sample community data", () => {
+  it("links Direction to Community without importing sample community data", () => {
     const direction = text("src/app/(app)/direction/page.tsx");
     expect(direction).not.toContain("community/mock");
     expect(direction).not.toContain("career-explore");
     expect(direction).toContain("DismissSuggestion");
     expect(direction).toContain("loadDirection");
-    expect(direction).toContain("ROUTES.directionExplore");
+    expect(direction).toContain("ROUTES.community");
+    expect(direction).not.toContain("ROUTES.directionExplore");
     expect(direction).toContain("ROUTES.reviews");
     expect(ROUTES.directionExplore).toBe("/direction/explore");
     expect(ROUTES.directionDismiss).toBe("/api/direction/dismiss");
+    // Retired (D12): the old route only redirects to Community.
     const explore = text("src/app/(app)/direction/explore/page.tsx");
-    expect(explore).toContain("loadDirection");
-    expect(explore).toContain("requireOnboardedUser");
-    expect(explore).toContain("profiles.userId");
+    expect(explore).toContain("redirect(ROUTES.community)");
     expect(explore).not.toContain("community/mock");
-    expect(explore).not.toContain("Rowan");
+    const community = text("src/app/(app)/community/page.tsx");
+    expect(community).toContain("requireOnboardedUser");
+    expect(community).not.toContain("community/mock");
   });
 
   it("lets only the view-model import sample community data", () => {
@@ -75,9 +77,9 @@ describe("community mock boundary", () => {
     }
   });
 
-  it("does not touch the database from the explore or community trees", () => {
+  it("does not touch the database from the explore tree or the community mock", () => {
     const trees = srcFiles.filter(
-      (file) => file.includes("features/explore/") || file.includes("features/community/"),
+      (file) => file.includes("features/explore/") || file.includes("features/community/mock/"),
     );
     expect(trees.length).toBeGreaterThan(0);
     for (const file of trees) {

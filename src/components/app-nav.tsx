@@ -12,6 +12,7 @@ export const NAV = [
   { href: ROUTES.home, label: "Home" },
   { href: ROUTES.profile, label: "Profile" },
   { href: ROUTES.direction, label: "Direction" },
+  { href: ROUTES.community, label: "Community" },
   { href: ROUTES.reviews, label: "Reviews" },
   { href: ROUTES.settings, label: "Settings" },
 ] as const;
