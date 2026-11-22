@@ -71,6 +71,7 @@ export const ROUTES = {
   foundersAdvisorsApi: "/api/founders/advisors",
   advisors: "/advisors",
   advisorRequest: "/api/advisors/request",
+  advisorRoster: "/api/advisors/roster",
   password: "/api/account/password",
   preferences: "/api/account/preferences",
   invite: "/invite/[code]",

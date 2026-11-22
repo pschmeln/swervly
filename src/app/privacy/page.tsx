@@ -158,6 +158,18 @@ export default function PrivacyPage() {
             answers and trait readings are not shared.
           </p>
           <p>
+            Approved co-op and career advisors at your school see totals for
+            students who signed up with your school&apos;s email domains: how
+            many finished onboarding, took the quiz and logged a co-op review,
+            and the most common chosen directions and companies reviewed. These
+            never show names, and anything from fewer than 2 students is hidden.
+            Advisors can list their students&apos; emails; Swervly keeps only a
+            keyed hash of each address, never the address, and never tells an
+            advisor whether an address has an account. Their roster totals count
+            only students who chose to share their details with their
+            school&apos;s advisors.
+          </p>
+          <p>
             Comments on a shared review note follow the same rules. They are
             shown, without your name, only to students who can see that note:
             students in the note writer&apos;s major, once the company page for that

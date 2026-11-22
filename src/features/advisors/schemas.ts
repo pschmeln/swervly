@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ROSTER_BATCH_MAX } from "./emails";
 
 /** Same rule as the school_domains_format check in migration 0013: lowercase labels joined by dots. */
 const DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
@@ -40,3 +41,16 @@ export function splitDomains(raw: string): string[] {
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
 }
+
+const RosterEmails = z
+  .array(z.email({ error: "One of those isn't an email address." }))
+  .min(1, { error: "Add at least one email." })
+  .max(ROSTER_BATCH_MAX, { error: `Send ${ROSTER_BATCH_MAX} emails or fewer at a time.` });
+
+/** Advisor roster changes (PR 6.2). Emails are hashed on the server and never stored. */
+export const RosterInput = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("add"), emails: RosterEmails }),
+  z.object({ action: z.literal("remove"), emails: RosterEmails }),
+  z.object({ action: z.literal("clear") }),
+]);
+export type RosterInput = z.infer<typeof RosterInput>;
