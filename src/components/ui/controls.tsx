@@ -8,9 +8,9 @@ import type {
   TextareaHTMLAttributes,
 } from "react";
 
-/** Shared focus ring: blue, offset, visible on white and on the sky band. */
-export const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
+import { focusRing } from "./focus-ring";
+
+export { focusRing };
 
 const controlClass = `min-h-12 w-full rounded-xl border border-neutral-200 bg-white px-3.5 text-base text-ink shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-ink-3 hover:border-neutral-300 ${focusRing} disabled:cursor-not-allowed disabled:opacity-60`;
 

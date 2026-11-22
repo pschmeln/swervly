@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button, Card } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import type { ChosenDirection } from "@/features/direction/chosen";
 import { ROUTES } from "@/lib/constants";
 

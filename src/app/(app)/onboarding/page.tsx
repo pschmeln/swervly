@@ -6,7 +6,7 @@ import { profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
 import { readPriorities } from "@/features/direction/priorities";
-import { locationValueFrom } from "@/features/location/components/location-fields";
+import { locationValueFrom } from "@/features/location/value";
 import { OnboardingFlow } from "@/features/profile/components/onboarding-flow";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { suggestSchoolFromEmail } from "@/features/profile/school";

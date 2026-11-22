@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, Field, Select } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { CompanyAveragesSummary, NOTHING_YET } from "@/features/company/averages-section";
 import { companiesForDirection, type DirectoryCompany } from "@/features/community/directory-filter";
 import type { FamilyId } from "@/features/atlas/types";

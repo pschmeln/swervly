@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { ROUTES } from "@/lib/constants";
 
 // Order follows the cycle on Home: Self (Profile) -> Direction -> Review.

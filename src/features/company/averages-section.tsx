@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { ALL_MAJORS, type CompanyAverages, type PublicMajorView } from "@/features/company/aggregate";
 import { PublicMajorSection } from "@/features/company/public-section";
 

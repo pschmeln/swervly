@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { POST_KIND_LABELS, timeAgo } from "@/features/community/rules";
 import type { PostSummary } from "@/features/community/server";
 import { ROUTES } from "@/lib/constants";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { ROUTES } from "@/lib/constants";
 
 export type CommunityTab = "posts" | "companies";

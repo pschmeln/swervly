@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button, Field, Select } from "@/components/ui";
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { COMMUNITY_ROLE_OPTIONS } from "@/features/community/rules";
 import { ROUTES } from "@/lib/constants";
 

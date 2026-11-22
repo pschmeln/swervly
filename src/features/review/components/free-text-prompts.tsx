@@ -1,6 +1,6 @@
 "use client";
 
-import { focusRing } from "@/components/ui/controls";
+import { focusRing } from "@/components/ui/focus-ring";
 import { REVIEW_PROMPT_CHIPS } from "@/features/review/free-text-prompts";
 
 /** Sentence-starter chips under the review note. Tapping one never submits or requires anything. */
