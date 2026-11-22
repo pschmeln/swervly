@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { Card, PageShell } from "@/components/ui";
 import { POLICY_CHANGES } from "@/features/privacy/agree";
 import { AgreeButton } from "@/features/privacy/components/agree-button";
@@ -16,7 +17,15 @@ const linkClass =
  * Shown before anything else to students who agreed to an older privacy policy.
  * Outside the (app) group so the gate in its layout does not loop.
  */
-export default async function PrivacyUpdatePage() {
+export default function PrivacyUpdatePage() {
+  return (
+    <Suspense fallback={<p className="px-4 py-6 text-ink-2">Loading…</p>}>
+      <PrivacyUpdate />
+    </Suspense>
+  );
+}
+
+async function PrivacyUpdate() {
   const user = await requireUser();
   if (!needsPolicyAgreement(user)) redirect(ROUTES.home);
   const changes = POLICY_CHANGES[PRIVACY_POLICY_VERSION] ?? [];
