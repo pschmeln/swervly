@@ -51,6 +51,25 @@ describe("direction rules", () => {
     expect(suggestions.some((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(false);
   });
 
+  it("labels Manufacturing/Process as a place to start when only the soft major hint matches", () => {
+    const soft = suggestionsFromRules({
+      traits: balanced,
+      major: "Mechanical Engineering",
+      goal: "undecided",
+    });
+    const processSoft = soft.find((item) => item.roleType === "manufacturing_process");
+    expect(processSoft?.evidenceLabel).toBe(FALLBACK_EVIDENCE_LABEL);
+    expect(processSoft?.evidenceLabel).not.toBe(RULES_EVIDENCE_LABEL);
+
+    const quizMatch = suggestionsFromRules({
+      traits: { ...balanced, conscientiousness: 16 },
+      major: "Mechanical Engineering",
+      goal: "industry",
+    });
+    const processQuiz = quizMatch.find((item) => item.roleType === "manufacturing_process");
+    expect(processQuiz?.evidenceLabel).toBe(RULES_EVIDENCE_LABEL);
+  });
+
   it("stays on rules when three close reviews span unrelated roles", () => {
     const direction = buildDirection(
       { traits: balanced, major: "Mechanical Engineering", goal: "industry" },

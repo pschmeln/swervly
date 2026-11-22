@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
 
+import { DIRECTION_EXHAUSTED_ACTION } from "@/features/direction/rules";
 import { CYCLE_STEPS } from "@/features/home/cycle-graphic";
 import { HomeHub, homeTraits, majorLine, type HomeHubProps } from "@/features/home/hub";
 import { readTraits } from "@/features/profile/traits";
@@ -78,8 +79,8 @@ describe("Home profile and direction windows", () => {
     const html = renderToStaticMarkup(<HomeHub {...base} suggestions={[]} interested={[]} />);
     const t = text(html);
     expect(t).not.toContain("Top suggestions");
-    expect(t).toContain("Retake the quiz if your answers have changed");
-    expect(t).toContain("browse the career map");
+    expect(t).toContain(DIRECTION_EXHAUSTED_ACTION);
+    expect(t).not.toContain("Not for me");
     expect(html).toContain('href="/direction"');
     expect(t).toContain("See all");
     expect(t).toContain("2 co-ops and internships logged.");

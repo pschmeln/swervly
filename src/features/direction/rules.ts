@@ -28,7 +28,7 @@ export const DIRECTION_INSUFFICIENT_LABEL =
 export const DIRECTION_EXHAUSTED_LABEL =
   "You've set aside every role Swervly can suggest from your quiz and major right now.";
 
-/** Empty-state body on Direction, Home, and Career Exploration when every suggestion was dismissed. */
+/** Empty-state body on Direction and Home when every suggestion was dismissed. */
 export const DIRECTION_EXHAUSTED_ACTION =
   "Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.";
 
@@ -168,8 +168,17 @@ const RULES: readonly Rule[] = [
   {
     role: "manufacturing_process",
     points: 3,
-    when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) !== "low",
+    // High conscientiousness is a real quiz signal with a process major — keep "Matched to your quiz and major".
+    when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) === "high",
     reason: "Your major and the way you follow a plan line up with process work.",
+  },
+  {
+    role: "manufacturing_process",
+    points: 1,
+    // Middle conscientiousness + process major is only a soft major hint, not a quiz match.
+    when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) === "middle",
+    reason: "Manufacturing and process work is a common path from your major and a solid place to start.",
+    fallback: true,
   },
   {
     role: "manufacturing_process",
