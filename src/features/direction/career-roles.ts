@@ -1,4 +1,4 @@
-import { ROLE_TYPE_VALUES, roleLabel } from "@/features/review/roles";
+import { ROLE_TYPE_VALUES, roleLabel, type RoleType } from "@/features/review/roles";
 
 export const EXTRA_CAREER_ROLE_IDS = [
   "business_operations",
@@ -15,6 +15,9 @@ export const EXTRA_CAREER_ROLE_IDS = [
 ] as const;
 
 export type ExtraCareerRole = (typeof EXTRA_CAREER_ROLE_IDS)[number];
+
+/** A role Swervly can name for a company or a suggestion: every co-op role type except "other", every extra role except "insufficient". */
+export type CareerRoleId = Exclude<RoleType, "other"> | Exclude<ExtraCareerRole, "insufficient">;
 
 const EXTRA_LABELS: Record<ExtraCareerRole, string> = {
   business_operations: "Business operations",

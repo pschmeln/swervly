@@ -15,7 +15,7 @@ The list is independent of Phase 2's major catalog. Company cards take plain `ro
 
 ## Checked links
 
-Checked on **2026-11-17** with one HTTP GET per URL from this workspace (browser User-Agent, redirects followed). A row is in the list only when the final status was 200, the final host belongs to the organization, and the HTML title or text identified a careers page. Source of truth in code: `src/features/explore/links.ts` (`VERIFIED_CAREER_LINKS`). The screen links the **final** URL only. `careerPageHref` rejects every other string, including the pre-redirect URL when it differs.
+Checked on **2026-11-17** with one HTTP GET per URL from this workspace (browser User-Agent, redirects followed). A row is in the list only when the final status was 200, the final host belongs to the organization, and the HTML title or text identified a careers page. Source of truth in code (since Nov 21, 2026): companies and their requested careers URLs in `src/content/companies.ts`, check results in `src/content/career-link-checks.ts` (written by `scripts/check-career-links.ts`), read by `src/features/explore/links.ts` (`VERIFIED_CAREER_LINKS`). The screen links the **final** URL only. `careerPageHref` rejects every other string, including the pre-redirect URL when it differs.
 
 | Organization | Field on the card | Requested URL | Final URL | Final host |
 | --- | --- | --- | --- | --- |
@@ -88,12 +88,12 @@ Append-only log of checks: `career_page_id`, `checked_on`, `method`, `http_statu
 4. Reject certificate errors, 403/404, and soft 200 error pages. Those stay in the review notes, not in `career_pages`.
 5. `careerPageHref` (or its server equivalent) is the only way a URL becomes an `href`. The allowlist is the accepted final URLs. Query strings, other paths, `http`, and userinfo fail closed.
 
-This prototype's check method string lives on `CAREER_LINK_CHECK_METHOD` in `src/features/explore/links.ts`.
+The check method string is `CHECK_METHOD` in `src/features/companies/link-check.ts` (re-exported as `CAREER_LINK_CHECK_METHOD`). Run the check with `npx tsx scripts/check-career-links.ts` on a machine with normal internet access.
 
 ## Refresh and staleness
 
 - Re-check every active URL at least every 90 days, with the same acceptance rules.
-- A link older than 90 days is stale. The UI should say the link needs a new check, or hide it, until a human accepts a new check. This prototype's date is 2026-11-17, so it is inside that window on the day it was written. It will go stale. There is no scheduler in this branch.
+- A link older than 90 days is stale. The UI should say the link needs a new check, or hide it, until a human accepts a new check. This prototype's date is 2026-11-17, so it is inside that window on the day it was written. It will go stale. Since Nov 21, 2026, `careerPageHref` hides a link more than 90 days after its check; re-run `scripts/check-career-links.ts` before then. There is no scheduler.
 - If a redirect changes the host, retire the row until a person confirms the new host still belongs to the organization.
 - Do not infer openings from the careers page wording during a re-check. The check only answers "is this still their careers site?"
 - Do not build a crawler. A re-check is a single GET of a known URL, recorded in `career_page_checks`.
