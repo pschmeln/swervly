@@ -12,8 +12,6 @@ import { levelOf, type AtlasNodeId } from "@/features/atlas/types";
  */
 
 export const MARK_VALUES = ["interested", "dismissed", "pursuing"] as const;
-export type MarkValue = (typeof MARK_VALUES)[number];
-
 export type SavedAtlasState = {
   /** False when the tables aren't there yet (migration not applied) or the read failed. */
   available: boolean;

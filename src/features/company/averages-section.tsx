@@ -7,7 +7,6 @@ import type { CommentView } from "@/features/community/server";
 
 export const NOT_ENOUGH_MAJOR = "Not enough reviews from your major yet.";
 export const NO_MAJOR_LINE = "Reviews are grouped by major. Add your major on your Profile to see your major's view.";
-export const ALL_MAJORS_NOTE = "Pay and written notes appear only within a student's own major.";
 export const NOTHING_YET = "No company page yet: at least 2 different students need to share reviews of it.";
 
 /** Company page (item 4): the viewer's major, or the all-majors fallback when that is hidden. */

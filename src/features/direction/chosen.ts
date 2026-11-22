@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { careerAtlasMarks } from "@/db/schema";
 import { atlasGraph } from "@/features/atlas/graph";
-import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { levelOf, type AtlasNodeId } from "@/features/atlas/types";
 import { ROUTES } from "@/lib/constants";
 
@@ -35,10 +34,10 @@ export function chosenDirectionView(nodeId: string | null | undefined): ChosenDi
 
 /**
  * The signed-in student's chosen direction, or null. Scoped to `userId`, which callers
- * take from requireUser(). Null when the career map is switched off or the read fails.
+ * take from requireUser(). Null when the read fails.
  */
 export async function loadChosenDirection(userId: string): Promise<ChosenDirection | null> {
-  if (!userId || !atlasPrototypeEnabled()) return null;
+  if (!userId) return null;
   try {
     const [row] = await db
       .select({ nodeId: careerAtlasMarks.nodeId })

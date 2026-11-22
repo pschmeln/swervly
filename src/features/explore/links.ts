@@ -1,14 +1,12 @@
 import { CAREER_LINK_CHECKS } from "@/content/career-link-checks";
 import { COMPANIES } from "@/content/companies";
-import { ageInDays, CHECK_MAX_AGE_DAYS, CHECK_METHOD, hostMatches } from "@/features/companies/link-check";
+import { ageInDays, CHECK_MAX_AGE_DAYS, hostMatches } from "@/features/companies/link-check";
 
 /**
  * Official careers URLs that passed a check (src/content/career-link-checks.ts,
  * written by scripts/check-career-links.ts). careerPageHref accepts only these exact
  * final URLs, and only while the check is at most CHECK_MAX_AGE_DAYS old. It is not a crawler.
  */
-export const CAREER_LINK_CHECK_METHOD = CHECK_METHOD;
-
 export type VerifiedCareerLink = {
   /** The company id in src/content/companies.ts. */
   id: string;

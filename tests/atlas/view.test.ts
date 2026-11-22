@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/lib/copy-rules";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
-import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import type { AtlasNodeId } from "@/features/atlas/types";
 import { defaultTrail, nodeModel, onetOnlineHref, rootModel, searchAtlas, type Marks } from "@/features/atlas/view";
 
@@ -117,17 +116,5 @@ describe("Atlas search and links", () => {
   it("only builds O*NET OnLine links from a well-formed code", () => {
     expect(onetOnlineHref("17-2141.00")).toBe("https://www.onetonline.org/link/summary/17-2141.00");
     expect(onetOnlineHref("17-2141.00/../../evil")).toBeNull();
-  });
-});
-
-describe("Atlas prototype switch", () => {
-  it("is live in production now", () => {
-    expect(atlasPrototypeEnabled({ VERCEL_ENV: "production" })).toBe(true);
-  });
-
-  it("turns off in production only when ATLAS_LIVE is false, staying on in preview and locally", () => {
-    expect(atlasPrototypeEnabled({ VERCEL_ENV: "production" }, false)).toBe(false);
-    expect(atlasPrototypeEnabled({ VERCEL_ENV: "preview" }, false)).toBe(true);
-    expect(atlasPrototypeEnabled({}, false)).toBe(true);
   });
 });

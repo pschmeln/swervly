@@ -9,11 +9,6 @@ export const MIN_DISTINCT_CONTRIBUTORS = 2;
  */
 export const MIN_DISTINCT_PAY_CONTRIBUTORS = 3;
 
-/** @deprecated Use MIN_DISTINCT_CONTRIBUTORS. Kept for older imports during transition. */
-export const MIN_REVIEWS_TO_SHOW = MIN_DISTINCT_CONTRIBUTORS;
-/** @deprecated Use MIN_DISTINCT_PAY_CONTRIBUTORS. */
-export const MIN_PAY_REPORTS = MIN_DISTINCT_PAY_CONTRIBUTORS;
-
 export type ReviewForAggregate = {
   /** The review row, when it exists (a preview draft has none). Lets a shared note carry comments. */
   reviewId?: string;

@@ -8,7 +8,6 @@ import { selectionFromStored } from "@/features/majors/selection";
 import { readPriorities } from "@/features/direction/priorities";
 import { locationValueFrom } from "@/features/location/value";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
-import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { loadChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
 import { hasCommunityTerms } from "@/features/community/rules";
@@ -60,7 +59,7 @@ export default async function ProfilePage() {
   return (
     <PageShell title="Profile">
       {archetype ? <ArchetypeCard card={archetype} share={{ agreed: hasCommunityTerms(user) }} /> : null}
-      {atlasPrototypeEnabled() ? <ChosenDirectionCard chosen={chosen} /> : null}
+      <ChosenDirectionCard chosen={chosen} />
       <PointsBalance points={summary.points} />
       {user.school ? (
         <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>

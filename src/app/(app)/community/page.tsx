@@ -1,5 +1,4 @@
 import { Card, PageShell } from "@/components/ui";
-import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { CompaniesDirectory } from "@/features/community/components/companies-directory";
 import { NO_POSTS, PostCard } from "@/features/community/components/post-card";
 import { PostComposer } from "@/features/community/components/post-composer";
@@ -27,17 +26,16 @@ function one(value: string | string[] | undefined): string {
 export default async function CommunityPage({ searchParams }: { searchParams: Params }) {
   const [user, params] = await Promise.all([requireOnboardedUser(), searchParams]);
   const tab = one(params.tab) === "companies" ? "companies" : "posts";
-  const atlasOn = atlasPrototypeEnabled();
   const chosen = await loadChosenDirection(user.id);
-  const families = atlasOn ? directionFamilies(chosen) : [];
-  const directionTitle = atlasOn && families.length > 0 ? (chosen?.title ?? null) : null;
+  const families = directionFamilies(chosen);
+  const directionTitle = families.length > 0 ? (chosen?.title ?? null) : null;
 
   if (tab === "companies") {
     const directory = await loadDirectoryCompanies(user);
     return (
       <PageShell title="Community" description="Questions and advice from co-op students, and the companies that hire them.">
         <CommunityTabs active="companies" />
-        {atlasOn ? <ChosenDirectionLine chosen={chosen} /> : null}
+        <ChosenDirectionLine chosen={chosen} />
         <CompaniesDirectory companies={directory.companies} companyRoles={directory.companyRoles} directionTitle={directionTitle} directionFamilies={families} />
       </PageShell>
     );
@@ -57,7 +55,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pa
   return (
     <PageShell title="Community" description="Questions and advice from co-op students, and the companies that hire them.">
       <CommunityTabs active="posts" />
-      {atlasOn ? <ChosenDirectionLine chosen={chosen} /> : null}
+      <ChosenDirectionLine chosen={chosen} />
       <PostComposer employers={employers} agreed={hasCommunityTerms(user)} defaultArea={families[0] ?? null} />
       <PostFilters state={state} employers={employers} directionTitle={directionTitle} />
       {posts.length === 0 ? (
