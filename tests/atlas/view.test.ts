@@ -73,7 +73,8 @@ describe("Atlas drill-down", () => {
     expect(view?.details?.jobZone?.education).toContain("bachelor's degree");
     const related = view?.details?.related ?? [];
     expect(related.find((item) => item.title === "Mechatronics Engineers")?.id).toBe("occ:onet:17-2199.05");
-    expect(related.find((item) => item.title === "Mechanical Engineering Technologists and Technicians")?.id).toBeNull();
+    expect(related.find((item) => item.title === "Mechanical Engineering Technologists and Technicians")?.id).toBe("occ:onet:17-3027.00");
+    expect(related.every((item) => item.href === null)).toBe(true);
     expect(view?.unknowns.join(" ")).not.toContain("hasn't added the O*NET description");
   });
 
