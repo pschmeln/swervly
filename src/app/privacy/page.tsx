@@ -46,7 +46,8 @@ export default function PrivacyPage() {
             enter for co-ops and internships. Your profile includes where you want
             to work: a home city (any US city or town) and how far you would go, or
             that you are open to anywhere, and whether you are open to remote work.
-            It can also include notes. If you join through another student&apos;s
+            It can also include notes and, if you choose, up to 3 things that
+            matter most to you in a co-op. If you join through another student&apos;s
             invite link, we store that connection. Our sign-in provider processes
             the information needed to authenticate you, including a password if
             you set one. We also store when you consent to the Privacy Policy,
@@ -68,7 +69,11 @@ export default function PrivacyPage() {
             how you work. Direction starts from a written rules table that
             connects quiz answers and majors to roles. When at least 2 different
             students with nearby quiz profiles have reviewed a role, that role
-            shows how many students and their average rating. Swervly does not
+            shows how many students and their average rating. If you picked
+            what matters most to you in a co-op, each suggestion can also show the
+            average rating for that from at least 2 different students in majors
+            like yours who shared their reviews (pay needs at least 3, and is shown
+            as a range). Swervly does not
             send your text to an AI model. The quiz uses lightly reworded
             Mini-IPIP items, so its scores do not carry the validation evidence of
             the original instrument, and they are not a clinical or hiring

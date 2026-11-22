@@ -24,6 +24,8 @@ import {
   locationPayload,
   type LocationValue,
 } from "@/features/location/components/location-fields";
+import { PrioritiesField } from "@/features/direction/components/priorities-field";
+import type { Priority } from "@/features/direction/priorities";
 import { MajorPicker } from "@/features/majors/components/major-picker";
 import type { MajorSearchContext } from "@/features/majors/catalog";
 import { isSelectableCatalogName, ProfileWriteInput, type MajorPickerValue } from "@/features/majors/selection";
@@ -81,6 +83,7 @@ export type OnboardingDefaults = {
   goal: string;
   goalNotes: string;
   location: LocationValue;
+  priorities: Priority[];
   constraintsNotes: string;
 };
 
@@ -108,6 +111,7 @@ function profilePayload(state: OnboardingDefaults): unknown {
     goal: state.goal,
     goalNotes: state.goalNotes.trim(),
     ...locationPayload(state.location),
+    priorities: state.priorities,
     constraintsNotes: state.constraintsNotes.trim(),
     consentPrivacy: state.consentPrivacy,
     consentDataUse: state.consentDataUse,
@@ -142,7 +146,7 @@ function stepForFields(fields: Record<string, string>): Step | null {
   if (keys.some((key) => STEP_ONE_KEYS.has(key))) return 1;
   if (
     keys.some((key) =>
-      ["goal", "goalNotes", "constraintsNotes", ...LOCATION_KEYS].includes(key),
+      ["goal", "goalNotes", "constraintsNotes", "priorities", ...LOCATION_KEYS].includes(key),
     )
   ) {
     return 2;
@@ -460,6 +464,12 @@ export function OnboardingFlow({
                 onChange={(event) => update("goalNotes", event.target.value)}
               />
             </Field>
+            <PrioritiesField
+              value={form.priorities}
+              onChange={(value) => update("priorities", value)}
+              error={fieldErrors.priorities}
+              disabled={pending}
+            />
             <LocationFields
               value={form.location}
               onChange={updateLocation}

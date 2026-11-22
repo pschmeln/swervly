@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { INSTRUMENT, QUIZ_ITEMS } from "@/content/mini-ipip";
 import { PASSWORD_TOO_LONG_BYTES, utf8ByteLength } from "@/features/auth/password-messages";
+import { PrioritiesInput } from "@/features/direction/priorities";
 import { PlaceGeoid, RadiusInput } from "@/features/location/schemas";
 import { MAJORS } from "@/lib/constants";
 
@@ -18,6 +19,8 @@ export const ProfileInput = z.object({
   radiusMiles: RadiusInput.nullable().optional(),
   openToAnywhere: z.boolean(),
   openToRemote: z.boolean(),
+  // Up to 3 co-op priorities (item 20, D8). Optional; omitted keeps the saved ones.
+  priorities: PrioritiesInput.optional(),
   constraintsNotes: z.string().max(500).optional(),
   consentPrivacy: z.literal(true),
   consentDataUse: z.literal(true),

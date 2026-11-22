@@ -14,6 +14,9 @@ import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { readTraits, type TraitReading } from "@/features/profile/traits";
 import type { TraitScores } from "@/features/profile/scoring";
 import { isRoleType } from "@/features/review/roles";
+import { isWouldReturn } from "@/features/review/would-return";
+import { readPriorities, type Priority } from "@/features/direction/priorities";
+import { whyMatched, type RoleReview } from "@/features/direction/why-matched";
 
 export type DirectionPayload = {
   readings: TraitReading[];
@@ -27,6 +30,8 @@ export type DirectionPayload = {
   /** Careers the student marked Interested, in the order they marked them. */
   interestedRoles: string[];
   academic: AcademicExploration;
+  /** The student's top priorities (item 20), in the order chosen. */
+  priorities: Priority[];
 };
 
 function parseScores(value: unknown): TraitScores | null {
@@ -44,7 +49,7 @@ function parseScores(value: unknown): TraitScores | null {
 export async function loadDirection(user: User): Promise<DirectionPayload | null> {
   const [profileRows, assessmentRows, reviewRows] = await Promise.all([
     db
-      .select({ goal: profiles.goal })
+      .select({ goal: profiles.goal, priorities: profiles.priorities })
       .from(profiles)
       .where(eq(profiles.userId, user.id))
       .limit(1),
@@ -60,7 +65,13 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
       .select({
         userId: rotations.userId,
         roleType: rotations.roleType,
+        rotationNumber: rotations.rotationNumber,
         enjoyment: reviews.enjoyment,
+        learning: reviews.learning,
+        mentorship: reviews.mentorship,
+        clarityGained: reviews.clarityGained,
+        wouldReturn: rotations.wouldReturn,
+        payHourly: rotations.payHourly,
         shareReviewsConsentAt: users.shareReviewsConsentAt,
         shareReviewsConsentVersion: users.shareReviewsConsentVersion,
         major: users.major,
@@ -91,6 +102,8 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
   // Evidence only from students in the same group of majors (founder decision, Nov 19, 2026).
   const group = evidenceGroup(majorForRules);
   const similar: SimilarReview[] = [];
+  // Every shared review in the same group of majors, for priority reasons (not limited to similar quiz profiles).
+  const pool: RoleReview[] = [];
   for (const row of reviewRows) {
     if (row.userId === user.id || !isRoleType(row.roleType)) continue;
     const reviewerMajor =
@@ -104,6 +117,17 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
     ) {
       continue;
     }
+    pool.push({
+      userId: row.userId,
+      roleType: row.roleType,
+      rotationNumber: row.rotationNumber,
+      enjoyment: row.enjoyment,
+      learning: row.learning,
+      mentorship: row.mentorship,
+      clarityGained: row.clarityGained,
+      wouldReturn: isWouldReturn(row.wouldReturn) ? row.wouldReturn : "maybe",
+      payHourly: row.payHourly == null ? null : Number(row.payHourly),
+    });
     const profileTraits = latest.get(row.userId);
     if (!profileTraits) continue;
     similar.push({
@@ -114,6 +138,7 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
     });
   }
 
+  const priorities = readPriorities(profileRows[0]?.priorities);
   const goalValue = profileRows[0]?.goal;
   const goal = goalValue === "grad_school" || goalValue === "undecided" ? goalValue : "industry";
   // Dismissed roles are skipped inside the ranking, so the next-best role takes their place.
@@ -129,7 +154,12 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
     suggestions: interestedFirst(
       withoutDismissedRoles(direction.suggestions, user.dismissedCareerRoles),
       user.interestedCareerRoles,
+    ).map((suggestion) =>
+      suggestion.roleType === "insufficient"
+        ? suggestion
+        : { ...suggestion, reasons: whyMatched(suggestion.reason, suggestion.roleType, priorities, pool) },
     ),
+    priorities,
     interestedRoles: [...user.interestedCareerRoles],
     academic: academicExploration({
       source: academicSource(user),
