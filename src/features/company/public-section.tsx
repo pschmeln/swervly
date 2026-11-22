@@ -81,7 +81,7 @@ export function PublicMajorSection({
           </p>
         ) : (
           <p className="mt-1 text-sm text-neutral-600">
-            Pay stays hidden until 2 different students in this group report it.
+            Pay stays hidden until 3 different students in this group report it.
           </p>
         )}
       </div>

@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ONET_CREDIT } from "@/content/atlas/occupations";
 import { COMPANY_NOTE } from "@/content/atlas/company-links";
 import { ANSWER_LABELS, type QuestionAnswer } from "@/content/atlas/questions";
 import { hasSignals, nextQuestion, questionPool, rankSpecializations, topPicks, type Answers, type Ranked } from "@/features/atlas/rank";
 import type { AtlasEntry } from "@/features/atlas/entry";
+import { comparePanel, compareFrom, compareReducer } from "@/features/atlas/compare";
+import { ComparePanel, COMPARE_PANEL_ID } from "@/features/atlas/components/compare-panel";
 import { atlasGraph } from "@/features/atlas/graph";
 import { ROUTES } from "@/lib/constants";
 import type { AtlasNodeId } from "@/features/atlas/types";
@@ -14,7 +16,6 @@ import {
   ATLAS_BANNER,
   CLOSEST_LABEL,
   companiesFor,
-  compareModel,
   defaultTrail,
   MARK_NOTE,
   NO_SKILLS_NOTE,
@@ -137,7 +138,7 @@ export function AtlasExplorer({
   const [notice, setNotice] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answers>(saved?.available ? saved.answers : initialAnswers);
   const [skipped, setSkipped] = useState<string[]>([]);
-  const [compare, setCompare] = useState<AtlasNodeId[]>(initialCompare);
+  const [compare, dispatchCompare] = useReducer(compareReducer, initialCompare, compareFrom);
   const answeredAny = Object.values(answers).some((value) => value !== "unsure");
 
   const current = trail.at(-1) ?? null;
@@ -167,15 +168,26 @@ export function AtlasExplorer({
   );
   const showPicks = hasSignals(signals) && picks.length > 0;
 
-  const comparison = useMemo(
-    () => (compare.length === 2 ? compareModel(graph, compare[0], compare[1]) : null),
-    [graph, compare],
-  );
+  // The chosen direction is the fixed third column: it depends on `pursuing` only.
+  const comparison = useMemo(() => comparePanel(graph, compare, pursuing), [graph, compare, pursuing]);
   const companies = useMemo(() => (current ? companiesFor(graph, current) : []), [graph, current]);
 
-  function toggleCompare(id: AtlasNodeId) {
-    setCompare((list) => (list.includes(id) ? list.filter((item) => item !== id) : [...list, id].slice(-2)));
+  function pickForCompare(id: AtlasNodeId) {
+    dispatchCompare({ type: "pick", id });
+    // The panel opens right under the button. Bring it on screen without moving focus.
+    requestAnimationFrame(() => {
+      document.getElementById(COMPARE_PANEL_ID)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
   }
+
+  const comparePanelElement = compare.open ? (
+    <ComparePanel
+      model={comparison}
+      onPick={pickForCompare}
+      onClear={(side) => dispatchCompare({ type: "clear", side })}
+      onClose={() => dispatchCompare({ type: "close" })}
+    />
+  ) : null;
 
   function answer(id: string, value: QuestionAnswer) {
     setAnswers((previous) => ({ ...previous, [id]: value }));
@@ -288,6 +300,7 @@ export function AtlasExplorer({
               )
             ) : null}
           </Card>
+          {comparePanelElement}
           {pursuing ? (
             <Card>
               <p className="text-sm text-neutral-600">Your direction</p>
@@ -325,7 +338,7 @@ export function AtlasExplorer({
           {showPicks ? (
             <section aria-label="Start here" className="flex flex-col gap-2">
               <h2 className="text-lg font-semibold">Start here</h2>
-              <p className="text-sm text-neutral-600">Ordered by what you told Swervly on this screen. A starting point, not a prediction.</p>
+              <p className="text-sm text-neutral-600">Ordered by what you told Swervly on this screen.</p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {picks.slice(0, 3).map((item) => <PickCard key={item.id} item={item} onOpen={() => openFromRoot(item.id)} />)}
               </ul>
@@ -388,14 +401,22 @@ export function AtlasExplorer({
                   </Button>
                 ) : null}
                 {view.level === "occupation" ? (
-                  <Button variant="secondary" aria-pressed={compare.includes(view.id)} onClick={() => toggleCompare(view.id)} className="w-full sm:w-auto">
-                    {compare.includes(view.id) ? "Remove from compare" : "Compare"}
+                  <Button
+                    variant={compare.left === view.id || compare.right === view.id ? "primary" : "secondary"}
+                    aria-pressed={compare.left === view.id || compare.right === view.id}
+                    aria-expanded={compare.open}
+                    aria-controls={COMPARE_PANEL_ID}
+                    onClick={() => pickForCompare(view.id)}
+                    className="w-full sm:w-auto"
+                  >
+                    {compare.left === view.id || compare.right === view.id ? "Comparing ✓" : "Compare"}
                   </Button>
                 ) : null}
               </div>
             ) : null}
             {notice ? <p className="mt-2 text-sm text-neutral-600" role="status">{notice}</p> : null}
           </Card>
+          {comparePanelElement}
 
           {view.details ? (
             <Card>
@@ -536,51 +557,6 @@ export function AtlasExplorer({
           </Card>
         </>
       )}
-
-      {compare.length > 0 ? (
-        <Card>
-          <h2 className="text-lg font-semibold">Compare occupations</h2>
-          {comparison === null ? (
-            <p className="mt-1 text-sm text-neutral-600">
-              {graph.nodes.get(compare[0])?.title} is picked. Open another occupation and choose Compare to see them side by side.
-            </p>
-          ) : (
-            <>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                {[comparison.left, comparison.right].map((side) => (
-                  <section key={side.id} aria-label={side.title} className="rounded-2xl border border-neutral-200 bg-white p-4">
-                    <h3 className="font-semibold text-neutral-900">{side.title}</h3>
-                    <p className="text-xs text-neutral-600">O*NET-SOC {side.onetCode}</p>
-                    {side.description ? <p className="mt-2 text-sm text-neutral-800">{side.description}</p> : null}
-                    <h4 className="mt-3 text-sm font-semibold">Top tasks</h4>
-                    <ul className="mt-1 list-disc pl-5 text-sm text-neutral-800">{side.tasks.map((task) => <li key={task}>{task}</li>)}</ul>
-                    <h4 className="mt-3 text-sm font-semibold">Skills that stand out</h4>
-                    <p className="text-sm text-neutral-800">{side.skills.length > 0 ? side.skills.join(", ") : "No usable O*NET ratings."}</p>
-                    <h4 className="mt-3 text-sm font-semibold">Software in demand</h4>
-                    <p className="text-sm text-neutral-800">{side.software.length > 0 ? side.software.join(", ") : "None flagged by O*NET."}</p>
-                    {side.preparation ? (
-                      <>
-                        <h4 className="mt-3 text-sm font-semibold">Preparation</h4>
-                        <p className="text-sm text-neutral-800">{side.preparation}</p>
-                      </>
-                    ) : null}
-                    <h4 className="mt-3 text-sm font-semibold">Areas in this map</h4>
-                    <p className="text-sm text-neutral-800">{side.areas.join(", ")}</p>
-                  </section>
-                ))}
-              </div>
-              <ul className="mt-3 list-disc pl-5 text-sm text-neutral-700">
-                <li>{comparison.sharedSkills.length > 0 ? `Both stand out for: ${comparison.sharedSkills.join(", ")}.` : "No standout skills in common."}</li>
-                <li>{comparison.sharedSoftware.length > 0 ? `Software in both: ${comparison.sharedSoftware.join(", ")}.` : "No in-demand software in common."}</li>
-                {comparison.sharedAreas.length > 0 ? <li>{`Both sit under: ${comparison.sharedAreas.join(", ")}.`}</li> : null}
-              </ul>
-            </>
-          )}
-          <button type="button" onClick={() => setCompare([])} className={`mt-2 min-h-12 rounded px-1 text-sm text-sky-800 underline ${focusRing}`}>
-            Clear compare
-          </button>
-        </Card>
-      ) : null}
 
       <p className="text-xs text-neutral-500">
         Areas, families and specializations are Swervly&apos;s own grouping. {ONET_CREDIT}

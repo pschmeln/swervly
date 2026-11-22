@@ -25,6 +25,13 @@ import {
   firstFieldControlId,
   readApiJson,
 } from "@/features/review/components/api-client";
+import { FreeTextPromptChips } from "@/features/review/components/free-text-prompts";
+import {
+  FREE_TEXT_MAX,
+  insertStarter,
+  placeholderAt,
+  PROMPT_ROTATE_MS,
+} from "@/features/review/free-text-prompts";
 import {
   EmployerAutocomplete,
   type EmployerOption,
@@ -207,6 +214,18 @@ export function ReviewForm({
   const [preview, setPreview] = useState<{ employerName: string; view: PublicMajorView } | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const saveErrorRef = useRef<HTMLDivElement>(null);
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [noteFocused, setNoteFocused] = useState(false);
+  const noteEmpty = form.freeText.length === 0;
+
+  // Rotate the note's placeholder question while the note is empty and not being typed in.
+  // Students who ask for reduced motion keep the first question.
+  useEffect(() => {
+    if (!noteEmpty || noteFocused) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => setPromptIndex((index) => index + 1), PROMPT_ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [noteEmpty, noteFocused]);
 
   useEffect(() => {
     if (!form.employerId) return;
@@ -270,6 +289,15 @@ export function ReviewForm({
       }
       return next;
     });
+  }
+
+  /** Every change to the note goes through here, so the share checkbox follows the text. */
+  function setNote(value: string) {
+    const hadText = form.freeText.trim().length > 0;
+    const hasText = value.trim().length > 0;
+    update("freeText", value);
+    if (!hasText) update("shareFreeText", false);
+    else if (!hadText && shareFreeTextDefault) update("shareFreeText", true);
   }
 
   async function addSkill() {
@@ -560,7 +588,7 @@ export function ReviewForm({
       <Field
         label="Hourly pay"
         htmlFor="payHourly"
-        hint="Optional. Only ever shown as a range across two or more students, never on its own."
+        hint="Optional. Other students see pay only once 3 or more students in your major report it for this company, as the lowest and highest figures."
         error={fieldError(fieldErrors, "payHourly")}
       >
         <TextInput
@@ -742,6 +770,7 @@ export function ReviewForm({
       <Field
         label="Anything a student considering this co-op should know?"
         htmlFor="freeText"
+        hint="Optional. Tap a prompt below to get started."
         error={fieldError(fieldErrors, "freeText", "review.freeText")}
       >
         <Textarea
@@ -749,17 +778,28 @@ export function ReviewForm({
           name="freeText"
           value={form.freeText}
           disabled={saving}
-          maxLength={2000}
-          onChange={(event) => {
-            const value = event.target.value;
-            const hadText = form.freeText.trim().length > 0;
-            const hasText = value.trim().length > 0;
-            update("freeText", value);
-            if (!hasText) update("shareFreeText", false);
-            else if (!hadText && shareFreeTextDefault) update("shareFreeText", true);
-          }}
+          maxLength={FREE_TEXT_MAX}
+          placeholder={placeholderAt(promptIndex)}
+          onFocus={() => setNoteFocused(true)}
+          onBlur={() => setNoteFocused(false)}
+          onChange={(event) => setNote(event.target.value)}
         />
       </Field>
+      <FreeTextPromptChips
+        disabled={saving}
+        onInsert={(starter) => {
+          const next = insertStarter(form.freeText, starter);
+          if (next === form.freeText) return;
+          setNote(next);
+          window.setTimeout(() => {
+            const note = document.getElementById("freeText");
+            if (note instanceof HTMLTextAreaElement) {
+              note.focus();
+              note.setSelectionRange(next.length, next.length);
+            }
+          }, 0);
+        }}
+      />
 
       <div className="flex flex-col gap-1.5">
         <Checkbox

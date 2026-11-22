@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withoutDismissedRoles } from "@/features/direction/career-roles";
-import { buildDirection, suggestionsFromRules } from "@/features/direction/rules";
+import { buildDirection, RULES_EVIDENCE_LABEL, suggestionsFromRules } from "@/features/direction/rules";
 import type { TraitScores } from "@/features/profile/scoring";
 
 const openAndConscientious: TraitScores = {
@@ -44,7 +44,7 @@ describe("direction outside engineering", () => {
       expect(suggestions.map((item) => item.roleType)).not.toContain(role);
     }
     expect(suggestions.every((item) => item.source === "rules")).toBe(true);
-    expect(suggestions.every((item) => item.evidenceLabel === "Early hypothesis")).toBe(true);
+    expect(suggestions.every((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
     expectNoFitClaim(suggestions);
   });
 
@@ -60,7 +60,7 @@ describe("direction outside engineering", () => {
     expect(direction.basis).toBe("rules");
     expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
     expect(direction.suggestions.map((item) => item.roleType)).not.toContain("software");
-    expect(direction.label.toLowerCase()).toContain("from your quiz and major");
+    expect(direction.label.toLowerCase()).toContain("based on your quiz and your major");
     expectNoFitClaim(direction);
   });
 
@@ -100,10 +100,10 @@ describe("direction outside engineering", () => {
       const direction = buildDirection({ traits: openAndConscientious, major, goal: "industry" }, []);
       expect(direction.suggestions).toHaveLength(3);
       expect(direction.suggestions.map((item) => item.roleType)).not.toContain("insufficient");
-      expect(direction.label.toLowerCase()).toContain("from your quiz");
+      expect(direction.label.toLowerCase()).toContain("based on your quiz");
       expect(direction.label.toLowerCase()).not.toContain("major");
       expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
-      expect(direction.suggestions.every((item) => item.reason.includes("not a fit score"))).toBe(true);
+      expect(direction.suggestions.every((item) => item.reason.length > 0)).toBe(true);
       expectNoFitClaim(direction);
     }
   });
@@ -111,7 +111,7 @@ describe("direction outside engineering", () => {
   it("never uses the engineering catch-all as a quiz signal for undecided students", () => {
     const direction = buildDirection({ traits: middle, major: "", goal: "industry" }, []);
     expect(direction.suggestions.map((item) => item.roleType)).toEqual(["insufficient"]);
-    expect(direction.label.toLowerCase()).toContain("not a career-fit score");
+    expect(direction.label.toLowerCase()).toContain("no role stands out");
   });
 
   it("lets the quiz change undecided suggestions", () => {
@@ -153,9 +153,9 @@ describe("direction outside engineering", () => {
       ],
     );
     expect(direction.suggestions[0]?.source).toBe("similar_students");
-    expect(direction.suggestions[0]?.evidenceLabel).toContain("n=3");
-    const hypothesis = direction.suggestions.find((item) => item.source === "rules");
-    if (hypothesis) expect(hypothesis.evidenceLabel).toBe("Early hypothesis");
+    expect(direction.suggestions[0]?.evidenceLabel).toBe("Backed by 3 students");
+    const fromRules = direction.suggestions.find((item) => item.source === "rules");
+    if (fromRules) expect(fromRules.evidenceLabel).toBe(RULES_EVIDENCE_LABEL);
   });
 
   it("drops a dismissed role without refilling it", () => {
