@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 import { focusRing } from "@/components/ui/controls";
 import { ROUTES } from "@/lib/constants";
 
@@ -29,10 +30,10 @@ export function AppNav({ account }: { account: ReactNode }) {
         <div className="flex items-center justify-between gap-2">
           <Link
             href={ROUTES.home}
-            className={`inline-flex min-h-12 items-center gap-2 rounded-full px-3 text-base font-bold tracking-tight text-ink ${focusRing}`}
+            aria-label="Swervly home"
+            className={`inline-flex min-h-12 items-center rounded-full px-3 ${focusRing}`}
           >
-            <span aria-hidden="true" className="size-5 rounded-md bg-gradient-to-br from-[#2f6bff] to-[#7c5cff]" />
-            Swervly
+            <BrandLogo variant="light" wordmark size={20} decorative />
           </Link>
 
           <nav aria-label="Main" className="hidden items-center gap-1 md:flex">

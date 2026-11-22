@@ -23,6 +23,12 @@ export const metadata: Metadata = {
   title: "Swervly",
   description:
     "Most students pick co-ops with almost no information about what they'll actually enjoy. Swervly turns a short quiz and real reviews into a direction.",
+  // App Router also serves src/app/icon.svg (blue mark). Explicit icons cover
+  // older clients and keep /brand/icon-blue.svg as the canonical public asset.
+  icons: {
+    icon: [{ url: "/brand/icon-blue.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/brand/icon-blue.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

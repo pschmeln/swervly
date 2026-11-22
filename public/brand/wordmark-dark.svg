@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" width="280" height="64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#4F74FF" />
+  <path d="M 15 47 C 34 47, 30 17, 49 17" stroke="#FFFFFF" stroke-width="8.5" stroke-linecap="butt" />
+  <text x="82" y="47" fill="#FFFFFF" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-size="44" font-weight="700" letter-spacing="-0.03em">Swervly</text>
+  <circle cx="249" cy="43" r="4.5" fill="#4F74FF" />
+</svg>
