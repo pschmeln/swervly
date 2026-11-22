@@ -44,14 +44,16 @@ describe("public copy", () => {
     expect(text).toContain("ends in .edu");
     expect(text).toContain("not affiliated with or endorsed by any university");
     expect(text).toContain("does not show names");
-    expect(text).toContain("2 different students");
-    expect(text).not.toContain("3 different students");
-    expect(text).toContain("range");
+    // Pages need 2 students; pay needs 3. Each rule is stated once, with its own number.
+    expect(text).toContain("least 2 different students in the major");
+    expect(text).toContain("at least 3 different students in that group reported pay");
+    expect(text).toContain("lowest and highest figures");
     expect(text.toLowerCase()).toContain("would go back");
     expect(text).toContain("turned on sharing");
     expect(text).toContain("Sharing is optional");
     expect(text).toContain("co-op experiences");
-    expect(text).toContain("exploratory");
+    expect(text).toContain("not a clinical or hiring assessment");
+    expect(text).not.toContain("not proof of career fit");
     expect(text).toContain("November 18, 2026");
     expect(text).not.toContain("only you can see your profile and co-op reviews");
     expect(text).not.toContain("for UC students");

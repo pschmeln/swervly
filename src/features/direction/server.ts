@@ -22,6 +22,8 @@ export type DirectionPayload = {
   label: string;
   basis: "rules" | "similar_students" | "mixed";
   suggestions: DirectionSuggestion[];
+  /** The student dismissed every role Swervly can suggest right now. */
+  exhausted: boolean;
   /** Careers the student marked Interested, in the order they marked them. */
   interestedRoles: string[];
   academic: AcademicExploration;
@@ -114,13 +116,15 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
 
   const goalValue = profileRows[0]?.goal;
   const goal = goalValue === "grad_school" || goalValue === "undecided" ? goalValue : "industry";
-  const direction = buildDirection({ traits, major: majorForRules, goal }, similar);
+  // Dismissed roles are skipped inside the ranking, so the next-best role takes their place.
+  const direction = buildDirection({ traits, major: majorForRules, goal }, similar, user.dismissedCareerRoles);
 
   return {
     readings: readTraits(traits),
     traits,
     label: direction.label,
     basis: direction.basis,
+    exhausted: direction.exhausted,
     // Interested careers rank first (founder decision: Interested shapes future suggestions).
     suggestions: interestedFirst(
       withoutDismissedRoles(direction.suggestions, user.dismissedCareerRoles),
