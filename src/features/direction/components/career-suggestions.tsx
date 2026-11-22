@@ -7,9 +7,11 @@ import { Button, Card } from "@/components/ui";
 import { familiesForRole } from "@/features/atlas/compat";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import {
-  beginDismiss,
+  claimFlight,
   DISMISS_GATE_IDLE,
+  DISMISS_REFRESH_UNLOCK_MS,
   failDismiss,
+  postDismissRole,
   succeedDismissAwaitingRefresh,
   type DismissGate,
 } from "@/features/direction/components/dismiss-gate";
@@ -53,6 +55,8 @@ export function CareerSuggestions({
   const router = useRouter();
   const [gate, setGate] = useState<DismissGate>(DISMISS_GATE_IDLE);
   const [error, setError] = useState(false);
+  /** Sync lock — claim here, not inside setState, so a retry always starts a fresh fetch. */
+  const flightRef = useRef<string | null>(null);
   const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -65,36 +69,42 @@ export function CareerSuggestions({
   const showExhausted = initialExhausted || initialSuggestions.length === 0;
 
   function dismiss(roleType: string) {
-    // Functional update so two rapid clicks cannot both claim the idle gate.
-    let allowed = false;
-    setGate((current) => {
-      const next = beginDismiss(current, roleType);
-      if (!next) return current;
-      allowed = true;
-      return next;
-    });
-    if (!allowed) return;
-    void runDismiss(roleType);
+    const claimed = claimFlight(flightRef.current, roleType);
+    if (!claimed) return;
+    // Assign the ref immediately (before any await/setState) so a second tap cannot start.
+    flightRef.current = claimed;
+    setGate({ activeRole: claimed });
+    setError(false);
+    void runDismiss(claimed);
+  }
+
+  function unlockAfterFailure() {
+    if (unlockTimer.current) {
+      clearTimeout(unlockTimer.current);
+      unlockTimer.current = null;
+    }
+    flightRef.current = null;
+    setGate(failDismiss(DISMISS_GATE_IDLE));
   }
 
   async function runDismiss(roleType: string) {
-    setError(false);
-    try {
-      const response = await fetch(ROUTES.directionDismiss, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ roleType }),
-      });
-      if (!response.ok) throw new Error("dismiss failed");
+    const result = await postDismissRole(roleType, { url: ROUTES.directionDismiss });
+    if (result === "ok") {
       setGate((current) => succeedDismissAwaitingRefresh(current));
       router.refresh();
-      // Stay locked until remount with server suggestions; unlock if refresh never remounts.
+      // Stay locked until remount; unlock if refresh never remounts.
       if (unlockTimer.current) clearTimeout(unlockTimer.current);
-      unlockTimer.current = setTimeout(() => setGate(DISMISS_GATE_IDLE), 8_000);
-    } catch {
-      setGate((current) => failDismiss(current));
-      setError(true);
+      unlockTimer.current = setTimeout(() => {
+        flightRef.current = null;
+        setGate(DISMISS_GATE_IDLE);
+      }, DISMISS_REFRESH_UNLOCK_MS);
+      return;
     }
+
+    // Failed / timed out: release Saving, show error, refresh so a prior success is not stale.
+    unlockAfterFailure();
+    setError(true);
+    router.refresh();
   }
 
   return (

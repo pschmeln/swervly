@@ -123,10 +123,15 @@ describe("dismiss lifecycle (delayed / failed / serialized)", () => {
 
   it("models a delayed response: no other role starts until unlock", () => {
     const started = beginDismiss(DISMISS_GATE_IDLE, processFill.roleType)!;
-    // Delayed response still in flight…
     expect(beginDismiss(started, fieldFill.roleType)).toBeNull();
     expect(beginDismiss(started, software.roleType)).toBeNull();
-    // Failure unlocks (success stays locked until remount).
     expect(failDismiss(started).activeRole).toBeNull();
+  });
+
+  it("clears stale error semantics: failure unlocks; next claim starts clean", () => {
+    // After failDismiss the gate is idle — a new attempt can claim and clear the prior error in UI.
+    const afterFail = failDismiss(beginDismiss(DISMISS_GATE_IDLE, software.roleType)!);
+    expect(afterFail).toEqual(DISMISS_GATE_IDLE);
+    expect(beginDismiss(afterFail, software.roleType)?.activeRole).toBe(software.roleType);
   });
 });

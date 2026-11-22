@@ -92,6 +92,22 @@ describe("Home profile and direction windows", () => {
     expect(html).toContain('href="/direction"');
     expect(t).toContain("See all");
     expect(t).toContain("2 co-ops and internships logged.");
+    expect(html).toContain('href="/onboarding?retake=1"');
+    expect(t).toContain("Retake the quiz");
+    // Atlas off (chosen undefined): Retake only — no duplicate Browse / See all.
+    expect(html).not.toContain('href="/direction/atlas"');
+  });
+
+  it("on exhausted with atlas on, offers Retake and Browse without duplicating See all", () => {
+    const html = renderToStaticMarkup(
+      <HomeHub {...base} suggestions={[]} interested={[]} chosen={null} />,
+    );
+    const t = text(html);
+    expect(html).toContain('href="/onboarding?retake=1"');
+    expect(html).toContain('href="/direction/atlas"');
+    expect(t).toContain("Retake the quiz");
+    expect(t).toContain("Browse the career map");
+    expect(t.split("See all").length - 1).toBe(1);
   });
 });
 
