@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             enter for co-ops and internships. Your profile includes where you want
             to work: a home city (any US city or town) and how far you would go, or
             that you are open to anywhere, and whether you are open to remote work.
-            It can also include an optional co-op track and notes. If you join through another student&apos;s
+            It can also include notes. If you join through another student&apos;s
             invite link, we store that connection. Our sign-in provider processes
             the information needed to authenticate you, including a password if
             you set one. We also store when you consent to the Privacy Policy,
@@ -64,13 +64,15 @@ export default function PrivacyPage() {
           <p>
             We use this information to create your profile, let you save co-op
             reviews, show other signed-in students an anonymous company view when
-            you have agreed to share, and offer Direction, labelled ideas of role
-            types worth exploring. Direction starts from a written rules table.
-            When enough distinct students with nearby quiz profiles have reviewed
-            a role, that role can also show a sample size. Similarity is not proof
-            of career fit. Swervly does not send your text to an AI model. The quiz
-            uses lightly reworded Mini-IPIP items; treat scores as exploratory, not
-            as having the same validation evidence as the original instrument.
+            you have agreed to share, and offer Direction: role types matched to
+            how you work. Direction starts from a written rules table that
+            connects quiz answers and majors to roles. When at least 2 different
+            students with nearby quiz profiles have reviewed a role, that role
+            shows how many students and their average rating. Swervly does not
+            send your text to an AI model. The quiz uses lightly reworded
+            Mini-IPIP items, so its scores do not carry the validation evidence of
+            the original instrument, and they are not a clinical or hiring
+            assessment.
             The career map uses your major, your Direction results and your own
             career map choices to order what you see first. It never shows a fit
             score, and you can change or clear those choices at any time.
@@ -96,8 +98,8 @@ export default function PrivacyPage() {
             experiences were rated &quot;Would go back&quot; (counting Yes only, with
             Maybe shown separately), with a separate count of reviews and students,
             plus average ratings, top skills, and shared notes. It does not show
-            names. Pay is shown only as a range, and only when 2 different students
-            in that group reported pay. A written note appears only if you ticked
+            names. Pay is shown only as the lowest and highest figures, and only when
+            at least 3 different students in that group reported pay. A written note appears only if you ticked
             the share box for that note. The box is off until you type something. A
             threshold of two is a minimum, not a guarantee of anonymity: with
             only two students, each one may be able to work out what the other

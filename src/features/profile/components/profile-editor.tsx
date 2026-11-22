@@ -22,7 +22,6 @@ export type ProfileEditorValues = {
   major: MajorPickerValue;
   exploringMajors: boolean;
   year: string;
-  coopTrack: string;
   goal: string;
   goalNotes: string;
   location: LocationValue;
@@ -85,7 +84,6 @@ export function ProfileEditor({
     const result = await sendJson(ROUTES.profileUpdate, "PUT", {
       school: form.school.trim(),
       year: Number(form.year),
-      coopTrack: form.coopTrack.trim(),
       goal: form.goal,
       goalNotes: form.goalNotes.trim(),
       ...locationPayload(form.location),
@@ -133,9 +131,6 @@ export function ProfileEditor({
           ) : null}
           <Field label="Year" htmlFor="year" error={fieldErrors.year}>
             <Select id="year" name="year" value={form.year} options={YEAR_OPTIONS} placeholder="Select your year" disabled={pending} onChange={(value) => update("year", value)} />
-          </Field>
-          <Field label="Co-op track" htmlFor="coopTrack" hint="Optional" error={fieldErrors.coopTrack}>
-            <TextInput id="coopTrack" name="coopTrack" value={form.coopTrack} maxLength={40} disabled={pending} onChange={(event) => update("coopTrack", event.target.value)} />
           </Field>
         </div>
       </Card>

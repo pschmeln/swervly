@@ -63,7 +63,6 @@ export default async function OnboardingPage({
           major: selectionFromStored(user),
           exploringMajors: user.exploringMajors,
           year: user.year == null ? "" : String(user.year),
-          coopTrack: user.coopTrack ?? "",
           goal: profile?.goal ?? "",
           goalNotes: profile?.goalNotes ?? "",
           location: locationValueFrom(profile),

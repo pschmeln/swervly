@@ -10,7 +10,6 @@ export const ProfileInput = z.object({
   school: z.string().trim().min(2).max(120),
   major: z.enum(MAJORS),
   year: z.int().min(1).max(5),
-  coopTrack: z.string().max(40).optional(),
   goal: z.enum(["industry", "grad_school", "undecided"]),
   goalNotes: z.string().max(500).optional(),
   // Location (item 3). A home city and radius are required unless openToAnywhere;

@@ -1,5 +1,7 @@
 import type { Trait } from "@/content/mini-ipip";
 import { Button, Card } from "@/components/ui";
+import type { ChosenDirection } from "@/features/direction/chosen";
+import { ChosenDirectionLine } from "@/features/direction/components/chosen-direction";
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { CycleGraphic } from "@/features/home/cycle-graphic";
 import type { User } from "@/db/schema";
@@ -19,6 +21,8 @@ export type HomeHubProps = {
   /** Top career suggestions, already ranked (Interested first). */
   suggestions: { roleType: string; roleLabel: string; reason: string }[];
   interested: { roleType: string; label: string }[];
+  /** The career map node the student chose. Undefined hides the line (career map off). */
+  chosen?: ChosenDirection | null;
 };
 
 /** "Electrical Engineering · Year 3" for the profile window. */
@@ -123,7 +127,7 @@ function ProfileWindow({ quizDone, canReview, majorLine, traits }: HomeHubProps)
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-ink-3">Exploratory readings from your quiz, not a test score.</p>
+          <p className="mt-3 text-xs text-ink-3">What your quiz says about how you work.</p>
         </>
       ) : (
         <div className="mt-4">
@@ -137,7 +141,7 @@ function ProfileWindow({ quizDone, canReview, majorLine, traits }: HomeHubProps)
   );
 }
 
-function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, interested }: HomeHubProps) {
+function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, interested, chosen }: HomeHubProps) {
   const top = suggestions.slice(0, 3);
   const interestedIds = new Set(interested.map((item) => item.roleType));
   const reviewLine =
@@ -150,6 +154,7 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
   return (
     <Card>
       <WindowHead title="Your direction" href={ROUTES.direction} linkLabel="See all" />
+      {chosen !== undefined ? <ChosenDirectionLine chosen={chosen} /> : null}
       {quizDone ? (
         <>
           <p className="mt-1 text-sm text-ink-3">Top suggestions. Mark the ones you want to explore.</p>
@@ -171,7 +176,9 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-ink-2">You dismissed the current suggestions. See all of Direction for more.</p>
+            <p className="mt-4 text-ink-2">
+              You&apos;ve said &ldquo;Not for me&rdquo; to every role Swervly can suggest right now. Open Direction to retake the quiz or browse the career map.
+            </p>
           )}
           {interested.length > 0 ? (
             <div className="mt-4">
@@ -187,7 +194,7 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
           ) : null}
         </>
       ) : (
-        <p className="mt-4 text-ink-2">Your direction appears after the quiz. It starts as a best guess and gets sharper as students review co-ops.</p>
+        <p className="mt-4 text-ink-2">Your direction appears after the quiz, and it gets sharper as more students review co-ops.</p>
       )}
       <div className="mt-5 border-t border-neutral-100 pt-4">
         <p className="text-sm text-ink-2">{reviewLine}</p>

@@ -11,6 +11,8 @@ export type ExploreDirection = {
   headline: string;
   note: string;
   needsQuiz: boolean;
+  /** Every suggestion was dismissed: offer Retake the quiz and Browse the career map. */
+  exhausted?: boolean;
 };
 
 export type CareerPath = {

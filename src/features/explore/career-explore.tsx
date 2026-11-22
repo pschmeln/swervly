@@ -131,6 +131,16 @@ function DirectionSection({ model }: { model: ExploreModel }) {
             </Button>
           </div>
         ) : null}
+        {model.direction.exhausted ? (
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
+              Retake the quiz
+            </Button>
+            <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
+              Browse the career map
+            </Button>
+          </div>
+        ) : null}
       </Card>
     </section>
   );

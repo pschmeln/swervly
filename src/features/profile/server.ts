@@ -109,7 +109,6 @@ export async function saveProfile(
     custom_major_text = ${write.customMajorText},
     exploring_majors = ${write.exploringMajors},
     year = ${input.year},
-    coop_track = ${input.coopTrack ?? null},
     consent_data_use_at = coalesce(consent_data_use_at, now()),
     updated_at = now()
     ${privacyPolicySql()}

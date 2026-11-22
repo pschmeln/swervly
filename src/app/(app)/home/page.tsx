@@ -3,6 +3,8 @@ import { INSTRUMENT } from "@/content/mini-ipip";
 import { db } from "@/db";
 import { assessments, rotations } from "@/db/schema";
 import { careerRoleLabel } from "@/features/direction/career-roles";
+import { loadChosenDirection } from "@/features/direction/chosen";
+import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { loadDirection } from "@/features/direction/server";
 import { HomeHub, homeTraits, majorLine } from "@/features/home/hub";
 import { requireUser } from "@/lib/auth";
@@ -23,7 +25,10 @@ export default async function HomePage() {
   const rotationCount = Number(countRows[0]?.value ?? 0);
   const quizDone = assessmentRows[0]?.instrument === INSTRUMENT;
   const canReview = user.onboardedAt != null;
-  const direction = quizDone ? await loadDirection(user) : null;
+  const [direction, chosen] = await Promise.all([
+    quizDone ? loadDirection(user) : Promise.resolve(null),
+    loadChosenDirection(user.id),
+  ]);
 
   return (
     <HomeHub
@@ -34,6 +39,7 @@ export default async function HomePage() {
       traits={direction ? homeTraits(direction.traits, direction.readings) : []}
       suggestions={direction?.suggestions ?? []}
       interested={(direction?.interestedRoles ?? []).map((roleType) => ({ roleType, label: careerRoleLabel(roleType) }))}
+      chosen={atlasPrototypeEnabled() ? chosen : undefined}
     />
   );
 }
