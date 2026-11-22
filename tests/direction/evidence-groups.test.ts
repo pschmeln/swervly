@@ -78,12 +78,15 @@ describe("co-op role types for every major", () => {
     expect(sql).toContain('DROP CONSTRAINT "rotations_role_type"');
   });
 
-  it("is the last migration in the journal", () => {
+  it("is in the journal, after 0007, in time order", () => {
     const journal = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as {
       entries: { tag: string; when: number }[];
     };
-    const last = journal.entries.at(-1);
-    expect(last?.tag).toBe("0008_role_types_all_majors");
-    expect((last?.when ?? 0) > (journal.entries.at(-2)?.when ?? 0)).toBe(true);
+    const index = journal.entries.findIndex((entry) => entry.tag === "0008_role_types_all_majors");
+    expect(index).toBeGreaterThan(0);
+    expect(journal.entries[index - 1]?.tag.startsWith("0007_")).toBe(true);
+    for (let i = 1; i < journal.entries.length; i += 1) {
+      expect(journal.entries[i]!.when > journal.entries[i - 1]!.when).toBe(true);
+    }
   });
 });

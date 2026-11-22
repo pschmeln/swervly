@@ -65,6 +65,8 @@ export type CompanyCardModel = {
   experienceCount: number;
   careersUrl: string | null;
   linkCheckedOn: string | null;
+  /** "Headquartered within N miles of City, ST" when inside the student's area (item 3). */
+  nearby?: string | null;
 };
 
 export type FounderPreview = "hidden_on_screen" | "left_visible_on_screen";

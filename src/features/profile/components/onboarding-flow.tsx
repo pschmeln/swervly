@@ -17,6 +17,13 @@ import {
   TextInput,
 } from "@/components/ui";
 import { INSTRUMENT, QUIZ_EXPLORATORY_DISCLAIMER, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
+import {
+  LOCATION_KEYS,
+  LocationFields,
+  locationErrors,
+  locationPayload,
+  type LocationValue,
+} from "@/features/location/components/location-fields";
 import { MajorPicker } from "@/features/majors/components/major-picker";
 import type { MajorSearchContext } from "@/features/majors/catalog";
 import { isSelectableCatalogName, ProfileWriteInput, type MajorPickerValue } from "@/features/majors/selection";
@@ -24,13 +31,13 @@ import { SHARE_REVIEWS_CONSENT_LABEL } from "@/features/privacy/share-consent";
 import { AssessmentInput } from "@/features/profile/schemas";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
-import { GOAL_OPTIONS, LOCATION_OPTIONS, YEAR_OPTIONS } from "./options";
+import { GOAL_OPTIONS, YEAR_OPTIONS } from "./options";
 
 const PAGE_SIZE = 5;
 const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
 
 export const DATA_USE_CONSENT_LABEL =
-  "I agree that my answers and co-op reviews are stored so Swervly can show my profile and reviews to me, and so the founders can operate the service.";
+  "I agree that my profile (including where I want to work), quiz answers and co-op reviews are stored so Swervly can show them to me, match me with roles, list companies in my area first, and so the founders can operate the service.";
 
 export { SHARE_REVIEWS_CONSENT_LABEL };
 
@@ -46,7 +53,6 @@ const FIELD_COPY: Record<string, string> = {
   coopTrack: "Use 40 characters or fewer.",
   goal: "Select a goal.",
   goalNotes: "Use 500 characters or fewer.",
-  locationConstraint: "Select a location constraint.",
   constraintsNotes: "Use 500 characters or fewer.",
 };
 
@@ -77,7 +83,7 @@ export type OnboardingDefaults = {
   coopTrack: string;
   goal: string;
   goalNotes: string;
-  locationConstraint: string;
+  location: LocationValue;
   constraintsNotes: string;
 };
 
@@ -105,7 +111,7 @@ function profilePayload(state: OnboardingDefaults): unknown {
     coopTrack: state.coopTrack.trim(),
     goal: state.goal,
     goalNotes: state.goalNotes.trim(),
-    locationConstraint: state.locationConstraint,
+    ...locationPayload(state.location),
     constraintsNotes: state.constraintsNotes.trim(),
     consentPrivacy: state.consentPrivacy,
     consentDataUse: state.consentDataUse,
@@ -141,7 +147,7 @@ function stepForFields(fields: Record<string, string>): Step | null {
   if (keys.some((key) => STEP_ONE_KEYS.has(key))) return 1;
   if (
     keys.some((key) =>
-      ["goal", "goalNotes", "locationConstraint", "constraintsNotes"].includes(key),
+      ["goal", "goalNotes", "constraintsNotes", ...LOCATION_KEYS].includes(key),
     )
   ) {
     return 2;
@@ -193,6 +199,11 @@ export function OnboardingFlow({
     setFieldErrors((current) => clearKey(current, key));
   }
 
+  function updateLocation(location: LocationValue) {
+    setForm((current) => ({ ...current, location }));
+    setFieldErrors((current) => LOCATION_KEYS.reduce(clearKey, current));
+  }
+
   function showFields(fields: Record<string, string>) {
     setFieldErrors(fields);
     const nextStep = stepForFields(fields);
@@ -225,6 +236,12 @@ export function OnboardingFlow({
     event.preventDefault();
     if (pendingRef.current) return;
 
+    const missingLocation = locationErrors(form.location);
+    if (Object.keys(missingLocation).length > 0) {
+      setFormError(null);
+      showFields(missingLocation);
+      return;
+    }
     const parsed = ProfileWriteInput.safeParse(profilePayload(form));
     if (!parsed.success) {
       setFormError(null);
@@ -439,7 +456,7 @@ export function OnboardingFlow({
 
         {step === 2 ? (
           <form className="grid gap-4" noValidate onSubmit={(event) => void onGoalsSubmit(event)}>
-            <h2 className="text-lg font-semibold">Goals</h2>
+            <h2 className="text-lg font-semibold">Goals and location</h2>
             <Field label="Goal" htmlFor="goal" error={fieldErrors.goal}>
               <Select
                 id="goal"
@@ -461,21 +478,12 @@ export function OnboardingFlow({
                 onChange={(event) => update("goalNotes", event.target.value)}
               />
             </Field>
-            <Field
-              label="Location constraint"
-              htmlFor="locationConstraint"
-              error={fieldErrors.locationConstraint}
-            >
-              <Select
-                id="locationConstraint"
-                name="locationConstraint"
-                value={form.locationConstraint}
-                onChange={(value) => update("locationConstraint", value)}
-                options={LOCATION_OPTIONS}
-                placeholder="Select a location constraint"
-                disabled={pending}
-              />
-            </Field>
+            <LocationFields
+              value={form.location}
+              onChange={updateLocation}
+              errors={fieldErrors}
+              disabled={pending}
+            />
             <Field
               label="Other constraints"
               htmlFor="constraintsNotes"

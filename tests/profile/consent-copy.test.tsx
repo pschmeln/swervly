@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { EMPTY_LOCATION, locationPayload } from "@/features/location/components/location-fields";
 import { describe, expect, it, vi } from "vitest";
 import {
   DATA_USE_CONSENT_LABEL,
@@ -26,7 +27,7 @@ const blankDefaults: OnboardingDefaults = {
   coopTrack: "",
   goal: "",
   goalNotes: "",
-  locationConstraint: "",
+  location: EMPTY_LOCATION,
   constraintsNotes: "",
 };
 
@@ -41,7 +42,7 @@ const readyWithoutShare: OnboardingDefaults = {
   coopTrack: "",
   goal: "industry",
   goalNotes: "",
-  locationConstraint: "anywhere",
+  location: { ...EMPTY_LOCATION, openToAnywhere: true },
   constraintsNotes: "",
 };
 
@@ -84,7 +85,7 @@ describe("optional share-reviews consent", () => {
       major: MAJORS[0],
       year: Number(readyWithoutShare.year),
       goal: readyWithoutShare.goal,
-      locationConstraint: readyWithoutShare.locationConstraint,
+      ...locationPayload(readyWithoutShare.location),
       consentPrivacy: true,
       consentDataUse: true,
       consentShareReviews: false,

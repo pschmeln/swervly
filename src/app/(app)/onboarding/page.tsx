@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
+import { locationValueFrom } from "@/features/location/components/location-fields";
 import { OnboardingFlow } from "@/features/profile/components/onboarding-flow";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { suggestSchoolFromEmail } from "@/features/profile/school";
@@ -33,8 +34,12 @@ export default async function OnboardingPage({
       school: profiles.school,
       goal: profiles.goal,
       goalNotes: profiles.goalNotes,
-      locationConstraint: profiles.locationConstraint,
       constraintsNotes: profiles.constraintsNotes,
+      homePlaceGeoid: profiles.homePlaceGeoid,
+      homeLabel: profiles.homeLabel,
+      radiusMiles: profiles.radiusMiles,
+      openToAnywhere: profiles.openToAnywhere,
+      openToRemote: profiles.openToRemote,
     })
     .from(profiles)
     .where(eq(profiles.userId, user.id))
@@ -61,7 +66,7 @@ export default async function OnboardingPage({
           coopTrack: user.coopTrack ?? "",
           goal: profile?.goal ?? "",
           goalNotes: profile?.goalNotes ?? "",
-          locationConstraint: profile?.locationConstraint ?? "",
+          location: locationValueFrom(profile),
           constraintsNotes: profile?.constraintsNotes ?? "",
         }}
       />

@@ -32,6 +32,7 @@ const FIELD_CONTROL_IDS: readonly { keys: readonly string[]; id: string }[] = [
   { keys: ["termYear"], id: "termYear" },
   { keys: ["rotationNumber"], id: "rotationNumber" },
   { keys: ["payHourly"], id: "payHourly" },
+  { keys: ["workPlaceGeoid"], id: "workPlaceGeoid" },
   { keys: ["wouldReturn"], id: "wouldReturn" },
   { keys: ["roleType"], id: "roleType" },
   { keys: ["enjoyment", "review.enjoyment"], id: "enjoyment-1" },

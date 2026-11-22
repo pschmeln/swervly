@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { PlaceGeoid } from "@/features/location/schemas";
 import { ROLE_TYPE_VALUES } from "@/features/review/roles";
 import { WOULD_RETURN_VALUES } from "@/features/review/would-return";
 import { MAX_ROTATIONS } from "@/lib/constants";
@@ -59,6 +60,8 @@ export const RotationInput = z
       })
       .optional(),
     wouldReturn: z.enum(WOULD_RETURN_VALUES, { error: "Choose yes, maybe, or no." }),
+    // Optional city where the co-op was (D7). Resolved to a Census place on the server.
+    workPlaceGeoid: PlaceGeoid.nullable().optional(),
     review: ReviewFields,
   })
   .transform((input) => {

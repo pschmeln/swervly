@@ -38,7 +38,7 @@ describeDb("phase 2 postgres consistency", () => {
       school: "Fixture University",
       year: 3,
       goal,
-      locationConstraint: "anywhere" as const,
+      openToAnywhere: true, openToRemote: false,
       consentPrivacy: true as const,
       consentDataUse: true as const,
       majorSelection: { source: "custom" as const, name: customName },
@@ -64,7 +64,8 @@ describeDb("phase 2 postgres consistency", () => {
     await db.insert(profiles).values({
       userId,
       goal: "industry",
-      locationConstraint: "anywhere",
+      openToAnywhere: true,
+      openToRemote: false,
     });
     const submissionId = randomUUID();
     await db.insert(majorSubmissions).values({
@@ -169,7 +170,8 @@ describeDb("phase 2 postgres consistency", () => {
         school: "Fixture University",
         year: 3,
         goal: "grad_school",
-        locationConstraint: "anywhere",
+        openToAnywhere: true,
+        openToRemote: false,
         consentPrivacy: true,
         consentDataUse: true,
         majorSelection: { source: "catalog", name: "Biology" },

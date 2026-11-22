@@ -1,4 +1,6 @@
 import { and, asc, eq, inArray, or } from "drizzle-orm";
+import { placeByGeoid } from "@/features/location/places";
+import { resolveWorkPlace } from "@/features/location/write";
 import { SKILLS } from "@/content/skills";
 import { db } from "@/db";
 import { employers, reviews, rotations, skills, type Employer } from "@/db/schema";
@@ -31,6 +33,8 @@ export type RotationWithDetails = {
   payHourly: string | null;
   roleType: string;
   wouldReturn: string;
+  workPlaceGeoid: string | null;
+  workLabel: string | null;
   source: string;
   createdAt: Date;
   updatedAt: Date;
@@ -277,6 +281,12 @@ async function requireOwnedRotation(userId: string, rotationId: string) {
   return row;
 }
 
+function workPlaceOrThrow(geoid: string | null | undefined) {
+  const work = resolveWorkPlace(geoid, placeByGeoid);
+  if (!work.ok) throw new ApiError(400, "invalid_body", "Check the fields below and try again.", work.fields);
+  return work;
+}
+
 function mapRotationRow(row: {
   rotation: typeof rotations.$inferSelect;
   employerId: string;
@@ -336,6 +346,7 @@ export async function createRotation(
 ): Promise<RotationWithDetails> {
   await requireVisibleEmployer(userId, input.employerId);
   await assertSkillsAllowed(userId, input.review.skillsUsed);
+  const work = workPlaceOrThrow(input.workPlaceGeoid);
 
   const rotationId = crypto.randomUUID();
   const reviewId = crypto.randomUUID();
@@ -354,6 +365,8 @@ export async function createRotation(
         rotationNumber: input.rotationNumber,
         payHourly: payHourlyToDb(input.payHourly),
         wouldReturn: input.wouldReturn,
+        workPlaceGeoid: work.geoid,
+        workLabel: work.label,
         source: DATA_SOURCE,
         createdAt: now,
         updatedAt: now,
@@ -397,6 +410,7 @@ export async function updateRotation(
   await requireOwnedRotation(userId, rotationId);
   await requireVisibleEmployer(userId, input.employerId);
   await assertSkillsAllowed(userId, input.review.skillsUsed);
+  const work = workPlaceOrThrow(input.workPlaceGeoid);
 
   const now = new Date();
 
@@ -413,6 +427,8 @@ export async function updateRotation(
           rotationNumber: input.rotationNumber,
           payHourly: payHourlyToDb(input.payHourly),
           wouldReturn: input.wouldReturn,
+          workPlaceGeoid: work.geoid,
+          workLabel: work.label,
           updatedAt: now,
         })
         .where(and(eq(rotations.id, rotationId), eq(rotations.userId, userId))),

@@ -629,6 +629,7 @@ function CompanyCard({
       </p>
       <h4 className="mt-3 text-sm font-medium text-neutral-900">Why this company is shown</h4>
       <p className="break-words text-neutral-800">{company.whyShown}</p>
+      {company.nearby ? <p className="mt-1 break-words font-medium text-emerald-800">{company.nearby}</p> : null}
       <h4 className="mt-3 text-sm font-medium text-neutral-900">Student experiences</h4>
       <p className="text-neutral-800">{DIRECTORY_EXPERIENCE_LINE}</p>
       <h4 className="mt-3 text-sm font-medium text-neutral-900">Official careers page</h4>

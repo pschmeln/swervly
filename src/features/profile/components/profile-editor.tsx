@@ -3,12 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Checkbox, ErrorNote, Field, Select, Textarea, TextInput } from "@/components/ui";
+import {
+  LOCATION_KEYS,
+  LocationFields,
+  locationErrors,
+  locationPayload,
+  type LocationValue,
+} from "@/features/location/components/location-fields";
 import { MajorPicker } from "@/features/majors/components/major-picker";
 import type { MajorSearchContext } from "@/features/majors/catalog";
 import type { MajorPickerValue } from "@/features/majors/selection";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
-import { GOAL_OPTIONS, LOCATION_OPTIONS, YEAR_OPTIONS } from "./options";
+import { GOAL_OPTIONS, YEAR_OPTIONS } from "./options";
 
 export type ProfileEditorValues = {
   school: string;
@@ -18,7 +25,7 @@ export type ProfileEditorValues = {
   coopTrack: string;
   goal: string;
   goalNotes: string;
-  locationConstraint: string;
+  location: LocationValue;
   constraintsNotes: string;
 };
 
@@ -47,9 +54,25 @@ export function ProfileEditor({
     });
   }
 
+  function updateLocation(location: LocationValue) {
+    setForm((current) => ({ ...current, location }));
+    setSaved(false);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      for (const key of LOCATION_KEYS) delete next[key];
+      return next;
+    });
+  }
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (pending) return;
+    const missingLocation = locationErrors(form.location);
+    if (Object.keys(missingLocation).length > 0) {
+      setFieldErrors(missingLocation);
+      setError("Check the fields below and try again.");
+      return;
+    }
     setPending(true);
     setError(null);
     setFieldErrors({});
@@ -65,7 +88,7 @@ export function ProfileEditor({
       coopTrack: form.coopTrack.trim(),
       goal: form.goal,
       goalNotes: form.goalNotes.trim(),
-      locationConstraint: form.locationConstraint,
+      ...locationPayload(form.location),
       constraintsNotes: form.constraintsNotes.trim(),
       consentPrivacy: true,
       consentDataUse: true,
@@ -117,7 +140,7 @@ export function ProfileEditor({
         </div>
       </Card>
       <Card>
-        <h2 className="text-lg font-semibold">Goals</h2>
+        <h2 className="text-lg font-semibold">Goals and location</h2>
         <div className="mt-4 grid gap-4">
           <Field label="Goal" htmlFor="goal" error={fieldErrors.goal}>
             <Select id="goal" name="goal" value={form.goal} options={GOAL_OPTIONS} placeholder="Select a goal" disabled={pending} onChange={(value) => update("goal", value)} />
@@ -125,9 +148,7 @@ export function ProfileEditor({
           <Field label="Goal notes" htmlFor="goalNotes" hint="Optional" error={fieldErrors.goalNotes}>
             <Textarea id="goalNotes" name="goalNotes" value={form.goalNotes} maxLength={500} disabled={pending} onChange={(event) => update("goalNotes", event.target.value)} />
           </Field>
-          <Field label="Location constraint" htmlFor="locationConstraint" error={fieldErrors.locationConstraint}>
-            <Select id="locationConstraint" name="locationConstraint" value={form.locationConstraint} options={LOCATION_OPTIONS} placeholder="Select a location constraint" disabled={pending} onChange={(value) => update("locationConstraint", value)} />
-          </Field>
+          <LocationFields value={form.location} onChange={updateLocation} errors={fieldErrors} disabled={pending} />
           <Field label="Other constraints" htmlFor="constraintsNotes" hint="Optional" error={fieldErrors.constraintsNotes}>
             <Textarea id="constraintsNotes" name="constraintsNotes" value={form.constraintsNotes} maxLength={500} disabled={pending} onChange={(event) => update("constraintsNotes", event.target.value)} />
           </Field>

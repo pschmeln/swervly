@@ -1,5 +1,6 @@
 "use client";
 
+import { rankByHomeArea, type HomeArea } from "@/features/location/area";
 import { useMemo, useState } from "react";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { ONET_CREDIT } from "@/content/atlas/occupations";
@@ -113,6 +114,7 @@ export function AtlasExplorer({
   initialAnswers = {},
   initialCompare = [],
   saved,
+  homeArea = null,
 }: {
   entry: AtlasEntry;
   /** Direction role ids the student dismissed. Read only. */
@@ -129,6 +131,8 @@ export function AtlasExplorer({
   initialCompare?: AtlasNodeId[];
   /** Choices saved to the account. When absent or unavailable, nothing is saved. */
   saved?: InitialSaved;
+  /** Home city and radius: organizations headquartered inside it are listed first. */
+  homeArea?: HomeArea | null;
 }) {
   const persist = saved?.available === true;
   const graph = atlasGraph();
@@ -175,7 +179,10 @@ export function AtlasExplorer({
     () => (compare.length === 2 ? compareModel(graph, compare[0], compare[1]) : null),
     [graph, compare],
   );
-  const companies = useMemo(() => (current ? companiesFor(graph, current) : []), [graph, current]);
+  const companies = useMemo(
+    () => rankByHomeArea(current ? companiesFor(graph, current) : [], homeArea),
+    [graph, current, homeArea],
+  );
 
   function toggleCompare(id: AtlasNodeId) {
     setCompare((list) => (list.includes(id) ? list.filter((item) => item !== id) : [...list, id].slice(-2)));
@@ -500,6 +507,7 @@ export function AtlasExplorer({
                   <li key={company.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
                     <p className="font-medium text-neutral-900">{company.name}</p>
                     <p className="text-sm text-neutral-600">{company.field} · Listed under {company.areas.join(" and ")}</p>
+                    {company.nearby ? <p className="mt-1 text-sm font-medium text-emerald-800">{company.nearby}</p> : null}
                     {company.careersUrl ? (
                       <p className="mt-1 text-sm">
                         <a href={company.careersUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-sky-800 underline">
