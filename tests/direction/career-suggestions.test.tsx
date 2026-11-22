@@ -6,8 +6,11 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
 import { CareerSuggestions, type CareerSuggestionView } from "@/features/direction/components/career-suggestions";
 import {
   beginDismiss,
+  DISMISS_FAILED_MESSAGE,
   DISMISS_GATE_IDLE,
+  DISMISS_UNKNOWN_MESSAGE,
   failDismiss,
+  outcomeAfterPost,
   succeedDismissAwaitingRefresh,
 } from "@/features/direction/components/dismiss-gate";
 import {
@@ -133,5 +136,16 @@ describe("dismiss lifecycle (delayed / failed / serialized)", () => {
     const afterFail = failDismiss(beginDismiss(DISMISS_GATE_IDLE, software.roleType)!);
     expect(afterFail).toEqual(DISMISS_GATE_IDLE);
     expect(beginDismiss(afterFail, software.roleType)?.activeRole).toBe(software.roleType);
+  });
+
+  it("confirmed fail and unknown never request a page refresh", () => {
+    expect(outcomeAfterPost("failed", null).refresh).toBe(false);
+    expect(outcomeAfterPost("timeout", "unknown").refresh).toBe(false);
+    expect(outcomeAfterPost("timeout", "not_dismissed").refresh).toBe(false);
+  });
+
+  it("exposes card-adjacent copy for fail vs unknown", () => {
+    expect(DISMISS_FAILED_MESSAGE).toContain("Couldn't save");
+    expect(DISMISS_UNKNOWN_MESSAGE).toContain("Couldn't confirm whether that saved");
   });
 });

@@ -1,11 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   beginDismiss,
   claimFlight,
   DISMISS_FETCH_TIMEOUT_MS,
   DISMISS_GATE_IDLE,
   failDismiss,
+  outcomeAfterPost,
   postDismissRole,
+  reconcileDismissedRole,
   succeedDismissAwaitingRefresh,
 } from "@/features/direction/components/dismiss-gate";
 import { buildDirection } from "@/features/direction/rules";
@@ -18,6 +20,16 @@ const curious: TraitScores = {
   neuroticism: 10,
   openness: 18,
 };
+
+function meResponse(dismissed: string[]) {
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      data: { user: { dismissedCareerRoles: dismissed }, profile: null },
+    }),
+    { status: 200 },
+  );
+}
 
 describe("dismiss gate (serialize Not for me)", () => {
   it("allows only one in-flight dismiss; rapid seconds are rejected", () => {
@@ -97,8 +109,20 @@ describe("dismiss gate (serialize Not for me)", () => {
   });
 });
 
-describe("postDismissRole (offline / timeout / recovery)", () => {
-  it("offline failure → unlock → reconnect retry starts a fresh POST", async () => {
+describe("Allen tests 1–6: offline / timeout / reconcile / late / exhausted", () => {
+  it("1. offline POST failure does not call for a refresh (outcome.refresh false)", async () => {
+    const offlineFetch: typeof fetch = async () => {
+      throw new TypeError("Failed to fetch");
+    };
+    const post = await postDismissRole("software", {
+      url: "/api/direction/dismiss",
+      fetchImpl: offlineFetch,
+    });
+    expect(post).toBe("failed");
+    expect(outcomeAfterPost(post, null)).toEqual({ kind: "failed", refresh: false });
+  });
+
+  it("2. offline → unlock → online retry starts a fresh POST", async () => {
     const calls: string[] = [];
     let flight: string | null = null;
 
@@ -111,7 +135,6 @@ describe("postDismissRole (offline / timeout / recovery)", () => {
       return new Response(JSON.stringify({ roleType: "software" }), { status: 200 });
     };
 
-    // Attempt 1 (offline): claim, POST fails, release.
     expect(claimFlight(flight, "software")).toBe("software");
     flight = "software";
     expect(await postDismissRole("software", { url: "/api/direction/dismiss", fetchImpl: offlineFetch })).toBe(
@@ -119,13 +142,99 @@ describe("postDismissRole (offline / timeout / recovery)", () => {
     );
     flight = null;
 
-    // Attempt 2 (online): new claim must succeed and POST must run.
     expect(claimFlight(flight, "software")).toBe("software");
     flight = "software";
     expect(await postDismissRole("software", { url: "/api/direction/dismiss", fetchImpl: onlineFetch })).toBe("ok");
     expect(calls).toEqual(["offline", "online"]);
+    expect(outcomeAfterPost("ok", null).refresh).toBe(true);
   });
 
+  it("3. timeout with server persistence already completed → ok + refresh after reconcile", async () => {
+    expect(outcomeAfterPost("timeout", "dismissed")).toEqual({ kind: "ok", refresh: true });
+    expect(
+      await reconcileDismissedRole("software", {
+        url: "/api/me",
+        fetchImpl: async () => meResponse(["software", "design"]),
+      }),
+    ).toBe("dismissed");
+  });
+
+  it("4. timeout with no server persistence → confirmed fail, no refresh", async () => {
+    expect(outcomeAfterPost("timeout", "not_dismissed")).toEqual({ kind: "failed", refresh: false });
+    expect(
+      await reconcileDismissedRole("software", {
+        url: "/api/me",
+        fetchImpl: async () => meResponse(["design"]),
+      }),
+    ).toBe("not_dismissed");
+  });
+
+  it("5. late responses after timeout stay serialized; reconcile unknown is safe", async () => {
+    const late = { resolve: (_value: Response) => {} };
+    const lateFetch: typeof fetch = () =>
+      new Promise((resolve) => {
+        late.resolve = resolve;
+      });
+
+    const pending = postDismissRole("field_site", {
+      url: "/api/direction/dismiss",
+      fetchImpl: lateFetch,
+      timeoutMs: 30,
+    });
+    await expect(pending).resolves.toBe("timeout");
+    late.resolve(new Response("{}", { status: 200 }));
+
+    expect(outcomeAfterPost("timeout", "unknown")).toEqual({ kind: "unknown", refresh: false });
+    expect(
+      await reconcileDismissedRole("field_site", {
+        url: "/api/me",
+        fetchImpl: async () => {
+          throw new TypeError("Failed to fetch");
+        },
+      }),
+    ).toBe("unknown");
+
+    let flight: string | null = null;
+    flight = claimFlight(flight, "field_site");
+    expect(flight).toBe("field_site");
+    expect(claimFlight(flight, "research")).toBeNull();
+  });
+
+  it("6. repeated dismissal requests and exhausted-state correctness", () => {
+    const context = { traits: curious, major: "Computer Science", goal: "industry" as const };
+    const allRoles = [
+      "design",
+      "test_validation",
+      "manufacturing_process",
+      "software",
+      "data_analytics",
+      "research",
+      "field_site",
+    ];
+    let dismissed: string[] = [];
+    let gate = DISMISS_GATE_IDLE;
+
+    for (let round = 0; round < 20 && !buildDirection(context, [], dismissed).exhausted; round++) {
+      const list = buildDirection(context, [], dismissed).suggestions;
+      expect(list.length).toBeGreaterThan(0);
+      const role = list[0].roleType;
+      const next = beginDismiss(gate, role);
+      expect(next).not.toBeNull();
+      // Server appends with Set — re-dismiss of same role would not grow the list (idempotent shape).
+      dismissed = [...new Set([...dismissed, role])];
+      gate = DISMISS_GATE_IDLE;
+    }
+
+    const done = buildDirection(context, [], dismissed);
+    expect(done.exhausted).toBe(true);
+    expect(done.suggestions).toEqual([]);
+    expect(dismissed.every((role) => allRoles.includes(role))).toBe(true);
+    // No duplicates from repeated dismiss of the same role.
+    expect(new Set(dismissed).size).toBe(dismissed.length);
+  });
+});
+
+describe("postDismissRole hang / HTTP", () => {
   it("token/network hang times out and releases for retry", async () => {
     const hungFetch: typeof fetch = (_input, init) =>
       new Promise((_resolve, reject) => {
@@ -144,33 +253,7 @@ describe("postDismissRole (offline / timeout / recovery)", () => {
     });
     expect(result).toBe("timeout");
     expect(Date.now() - started).toBeLessThan(DISMISS_FETCH_TIMEOUT_MS);
-    // After timeout the UI unlocks; a new claim works.
     expect(claimFlight(null, "design")).toBe("design");
-  });
-
-  it("late success after a prior timeout is treated as a separate attempt (serialize)", async () => {
-    const late = {
-      resolve: (_value: Response) => {},
-    };
-    const lateFetch: typeof fetch = () =>
-      new Promise((resolve) => {
-        late.resolve = resolve;
-      });
-
-    const pending = postDismissRole("field_site", {
-      url: "/api/direction/dismiss",
-      fetchImpl: lateFetch,
-      timeoutMs: 30,
-    });
-    // Timed out while still in flight on the wire — UI unlocks; do not start a concurrent dismiss.
-    await expect(pending).resolves.toBe("timeout");
-    // Late response arrives afterward (ignored by the timed-out attempt).
-    late.resolve(new Response("{}", { status: 200 }));
-    // Student may retry only after unlock; still one at a time.
-    let flight: string | null = null;
-    flight = claimFlight(flight, "field_site");
-    expect(flight).toBe("field_site");
-    expect(claimFlight(flight, "research")).toBeNull();
   });
 
   it("HTTP error fails without leaving the slot claimed in the helper", async () => {

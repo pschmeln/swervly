@@ -8,10 +8,14 @@ import { familiesForRole } from "@/features/atlas/compat";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import {
   claimFlight,
+  DISMISS_FAILED_MESSAGE,
   DISMISS_GATE_IDLE,
   DISMISS_REFRESH_UNLOCK_MS,
+  DISMISS_UNKNOWN_MESSAGE,
   failDismiss,
+  outcomeAfterPost,
   postDismissRole,
+  reconcileDismissedRole,
   succeedDismissAwaitingRefresh,
   type DismissGate,
 } from "@/features/direction/components/dismiss-gate";
@@ -39,9 +43,12 @@ type CareerSuggestionsProps = {
   children?: ReactNode;
 };
 
+type DismissError = { roleType: string; kind: "failed" | "unknown" };
+
 /**
  * Direction label + career cards. Dismisses are serialized: one Not for me at a time,
- * list updates only from server props after refresh (remount via parent `key`).
+ * list updates only from server props after refresh (remount via parent `key`) on confirmed ok.
+ * Confirmed failures stay in-page (no refresh/nav). Timeouts reconcile via GET before claiming fail.
  */
 export function CareerSuggestions({
   initialLabel,
@@ -54,10 +61,12 @@ export function CareerSuggestions({
 }: CareerSuggestionsProps) {
   const router = useRouter();
   const [gate, setGate] = useState<DismissGate>(DISMISS_GATE_IDLE);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<DismissError | null>(null);
   /** Sync lock — claim here, not inside setState, so a retry always starts a fresh fetch. */
   const flightRef = useRef<string | null>(null);
   const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Generation so a timed-out attempt cannot refresh/navigate after unlock. */
+  const attemptIdRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -73,9 +82,11 @@ export function CareerSuggestions({
     if (!claimed) return;
     // Assign the ref immediately (before any await/setState) so a second tap cannot start.
     flightRef.current = claimed;
+    attemptIdRef.current += 1;
+    const attemptId = attemptIdRef.current;
     setGate({ activeRole: claimed });
-    setError(false);
-    void runDismiss(claimed);
+    setError(null);
+    void runDismiss(claimed, attemptId);
   }
 
   function unlockAfterFailure() {
@@ -87,24 +98,39 @@ export function CareerSuggestions({
     setGate(failDismiss(DISMISS_GATE_IDLE));
   }
 
-  async function runDismiss(roleType: string) {
-    const result = await postDismissRole(roleType, { url: ROUTES.directionDismiss });
-    if (result === "ok") {
-      setGate((current) => succeedDismissAwaitingRefresh(current));
-      router.refresh();
-      // Stay locked until remount; unlock if refresh never remounts.
-      if (unlockTimer.current) clearTimeout(unlockTimer.current);
-      unlockTimer.current = setTimeout(() => {
-        flightRef.current = null;
-        setGate(DISMISS_GATE_IDLE);
-      }, DISMISS_REFRESH_UNLOCK_MS);
+  function lockAwaitingRefresh(attemptId: number) {
+    if (attemptId !== attemptIdRef.current) return;
+    setGate((current) => succeedDismissAwaitingRefresh(current));
+    router.refresh();
+    if (unlockTimer.current) clearTimeout(unlockTimer.current);
+    unlockTimer.current = setTimeout(() => {
+      if (attemptId !== attemptIdRef.current) return;
+      flightRef.current = null;
+      setGate(DISMISS_GATE_IDLE);
+    }, DISMISS_REFRESH_UNLOCK_MS);
+  }
+
+  async function runDismiss(roleType: string, attemptId: number) {
+    const post = await postDismissRole(roleType, { url: ROUTES.directionDismiss });
+    if (attemptId !== attemptIdRef.current) return;
+
+    let reconcile = null as Awaited<ReturnType<typeof reconcileDismissedRole>> | null;
+    if (post === "timeout") {
+      // Ambiguous: server may already have persisted. Reconcile without full-page nav.
+      reconcile = await reconcileDismissedRole(roleType, { url: ROUTES.me });
+      if (attemptId !== attemptIdRef.current) return;
+    }
+
+    const outcome = outcomeAfterPost(post, reconcile);
+    if (outcome.kind === "ok") {
+      lockAwaitingRefresh(attemptId);
       return;
     }
 
-    // Failed / timed out: release Saving, show error, refresh so a prior success is not stale.
+    // Confirmed fail or unknown: keep page + cards; in-page error; unlock. Never refresh here
+    // (offline refresh would kick Chrome's offline interstitial).
     unlockAfterFailure();
-    setError(true);
-    router.refresh();
+    setError({ roleType, kind: outcome.kind });
   }
 
   return (
@@ -145,12 +171,19 @@ export function CareerSuggestions({
                   roleType={suggestion.roleType}
                   initial={interestedRoles.includes(suggestion.roleType)}
                 />
-                <DismissSuggestion
-                  roleType={suggestion.roleType}
-                  disabled={busy}
-                  pending={gate.activeRole === suggestion.roleType}
-                  onDismiss={dismiss}
-                />
+                <div className="flex w-full flex-col gap-1 sm:w-auto">
+                  <DismissSuggestion
+                    roleType={suggestion.roleType}
+                    disabled={busy}
+                    pending={gate.activeRole === suggestion.roleType}
+                    onDismiss={dismiss}
+                  />
+                  {error?.roleType === suggestion.roleType ? (
+                    <p role="alert" className="text-sm font-medium text-red-700">
+                      {error.kind === "unknown" ? DISMISS_UNKNOWN_MESSAGE : DISMISS_FAILED_MESSAGE}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             ) : null}
             {atlasOn && familiesForRole(suggestion.roleType)[0] ? (
@@ -165,11 +198,6 @@ export function CareerSuggestions({
             ) : null}
           </Card>
         ))}
-        {error ? (
-          <p role="alert" className="text-sm font-medium text-red-700">
-            Couldn&apos;t save that. Try again.
-          </p>
-        ) : null}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button href={ROUTES.community} className="w-full sm:w-auto">
