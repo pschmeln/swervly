@@ -4,6 +4,7 @@ import {
   evidenceBackedRoles,
   MIN_DISTINCT_STUDENTS_PER_ROLE,
   MIN_MEAN_ENJOYMENT,
+  RULES_EVIDENCE_LABEL,
   suggestionsFromRules,
   traitDistance,
 } from "@/features/direction/rules";
@@ -18,7 +19,7 @@ const balanced: TraitScores = {
 };
 
 describe("direction rules", () => {
-  it("returns three labelled early hypotheses without calling a model", () => {
+  it("returns three labelled rule-based suggestions without calling a model", () => {
     const suggestions = suggestionsFromRules({
       traits: { ...balanced, openness: 18, conscientiousness: 16 },
       major: "Computer Science",
@@ -28,8 +29,7 @@ describe("direction rules", () => {
     expect(suggestions.map((item) => item.roleType)).toContain("software");
     expect(suggestions.every((item) => item.reason.length > 0)).toBe(true);
     expect(suggestions.every((item) => item.source === "rules")).toBe(true);
-    expect(suggestions.every((item) => item.evidenceLabel === "Early hypothesis")).toBe(true);
-    expect(suggestions[0]?.reason).toContain("Early hypothesis:");
+    expect(suggestions.every((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
   });
 
   it("stays on rules when three close reviews span unrelated roles", () => {
@@ -42,8 +42,7 @@ describe("direction rules", () => {
       ],
     );
     expect(direction.basis).toBe("rules");
-    expect(direction.label).toContain("Worth exploring");
-    expect(direction.label).toContain("early hypotheses");
+    expect(direction.label).toBe("Roles that fit how you work, based on your quiz and your major.");
     expect(direction.suggestions.every((item) => item.source === "rules")).toBe(true);
   });
 
@@ -110,9 +109,11 @@ describe("direction rules", () => {
       source: "similar_students",
       sampleSize: 3,
     });
-    expect(direction.suggestions[0]?.reason).toContain("Worth exploring");
-    expect(direction.suggestions[0]?.reason).toContain("not proof");
-    expect(direction.suggestions[0]?.evidenceLabel).toContain("n=3");
+    // A claim about other students always carries the count and the actual average.
+    expect(direction.suggestions[0]?.reason).toBe(
+      "3 students with profiles like yours rated co-ops in this role 4.7/5 for enjoyment.",
+    );
+    expect(direction.suggestions[0]?.evidenceLabel).toBe("Backed by 3 students");
     expect(traitDistance(balanced, balanced)).toBe(0);
   });
 

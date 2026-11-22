@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { CATALOG_COMPANIES } from "@/features/explore/companies";
+import { COMPANIES } from "@/content/companies";
 import {
-  CAREER_LINK_CHECKED_ON,
   VERIFIED_CAREER_LINKS,
   careerPageHref,
 } from "@/features/explore/links";
@@ -18,6 +18,15 @@ import {
   toggleHelpful,
   toggleSaved,
 } from "@/features/explore/local-state";
+
+// Career links expire 90 days after their check; pin "today" so this test does not.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-21T12:00:00Z"));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe("verified career links", () => {
   it("keeps 12 https links on the organization hosts", () => {
@@ -37,7 +46,13 @@ describe("verified career links", () => {
         expect(careerPageHref(link.requestedUrl)).toBeNull();
       }
     }
-    expect(CAREER_LINK_CHECKED_ON).toBe("2026-11-17");
+    expect(VERIFIED_CAREER_LINKS.every((link) => link.checkedOn === "2026-11-17")).toBe(true);
+  });
+
+  it("stops showing a link 90 days after its check", () => {
+    const link = VERIFIED_CAREER_LINKS[0];
+    expect(careerPageHref(link.finalUrl, new Date("2027-02-15T12:00:00Z"))).toBe(link.finalUrl);
+    expect(careerPageHref(link.finalUrl, new Date("2027-02-16T12:00:00Z"))).toBeNull();
   });
 
   it("rejects anything that is not an exact checked URL", () => {
@@ -61,13 +76,15 @@ describe("verified career links", () => {
 });
 
 describe("company catalog", () => {
-  it("covers the checked links once and adds one empty card", () => {
+  it("lists exactly the companies with a checked careers page, and no placeholder", () => {
     const linked = CATALOG_COMPANIES.filter((company) => company.careerLinkId);
-    const empty = CATALOG_COMPANIES.filter((company) => company.careerLinkId === null);
+    expect(linked).toHaveLength(CATALOG_COMPANIES.length);
     expect(linked).toHaveLength(12);
-    expect(empty).toHaveLength(1);
     expect(new Set(linked.map((company) => company.careerLinkId)).size).toBe(12);
-    expect(empty[0]?.name).toBe("Sample Org With No Page On File");
+    expect(CATALOG_COMPANIES.some((company) => /sample|placeholder/i.test(company.name))).toBe(false);
+    // Every directory company is also an employer the co-op form offers.
+    const companyIds = new Set(COMPANIES.map((company) => company.id));
+    for (const company of CATALOG_COMPANIES) expect(companyIds.has(company.id)).toBe(true);
     const fields = new Set(linked.map((company) => company.field));
     expect(fields.size).toBeGreaterThanOrEqual(8);
     expect([...fields].every((field) => /engineering/i.test(field))).toBe(false);
@@ -92,7 +109,7 @@ describe("sample consent", () => {
     expect(serialized).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     expect(model?.companies.find((company) => company.id === "mayo")?.experienceCount).toBe(0);
     expect(model?.companies.find((company) => company.id === "cchmc")?.experienceCount).toBe(1);
-    expect(model?.experiences.map((item) => item.companyName)).toEqual(["Cincinnati Children's"]);
+    expect(model?.experiences.map((item) => item.companyName)).toEqual(["Cincinnati Children's Hospital Medical Center"]);
     expect(prototypeModel(false)).toBeNull();
   });
 });
@@ -109,9 +126,7 @@ describe("local prototype actions", () => {
     if (!model) throw new Error("expected prototype model");
     expect(filterQuestions(model.questions, "company:mayo")).toEqual([]);
     expect(filterQuestions(model.questions, "role:clinical-operations")).toHaveLength(1);
-    expect(companiesForRole(model.companies, "No category on file").map((company) => company.id)).toEqual([
-      "sample-empty",
-    ]);
+    expect(companiesForRole(model.companies, "Finance").map((company) => company.id)).toEqual(["cleveland-fed", "pnc"]);
     expect(companiesForRole(model.companies, "Missing category")).toEqual([]);
 
     const missing = addQuestion(model.questions, { scopeValue: "role:nope", title: "Hi", body: "Details", id: "x" }, model.scopes);

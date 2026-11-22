@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PageShell } from "@/components/ui";
 import { CareerExplore } from "@/features/explore/career-explore";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/features/explore/local-state";
@@ -15,6 +15,15 @@ import {
   type ExploreModel,
 } from "@/features/explore/types";
 import { buildExploreModel } from "@/features/explore/view-model";
+
+// Career links expire 90 days after their check; pin "today" so this test does not.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-21T12:00:00Z"));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 function model(): ExploreModel {
   return buildExploreModel({
@@ -72,12 +81,14 @@ describe("career exploration prototype", () => {
     expect(text).toContain("Companies & opportunities");
     expect(text).toContain("Nursing");
     expect(text).toContain("Healthcare — clinical");
-    expect(text).toContain("Listed under Clinical operations, which is also one of your direction suggestions.");
+    expect(text).toContain(
+      "Listed under Healthcare — clinical and Healthcare administration, which are also among your direction suggestions.",
+    );
     expect(text).toContain("Invented sample: the team drew the clinic schedule on a whiteboard");
     expect(text).not.toContain("1 sample experience marked as shared.");
     expect(text).toContain(DIRECTORY_EXPERIENCE_LINE);
-    expect(text).toContain("No official careers page is on file.");
-    expect(text).toContain("Sample Org With No Page On File");
+    // No invented placeholder company any more (ground rule: no fake content shown as real).
+    expect(text).not.toContain("Sample Org With No Page On File");
     expect(text).toContain("No sample answers yet.");
     expect(text).toContain(DEMO_FOUNDER_LABEL);
     expect(text).toContain("Link checked 2026-11-17.");

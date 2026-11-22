@@ -6,7 +6,7 @@ import {
   MOCK_REPORTS,
   type MockExperience,
 } from "@/features/community/mock/data";
-import { CAREER_LINK_CHECKED_ON, careerLinkById, careerPageHref } from "@/features/explore/links";
+import { careerLinkById, careerPageHref } from "@/features/explore/links";
 import { CAREER_EXPLORE_PROTOTYPE_ENABLED } from "@/features/explore/prototype";
 import type { CompanyCardModel, ExploreModel, SampleExperience, ScopeOption } from "@/features/explore/types";
 
@@ -22,17 +22,10 @@ const DISCUSSION_ROLES = [
   { id: "manufacturing", title: "Manufacturing" },
 ] as const;
 
-export const COMPANY_ROLE_FILTERS = [
-  "Clinical operations",
-  "Community programs",
-  "Public environmental work",
-  "Business operations",
-  "Consulting",
-  "Finance",
-  "Product design",
-  "Manufacturing",
-  "No category on file",
-] as const;
+/** Role categories present in the directory, for the filter. Read from the company list. */
+export const COMPANY_ROLE_FILTERS: readonly string[] = [
+  ...new Set(CATALOG_COMPANIES.flatMap((company) => company.roleCategories)),
+].sort((left, right) => left.localeCompare(right));
 
 function isSharedSample(item: MockExperience): boolean {
   return item.sharingConsent === true && item.body.trim().length > 0;
@@ -70,7 +63,7 @@ function assembleExploreModel(): ExploreModel {
       whyShown: company.whyShown,
       experienceCount: experienceCount.get(company.id) ?? 0,
       careersUrl,
-      linkCheckedOn: careersUrl ? CAREER_LINK_CHECKED_ON : null,
+      linkCheckedOn: careersUrl && link ? link.checkedOn : null,
     };
   });
 

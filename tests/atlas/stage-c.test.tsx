@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { COMPANY_FAMILIES, COMPANY_NOTE } from "@/content/atlas/company-links";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { atlasEntry } from "@/features/atlas/entry";
@@ -11,6 +11,15 @@ import { careerPageHref } from "@/features/explore/links";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/features/explore/local-state";
 
 const graph = atlasGraph();
+// Career links expire 90 days after their check; pin "today" so this test does not.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-21T12:00:00Z"));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
+
 const quiet: Signals = { answers: {}, interested: [], dismissed: [], directionInterested: [], directionDismissed: [] };
 
 describe("organizations in the map", () => {
@@ -32,7 +41,7 @@ describe("organizations in the map", () => {
 
   it("shows hospitals for a nursing occupation and never the invented placeholder", () => {
     const names = companiesFor(graph, "occ:onet:29-1141.00").map((company) => company.name);
-    expect(names).toContain("Cincinnati Children's");
+    expect(names).toContain("Cincinnati Children's Hospital Medical Center");
     expect(names).not.toContain("Sample Org With No Page On File");
   });
 
@@ -64,7 +73,7 @@ describe("compare two occupations", () => {
     expect(compareModel(graph, "fam:finance", "occ:onet:17-2141.00")).toBeNull();
   });
 
-  it("renders side by side with a clear button", () => {
+  it("renders side by side, with a clear button on each side and a close button", () => {
     const entry = atlasEntry(graph, { major: "Nursing", majorSource: "catalog" });
     const html = renderToStaticMarkup(
       <AtlasExplorer entry={entry} dismissedRoles={[]} initialFocus={null} initialCompare={["occ:onet:29-1141.00", "occ:onet:29-1171.00"]} />,
@@ -72,7 +81,9 @@ describe("compare two occupations", () => {
     expect(html).toContain("Compare occupations");
     expect(html).toContain("Registered Nurses");
     expect(html).toContain("Nurse Practitioners");
-    expect(html).toContain("Clear compare");
+    expect(html).toContain('aria-label="Clear Registered Nurses"');
+    expect(html).toContain('aria-label="Clear Nurse Practitioners"');
+    expect(html).toContain(">Close<");
   });
 });
 

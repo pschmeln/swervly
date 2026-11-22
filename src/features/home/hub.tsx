@@ -127,7 +127,7 @@ function ProfileWindow({ quizDone, canReview, majorLine, traits }: HomeHubProps)
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-ink-3">Exploratory readings from your quiz, not a test score.</p>
+          <p className="mt-3 text-xs text-ink-3">What your quiz says about how you work.</p>
         </>
       ) : (
         <div className="mt-4">
@@ -176,7 +176,9 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-ink-2">You dismissed the current suggestions. See all of Direction for more.</p>
+            <p className="mt-4 text-ink-2">
+              You&apos;ve said &ldquo;Not for me&rdquo; to every role Swervly can suggest right now. Open Direction to retake the quiz or browse the career map.
+            </p>
           )}
           {interested.length > 0 ? (
             <div className="mt-4">
@@ -192,7 +194,7 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
           ) : null}
         </>
       ) : (
-        <p className="mt-4 text-ink-2">Your direction appears after the quiz. It starts as a best guess and gets sharper as students review co-ops.</p>
+        <p className="mt-4 text-ink-2">Your direction appears after the quiz, and it gets sharper as more students review co-ops.</p>
       )}
       <div className="mt-5 border-t border-neutral-100 pt-4">
         <p className="text-sm text-ink-2">{reviewLine}</p>

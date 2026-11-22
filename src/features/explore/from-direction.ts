@@ -1,4 +1,4 @@
-import { withoutDismissedRoles } from "@/features/direction/career-roles";
+import { careerRoleLabel, withoutDismissedRoles } from "@/features/direction/career-roles";
 import type { Goal } from "@/features/direction/rules";
 import {
   academicSource,
@@ -25,23 +25,18 @@ export type StudentExploreInput = {
 };
 
 /**
- * Directory categories that use the same words as a direction role.
- * Engineering "design" is not product design. Healthcare administration is not clinical work.
+ * Directory role categories are Direction's own role ids (src/content/companies.ts), shown
+ * by label, so a match always means the same role. Engineering design is not product
+ * design (IDEO is not tagged Design), and healthcare administration is not clinical work.
  */
-const ROLE_DIRECTORY: Record<string, readonly string[]> = {
-  business_operations: ["Business operations"],
-  finance: ["Finance"],
-  healthcare_clinical: ["Clinical operations"],
-  manufacturing_process: ["Manufacturing"],
-};
 
 const QUIZ_HEADLINE = "Take the quiz first.";
-const QUIZ_NOTE = "Direction is a guess from those answers.";
-const DISMISSED_NOTE = "You dismissed the current suggestions. You can change your major on your profile.";
+const QUIZ_NOTE = "Direction matches roles to how you work.";
+const DISMISSED_NOTE = "Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.";
 const PATHS_READY =
-  "These pathways are the suggestions already on Direction. Early hypotheses and student evidence stay separate.";
+  "These pathways are your Direction suggestions. Ones backed by student reviews say so.";
 const PATHS_QUIZ = "Career pathways show up here after you take the quiz.";
-const PATHS_DISMISSED = "No pathways are listed while those suggestions are dismissed.";
+const PATHS_DISMISSED = "No pathways to show right now.";
 const PATHS_INSUFFICIENT = "There is not enough information for a pathway yet.";
 
 export type DirectionExploreCopy = {
@@ -84,16 +79,16 @@ function overlapCategories(roleIds: readonly string[]): Set<string> {
   const categories = new Set<string>();
   for (const roleId of roleIds) {
     if (roleId === "insufficient") continue;
-    for (const category of ROLE_DIRECTORY[roleId] ?? []) categories.add(category);
+    categories.add(careerRoleLabel(roleId));
   }
   return categories;
 }
 
 function whyForCompany(company: CompanyCardModel, categories: ReadonlySet<string>): string {
-  if (company.id === "sample-empty") return company.whyShown;
   const shared = company.roleCategories.filter((category) => categories.has(category));
   if (shared.length === 0) return DIRECTORY_WHY_SHOWN;
-  return `Listed under ${shared.join(" and ")}, which is also one of your direction suggestions.`;
+  if (shared.length === 1) return `Listed under ${shared[0]}, which is also one of your direction suggestions.`;
+  return `Listed under ${shared.join(" and ")}, which are also among your direction suggestions.`;
 }
 
 export function directionExploreCopy(input: StudentExploreInput): DirectionExploreCopy {
@@ -110,7 +105,8 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
       direction: { headline: QUIZ_HEADLINE, note: QUIZ_NOTE, needsQuiz: true },
       paths: [],
       pathsIntro: PATHS_QUIZ,
-      pathsEmpty: PATHS_QUIZ,
+      // The intro already says it. Showing it again as the empty state printed it twice.
+      pathsEmpty: null,
       companies: (companies) => companies.map((company) => ({ ...company, whyShown: whyForCompany(company, new Set()) })),
     };
   }
@@ -125,7 +121,7 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
     title: item.roleLabel,
     summary: item.reason,
     sourceLabel:
-      item.evidenceLabel?.trim() || (item.source === "similar_students" ? "Student evidence" : "Early hypothesis"),
+      item.evidenceLabel?.trim() || (item.source === "similar_students" ? "Backed by student reviews" : "Matched to your quiz and major"),
   }));
   const categories = overlapCategories(insufficient ? [] : pathways.map((path) => path.id));
 
@@ -135,10 +131,12 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
       headline: input.direction.label,
       note: dismissedAll ? DISMISSED_NOTE : insufficient ? PATHS_INSUFFICIENT : PATHS_READY,
       needsQuiz: false,
+      exhausted: dismissedAll,
     },
     paths: pathways,
     pathsIntro: dismissedAll ? PATHS_DISMISSED : insufficient ? PATHS_INSUFFICIENT : PATHS_READY,
-    pathsEmpty: pathways.length === 0 ? (dismissedAll ? PATHS_DISMISSED : PATHS_QUIZ) : null,
+    // Every empty case is already explained by pathsIntro, so there is no second message.
+    pathsEmpty: null,
     companies: (companies) => companies.map((company) => ({ ...company, whyShown: whyForCompany(company, categories) })),
   };
 }
