@@ -65,6 +65,7 @@ export const ROUTES = {
   places: "/api/places",
   founders: "/founders",
   foundersApi: "/api/founders",
+  foundersCommunityApi: "/api/founders/community",
   password: "/api/account/password",
   preferences: "/api/account/preferences",
   invite: "/invite/[userId]",

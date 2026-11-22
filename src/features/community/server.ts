@@ -52,6 +52,8 @@ export type PostSummary = {
 export type CommentView = {
   id: string;
   body: string;
+  /** Only founders ever receive hidden answers. */
+  hidden: boolean;
   createdAt: Date;
   editedAt: Date | null;
   helpfulCount: number;
@@ -60,7 +62,7 @@ export type CommentView = {
   canEdit: boolean;
 };
 
-export type PostDetail = PostSummary & { deleted: boolean; comments: CommentView[] };
+export type PostDetail = PostSummary & { deleted: boolean; hidden: boolean; comments: CommentView[] };
 
 const FAMILY_TITLE = new Map(FAMILIES.map((family) => [family.id, family.title]));
 
@@ -287,8 +289,14 @@ export async function listPosts(
   }));
 }
 
-/** A visible post or an erased tombstone, with its visible answers. Hidden and removed posts are not found. */
-export async function getPost(viewer: User, postId: string): Promise<PostDetail | null> {
+/**
+ * A visible post or an erased tombstone, with its visible answers. Hidden and removed posts are not
+ * found, except that founders (checked by the caller with isFounderEmail) also get hidden posts and
+ * hidden answers, flagged, so they can read reports in context.
+ */
+export async function getPost(viewer: User, postId: string, options: { founder?: boolean } = {}): Promise<PostDetail | null> {
+  const postStatuses = options.founder ? ["visible", "deleted", "hidden"] : ["visible", "deleted"];
+  const commentStatuses = options.founder ? ["visible", "hidden"] : ["visible"];
   const [row] = await db
     .select({
       id: communityPosts.id,
@@ -307,13 +315,14 @@ export async function getPost(viewer: User, postId: string): Promise<PostDetail 
     })
     .from(communityPosts)
     .leftJoin(employers, eq(employers.id, communityPosts.employerId))
-    .where(and(eq(communityPosts.id, postId), inArray(communityPosts.status, ["visible", "deleted"])))
+    .where(and(eq(communityPosts.id, postId), inArray(communityPosts.status, postStatuses)))
     .limit(1);
   if (!row) return null;
   const comments = await db
     .select({
       id: communityComments.id,
       body: communityComments.body,
+      status: communityComments.status,
       authorUserId: communityComments.authorUserId,
       createdAt: communityComments.createdAt,
       editedAt: communityComments.editedAt,
@@ -321,7 +330,7 @@ export async function getPost(viewer: User, postId: string): Promise<PostDetail 
       helpedByMe: sql<boolean>`exists (select 1 from community_helpful h where h.comment_id = ${communityComments.id} and h.user_id = ${viewer.id}::uuid)`,
     })
     .from(communityComments)
-    .where(and(eq(communityComments.postId, postId), eq(communityComments.status, "visible")))
+    .where(and(eq(communityComments.postId, postId), inArray(communityComments.status, commentStatuses)))
     .orderBy(communityComments.createdAt);
   const now = Date.now();
   const deleted = row.status === "deleted";
@@ -333,15 +342,17 @@ export async function getPost(viewer: User, postId: string): Promise<PostDetail 
     tags: deleted ? [] : tagsFor(row),
     createdAt: row.createdAt,
     editedAt: row.editedAt,
-    answerCount: comments.length,
+    answerCount: comments.filter((comment) => comment.status === "visible").length,
     helpfulCount: Number(row.helpfulCount),
     helpedByMe: Boolean(row.helpedByMe),
     mine: !deleted && row.authorUserId === viewer.id,
     canEdit: !deleted && row.authorUserId === viewer.id && editWindowOpen(row.createdAt, now),
     deleted,
+    hidden: row.status === "hidden",
     comments: comments.map((comment) => ({
       id: comment.id,
       body: comment.body,
+      hidden: comment.status === "hidden",
       createdAt: comment.createdAt,
       editedAt: comment.editedAt,
       helpfulCount: Number(comment.helpfulCount),

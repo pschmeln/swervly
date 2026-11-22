@@ -7,6 +7,7 @@ import { ROUTES } from "@/lib/constants";
 
 export const NO_POSTS = "No posts here yet. Ask the first question or share what you learned on a co-op.";
 export const DELETED_POST = "The author deleted this post. The answers below are kept.";
+export const HIDDEN_NOTE = "Hidden from students. Only founders can see this.";
 
 export function excerpt(text: string, max = 220): string {
   const clean = text.replace(/\s+/g, " ").trim();
