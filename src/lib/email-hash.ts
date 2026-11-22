@@ -2,7 +2,8 @@ import { createHmac } from "node:crypto";
 
 /**
  * Keyed hash of an email address (HMAC-SHA256 with EMAIL_HASH_SECRET). Used wherever Swervly must
- * match an address without storing it: advisor rosters (item 15) and, later, invite emails (item 1).
+ * match an address without storing it: advisor rosters (item 15). Swervly sends no invite emails;
+ * referrals are only the copyable link.
  * The secret lives only in the environment; never log it, the address, or the hash next to an address.
  */
 
