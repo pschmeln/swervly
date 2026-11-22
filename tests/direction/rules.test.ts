@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDirection,
   evidenceBackedRoles,
+  FALLBACK_EVIDENCE_LABEL,
   MIN_DISTINCT_STUDENTS_PER_ROLE,
   MIN_MEAN_ENJOYMENT,
   RULES_EVIDENCE_LABEL,
@@ -29,7 +30,24 @@ describe("direction rules", () => {
     expect(suggestions.map((item) => item.roleType)).toContain("software");
     expect(suggestions.every((item) => item.reason.length > 0)).toBe(true);
     expect(suggestions.every((item) => item.source === "rules")).toBe(true);
-    expect(suggestions.every((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
+    expect(
+      suggestions.every(
+        (item) => item.evidenceLabel === RULES_EVIDENCE_LABEL || item.evidenceLabel === FALLBACK_EVIDENCE_LABEL,
+      ),
+    ).toBe(true);
+    expect(suggestions.some((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
+  });
+
+  it("labels a generic fill as a place to start, not a quiz match", () => {
+    const suggestions = suggestionsFromRules({
+      traits: balanced,
+      major: "Mechanical Engineering",
+      goal: "industry",
+    });
+    expect(suggestions.length).toBe(3);
+    // Balanced traits only fire the always-on fallback; the rest are fills.
+    expect(suggestions.every((item) => item.evidenceLabel === FALLBACK_EVIDENCE_LABEL)).toBe(true);
+    expect(suggestions.some((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(false);
   });
 
   it("stays on rules when three close reviews span unrelated roles", () => {

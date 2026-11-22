@@ -1,5 +1,5 @@
 import { careerRoleLabel, withoutDismissedRoles } from "@/features/direction/career-roles";
-import type { Goal } from "@/features/direction/rules";
+import { DIRECTION_EXHAUSTED_ACTION, type Goal } from "@/features/direction/rules";
 import {
   academicSource,
   displayMajor,
@@ -32,8 +32,8 @@ export type StudentExploreInput = {
 
 const QUIZ_HEADLINE = "Take the quiz first.";
 const QUIZ_NOTE = "Direction matches roles to how you work.";
-const DISMISSED_NOTE = "Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.";
-const PATHS_READY =
+/** Pathways intro when Direction has concrete suggestions. Shown once, under Explore career paths. */
+export const PATHS_READY =
   "These pathways are your Direction suggestions. Ones backed by student reviews say so.";
 const PATHS_QUIZ = "Career pathways show up here after you take the quiz.";
 const PATHS_DISMISSED = "No pathways to show right now.";
@@ -121,7 +121,8 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
     title: item.roleLabel,
     summary: item.reason,
     sourceLabel:
-      item.evidenceLabel?.trim() || (item.source === "similar_students" ? "Backed by student reviews" : "Matched to your quiz and major"),
+      item.evidenceLabel?.trim() ||
+      (item.source === "similar_students" ? "Backed by student reviews" : null),
   }));
   const categories = overlapCategories(insufficient ? [] : pathways.map((path) => path.id));
 
@@ -129,13 +130,15 @@ export function directionExploreCopy(input: StudentExploreInput): DirectionExplo
     profile,
     direction: {
       headline: input.direction.label,
-      note: dismissedAll ? DISMISSED_NOTE : insufficient ? PATHS_INSUFFICIENT : PATHS_READY,
+      // PATHS_READY belongs under Explore career paths only — putting it here duplicated the sentence.
+      note: dismissedAll ? DIRECTION_EXHAUSTED_ACTION : insufficient ? PATHS_INSUFFICIENT : "",
       needsQuiz: false,
       exhausted: dismissedAll,
     },
     paths: pathways,
-    pathsIntro: dismissedAll ? PATHS_DISMISSED : insufficient ? PATHS_INSUFFICIENT : PATHS_READY,
-    // Every empty case is already explained by pathsIntro, so there is no second message.
+    // Insufficient copy lives on direction.note (and the insufficient path card); don't repeat it here.
+    pathsIntro: dismissedAll ? PATHS_DISMISSED : insufficient ? "" : PATHS_READY,
+    // Every empty case is already explained by pathsIntro or direction.note, so there is no second message.
     pathsEmpty: null,
     companies: (companies) => companies.map((company) => ({ ...company, whyShown: whyForCompany(company, categories) })),
   };

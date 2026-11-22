@@ -3,6 +3,7 @@ import { Button, Card } from "@/components/ui";
 import type { ChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionLine } from "@/features/direction/components/chosen-direction";
 import { InterestedButton } from "@/features/direction/components/interested-button";
+import { DIRECTION_EXHAUSTED_ACTION } from "@/features/direction/rules";
 import { CycleGraphic } from "@/features/home/cycle-graphic";
 import type { User } from "@/db/schema";
 import { UNDECIDED_LABEL } from "@/features/majors/catalog";
@@ -157,28 +158,28 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
       {chosen !== undefined ? <ChosenDirectionLine chosen={chosen} /> : null}
       {quizDone ? (
         <>
-          <p className="mt-1 text-sm text-ink-3">Top suggestions. Mark the ones you want to explore.</p>
           {top.length > 0 ? (
-            <ul className="mt-4 grid gap-2.5">
-              {top.map((item) => (
-                <li
-                  key={item.roleType}
-                  className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">{item.roleLabel}</p>
-                    <p className="line-clamp-2 text-sm text-ink-3">{item.reason}</p>
-                  </div>
-                  {item.roleType !== "insufficient" ? (
-                    <InterestedButton roleType={item.roleType} initial={interestedIds.has(item.roleType)} />
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="mt-1 text-sm text-ink-3">Top suggestions. Mark the ones you want to explore.</p>
+              <ul className="mt-4 grid gap-2.5">
+                {top.map((item) => (
+                  <li
+                    key={item.roleType}
+                    className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-ink">{item.roleLabel}</p>
+                      <p className="line-clamp-2 text-sm text-ink-3">{item.reason}</p>
+                    </div>
+                    {item.roleType !== "insufficient" ? (
+                      <InterestedButton roleType={item.roleType} initial={interestedIds.has(item.roleType)} />
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : (
-            <p className="mt-4 text-ink-2">
-              You&apos;ve said &ldquo;Not for me&rdquo; to every role Swervly can suggest right now. Open Direction to retake the quiz or browse the career map.
-            </p>
+            <p className="mt-4 text-ink-2">{DIRECTION_EXHAUSTED_ACTION}</p>
           )}
           {interested.length > 0 ? (
             <div className="mt-4">

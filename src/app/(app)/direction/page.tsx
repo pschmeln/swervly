@@ -7,6 +7,7 @@ import { DismissSuggestion } from "@/features/direction/components/dismiss-sugge
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { loadChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
+import { DIRECTION_EXHAUSTED_ACTION } from "@/features/direction/rules";
 import { loadDirection } from "@/features/direction/server";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
@@ -91,9 +92,7 @@ export default async function DirectionPage({
       <div className="grid gap-4">
         {direction.suggestions.length === 0 ? (
           <Card>
-            <p className="text-neutral-700">
-              Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.
-            </p>
+            <p className="text-neutral-700">{DIRECTION_EXHAUSTED_ACTION}</p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
                 Retake the quiz
@@ -142,7 +141,8 @@ export default async function DirectionPage({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button href={ROUTES.community} className="w-full sm:w-auto">See companies in Community</Button>
         <Button href={ROUTES.reviews} variant="secondary" className="w-full sm:w-auto">Review a co-op</Button>
-        {atlasOn ? (
+        {/* Exhausted empty card already offers Browse; skip a second identical control. */}
+        {atlasOn && direction.suggestions.length > 0 ? (
           <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">Browse the career map</Button>
         ) : null}
       </div>

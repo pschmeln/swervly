@@ -28,6 +28,10 @@ export const DIRECTION_INSUFFICIENT_LABEL =
 export const DIRECTION_EXHAUSTED_LABEL =
   "You've set aside every role Swervly can suggest from your quiz and major right now.";
 
+/** Empty-state body on Direction, Home, and Career Exploration when every suggestion was dismissed. */
+export const DIRECTION_EXHAUSTED_ACTION =
+  "Retake the quiz if your answers have changed, or browse the career map to find a direction on your own.";
+
 export type DirectionResult = {
   label: string;
   basis: "rules" | "similar_students" | "mixed";
@@ -50,6 +54,9 @@ export const MIN_MEAN_ENJOYMENT = 4;
 
 /** Label on suggestions that come from the quiz and major rules. */
 export const RULES_EVIDENCE_LABEL = "Matched to your quiz and major";
+
+/** Label when the role is only a generic fill / always-on fallback, not a quiz signal. */
+export const FALLBACK_EVIDENCE_LABEL = "A solid place to start";
 
 export type Goal = "industry" | "grad_school" | "undecided";
 
@@ -550,13 +557,13 @@ export function suggestionsFromRules(
 ): DirectionSuggestion[] {
   const hidden: ReadonlySet<string> = new Set(dismissed);
   if (!keepsEngineeringCoopRules(context.major)) return nonEngineeringSuggestions(context, hidden);
-  const scored = new Map<RoleType, { points: number; reason: string }>();
+  const scored = new Map<RoleType, { points: number; reason: string; fromFallback: boolean }>();
   for (const rule of RULES) {
     if (hidden.has(rule.role)) continue;
     if (!rule.when(context)) continue;
     const current = scored.get(rule.role);
     if (!current || rule.points > current.points) {
-      scored.set(rule.role, { points: rule.points, reason: rule.reason });
+      scored.set(rule.role, { points: rule.points, reason: rule.reason, fromFallback: rule.fallback === true });
     }
   }
 
@@ -573,7 +580,7 @@ export function suggestionsFromRules(
       roleLabel: roleLabel(roleType),
       reason: row.reason,
       source: "rules",
-      evidenceLabel: RULES_EVIDENCE_LABEL,
+      evidenceLabel: row.fromFallback ? FALLBACK_EVIDENCE_LABEL : RULES_EVIDENCE_LABEL,
     });
     if (chosen.length === 3) return chosen;
   }
@@ -586,7 +593,7 @@ export function suggestionsFromRules(
       roleLabel: roleLabel(roleType),
       reason: fillReason(roleType, context),
       source: "rules",
-      evidenceLabel: RULES_EVIDENCE_LABEL,
+      evidenceLabel: FALLBACK_EVIDENCE_LABEL,
     });
     if (chosen.length === 3) break;
   }

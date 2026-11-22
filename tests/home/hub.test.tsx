@@ -73,6 +73,17 @@ describe("Home profile and direction windows", () => {
     expect(html).toContain('href="/reviews/new"');
     expect(text(html)).toContain("No co-ops logged yet.");
   });
+
+  it("hides the Top suggestions heading when the list is empty, and keeps exhausted copy plus nav", () => {
+    const html = renderToStaticMarkup(<HomeHub {...base} suggestions={[]} interested={[]} />);
+    const t = text(html);
+    expect(t).not.toContain("Top suggestions");
+    expect(t).toContain("Retake the quiz if your answers have changed");
+    expect(t).toContain("browse the career map");
+    expect(html).toContain('href="/direction"');
+    expect(t).toContain("See all");
+    expect(t).toContain("2 co-ops and internships logged.");
+  });
 });
 
 describe("majorLine", () => {
