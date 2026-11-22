@@ -16,6 +16,6 @@ describe("major moderation and profile saves", () => {
     expect(profile).toContain("on conflict (user_id) where status = 'pending' do nothing");
     expect(profile).toContain("insert into profiles");
     expect(profile).toContain("from changed");
-    expect(profile).toContain("if (returnedIds(saved).length === 0) throw conflict()");
+    expect(profile).toContain("if (resultRows(saved).length === 0) throw conflict()");
   });
 });

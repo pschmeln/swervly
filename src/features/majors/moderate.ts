@@ -7,6 +7,7 @@ import { isFounderEmail } from "@/lib/founders";
 import { APPROVED_CUSTOM_CATEGORY } from "./catalog";
 import { loadMajorSearchContext } from "./load";
 import { planMajorModeration } from "./moderation-plan";
+import { resultRows } from "@/lib/db-errors";
 
 export const MajorModerationInput = z
   .object({
@@ -176,8 +177,7 @@ async function claimPendingSubmission(input: {
 }
 
 function decidedCount(result: unknown): number {
-  const rows = result && typeof result === "object" && "rows" in result ? result.rows : result;
-  const row = Array.isArray(rows) ? rows[0] : undefined;
+  const row = resultRows(result)[0];
   if (!row || typeof row !== "object" || !("decided_count" in row)) return 0;
   return Number(row.decided_count);
 }

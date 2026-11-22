@@ -27,6 +27,7 @@ import {
   type ReportReason,
 } from "./rules";
 import { showsCompany, showsFamily, showsRole } from "@/lib/audience";
+import { resultRows } from "@/lib/db-errors";
 
 /**
  * Community data access. Every write takes the user from the session (apiOnboardedUser) and
@@ -70,11 +71,6 @@ export type PostDetail = PostSummary & { deleted: boolean; hidden: boolean; comm
 
 const FAMILY_TITLE = new Map(FAMILIES.map((family) => [family.id, family.title]));
 
-function rows<T>(result: unknown): T[] {
-  const list = result && typeof result === "object" && "rows" in result ? (result as { rows: unknown }).rows : result;
-  return Array.isArray(list) ? (list as T[]) : [];
-}
-
 function editWindowOpen(createdAt: Date, now = Date.now()): boolean {
   return now - createdAt.getTime() < EDIT_WINDOW_MS;
 }
@@ -109,7 +105,7 @@ export async function takeRateSlot(userId: string, action: RateAction, now = new
     where community_rate_buckets.count < ${cap}
     returning count
   `);
-  if (rows(result).length === 0) {
+  if (resultRows(result).length === 0) {
     throw new ApiError(429, "rate_limited", "You've reached the hourly limit for this. Try again later.");
   }
 }

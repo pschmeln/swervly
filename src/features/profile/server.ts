@@ -39,6 +39,7 @@ import { type AssessmentInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
 import { pointsLedgerExportQuery, referralOnboardingAward } from "./referrals";
 import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
+import { resultRows } from "@/lib/db-errors";
 
 const CLERK_ERROR_CODE = /^[a-z0-9_]{1,64}$/;
 
@@ -219,7 +220,7 @@ export async function saveProfile(
           )
           ${profileWrite}
         `);
-    if (returnedIds(saved).length === 0) throw conflict();
+    if (resultRows(saved).length === 0) throw conflict();
   } else {
     const saved = await db.execute<{ id: string }>(sql`
       with changed as (
@@ -231,7 +232,7 @@ export async function saveProfile(
       )
       ${profileWrite}
     `);
-    if (returnedIds(saved).length === 0) throw new Error("profile_write_missing");
+    if (resultRows(saved).length === 0) throw new Error("profile_write_missing");
   }
 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -241,11 +242,6 @@ export async function saveProfile(
   }
 
   return { user, profile };
-}
-
-function returnedIds(result: unknown): unknown[] {
-  const rows = result && typeof result === "object" && "rows" in result ? result.rows : result;
-  return Array.isArray(rows) ? rows : [];
 }
 
 export function onboardingResumeStep(

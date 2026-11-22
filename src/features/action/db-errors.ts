@@ -27,14 +27,7 @@ function errorText(error: unknown): string {
     .join("\n");
 }
 
-export function isUniqueViolation(error: unknown): boolean {
-  for (const part of walkCauses(error)) {
-    if (typeof part === "object" && part !== null && "code" in part && part.code === "23505") {
-      return true;
-    }
-  }
-  return false;
-}
+export { isUniqueViolation } from "@/lib/db-errors";
 
 /** True when Action tables are missing (migration 0009 not applied). */
 export function isMissingActionRelation(error: unknown): boolean {

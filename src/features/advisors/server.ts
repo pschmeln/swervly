@@ -6,6 +6,7 @@ import { PRIVACY_POLICY_VERSION } from "@/features/privacy/policy-version";
 import { ApiError } from "@/lib/api";
 import { exportAdvisorAccess } from "./access";
 import type { AdvisorRequestInput, FounderAdvisorInput } from "./schemas";
+import { isUniqueViolation } from "@/lib/db-errors";
 
 /**
  * Advisor roles (item 15, PR 6.1, D9). A school is a name plus the email domains its people sign
@@ -159,11 +160,6 @@ async function domainsTakenElsewhere(domains: readonly string[], schoolId: strin
 function takenError(domains: readonly string[]): ApiError {
   const message = `${domains.join(", ")} already ${domains.length === 1 ? "belongs" : "belong"} to another school.`;
   return new ApiError(409, "domain_taken", message, { domains: message });
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  const code = (error as { code?: string; cause?: { code?: string } } | null)?.code ?? (error as { cause?: { code?: string } } | null)?.cause?.code;
-  return code === "23505";
 }
 
 export async function founderAdvisorAction(founder: User, input: FounderAdvisorInput): Promise<{ id: string }> {
