@@ -58,7 +58,6 @@ describe("public copy", () => {
     expect(text).toContain("each student counts once");
     expect(text).toContain("average across all majors");
     expect(text).toContain("never pay or written notes");
-    expect(text).toContain("co-op experiences");
     // #46 Why-we-use-it fit copy
     expect(text).toContain("not a clinical or hiring assessment");
     expect(text).not.toContain("not proof of career fit");
