@@ -29,13 +29,14 @@ function text(html: string) {
 }
 
 describe("Home cycle graphic", () => {
-  it("is Self, Direction, Action, Review with Action not linked", () => {
+  it("is Self, Direction, Action, Review with Action linked", () => {
     expect(CYCLE_STEPS.map((step) => step.title)).toEqual(["Self", "Direction", "Action", "Review"]);
-    expect(CYCLE_STEPS.find((step) => step.key === "action")?.href).toBeNull();
+    expect(CYCLE_STEPS.find((step) => step.key === "action")?.href).toBe("/action");
     const html = renderToStaticMarkup(<HomeHub {...base} />);
-    for (const href of ['href="/profile"', 'href="/direction"', 'href="/reviews"']) expect(html).toContain(href);
-    expect(text(html)).toContain("Coming soon");
-    expect(html).toContain('aria-disabled="true"');
+    for (const href of ['href="/profile"', 'href="/direction"', 'href="/action"', 'href="/reviews"']) expect(html).toContain(href);
+    expect(text(html)).toContain("Take the next step");
+    expect(text(html)).not.toContain("Coming soon");
+    expect(html).not.toContain('aria-disabled="true"');
   });
 
   it("has no Chinese text", () => {

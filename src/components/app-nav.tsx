@@ -5,13 +5,16 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { focusRing } from "@/components/ui/focus-ring";
+import { ACTION_HREF } from "@/features/action-ui/paths";
 import { ROUTES } from "@/lib/constants";
 
-// Order follows the cycle on Home: Self (Profile) -> Direction -> Review.
+// Order follows the cycle on Home: Self (Profile) -> Direction -> Action -> Review.
+// Community sits with the other sections, after Action.
 export const NAV = [
   { href: ROUTES.home, label: "Home" },
   { href: ROUTES.profile, label: "Profile" },
   { href: ROUTES.direction, label: "Direction" },
+  { href: ACTION_HREF, label: "Action" },
   { href: ROUTES.community, label: "Community" },
   { href: ROUTES.reviews, label: "Reviews" },
   { href: ROUTES.settings, label: "Settings" },

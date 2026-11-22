@@ -15,6 +15,8 @@ export const MIN_REVIEWS_TO_SHOW = MIN_DISTINCT_CONTRIBUTORS;
 export const MIN_PAY_REPORTS = MIN_DISTINCT_PAY_CONTRIBUTORS;
 
 export type ReviewForAggregate = {
+  /** The review row, when it exists (a preview draft has none). Lets a shared note carry comments. */
+  reviewId?: string;
   userId: string;
   major: string;
   wouldReturn: WouldReturn;
@@ -49,8 +51,11 @@ export type PublicMajorView = {
   } | null;
   topSkills: string[];
   payRange: { low: number; high: number } | null;
-  sharedNotes: string[];
+  sharedNotes: SharedNote[];
 };
+
+/** A written note shared with the author's major. reviewId is null for a preview draft. */
+export type SharedNote = { reviewId: string | null; text: string };
 
 function mean(values: number[]): number {
   const total = values.reduce((sum, value) => sum + value, 0);
@@ -118,7 +123,7 @@ function aggregateGroup(
     .map(([skill]) => skill);
 
   let payRange: PublicMajorView["payRange"] = null;
-  let sharedNotes: string[] = [];
+  let sharedNotes: SharedNote[] = [];
   if (options.notesAndPay) {
     const payContributors = new Set<string>();
     const pays: number[] = [];
@@ -133,7 +138,7 @@ function aggregateGroup(
     // Free text only with per-note consent, and only once the major group is visible.
     sharedNotes = group
       .filter((review) => review.shareFreeText && (review.freeText?.trim().length ?? 0) > 0)
-      .map((review) => review.freeText!.trim());
+      .map((review) => ({ reviewId: review.reviewId ?? null, text: review.freeText!.trim() }));
   }
 
   return {

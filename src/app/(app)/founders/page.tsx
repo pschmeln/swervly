@@ -7,6 +7,8 @@ import { SKILL_CATALOG } from "@/content/skills";
 import { listPublicMajorNames } from "@/features/majors/catalog";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { MajorQueue } from "@/features/majors/components/major-queue";
+import { ModerationQueue } from "@/features/community/components/moderation-queue";
+import { loadModerationQueue } from "@/features/community/moderation";
 import { FounderQueue } from "@/features/moderation/founder-queue";
 import { requireUser } from "@/lib/auth";
 import { isFounderEmail } from "@/lib/founders";
@@ -17,13 +19,14 @@ export default async function FoundersPage() {
   const user = await requireUser();
   if (!isFounderEmail(user.email)) notFound();
 
-  const [pendingSkills, pendingEmployers, approvedEmployers, approvedCustom, pendingMajors, majorSearch] = await Promise.all([
+  const [pendingSkills, pendingEmployers, approvedEmployers, approvedCustom, pendingMajors, majorSearch, community] = await Promise.all([
     db.select().from(skills).where(eq(skills.status, "pending")),
     db.select().from(employers).where(eq(employers.status, "pending")),
     db.select({ id: employers.id, name: employers.name }).from(employers).where(eq(employers.status, "approved")),
     db.select({ name: skills.name }).from(skills).where(eq(skills.status, "approved")),
     db.select().from(majorSubmissions).where(eq(majorSubmissions.status, "pending")),
     loadMajorSearchContext(),
+    loadModerationQueue(),
   ]);
 
   const skillTargets = [
@@ -37,6 +40,7 @@ export default async function FoundersPage() {
         New companies, skills, and custom majors stay private to the student who added them until you approve them.
         Check this once a day.
       </p>
+      <ModerationQueue reported={community.reported} hidden={community.hidden} />
       <MajorQueue
         submissions={pendingMajors.map((row) => ({ id: row.id, rawName: row.rawName }))}
         targets={listPublicMajorNames(majorSearch)}

@@ -1,11 +1,21 @@
 import { Card } from "@/components/ui";
+import { ShareArchetype } from "@/features/community/components/share-archetype";
 import type { ArchetypeCard as ArchetypeCardModel } from "@/features/profile/archetype";
 
 /**
  * The work-style card (item 18). Plain server markup: same scores, same card.
- * `justFinished` adds the line shown right after the quiz.
+ * `justFinished` adds the line shown right after the quiz. `share` adds "Share to Community"
+ * (item 19); pass whether the student already agreed to the Community rules.
  */
-export function ArchetypeCard({ card, justFinished = false }: { card: ArchetypeCardModel; justFinished?: boolean }) {
+export function ArchetypeCard({
+  card,
+  justFinished = false,
+  share,
+}: {
+  card: ArchetypeCardModel;
+  justFinished?: boolean;
+  share?: { agreed: boolean };
+}) {
   return (
     <Card>
       <p className="text-sm font-semibold uppercase tracking-wide text-ink-3">Your work style</p>
@@ -22,6 +32,7 @@ export function ArchetypeCard({ card, justFinished = false }: { card: ArchetypeC
       {justFinished ? (
         <p className="mt-4 text-sm text-ink-3">From your quiz just now. Retake it any time and this card updates.</p>
       ) : null}
+      {share ? <ShareArchetype agreed={share.agreed} /> : null}
     </Card>
   );
 }

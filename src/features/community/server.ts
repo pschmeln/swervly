@@ -15,6 +15,7 @@ import {
 import type { FamilyId } from "@/features/atlas/types";
 import { careerRoleLabel } from "@/features/direction/career-roles";
 import { normalizeEmployerName } from "@/features/review/normalize";
+import { sharedArchetype, type SharedArchetype } from "./archetype-view";
 import { ApiError } from "@/lib/api";
 import {
   COMMUNITY_TERMS_VERSION,
@@ -40,6 +41,8 @@ export type PostSummary = {
   title: string;
   body: string;
   tags: PostTag[];
+  /** A shared work-style card (item 19): its name and description. Null for other posts. */
+  archetype: SharedArchetype | null;
   createdAt: Date;
   editedAt: Date | null;
   answerCount: number;
@@ -52,6 +55,8 @@ export type PostSummary = {
 export type CommentView = {
   id: string;
   body: string;
+  /** Only founders ever receive hidden answers. */
+  hidden: boolean;
   createdAt: Date;
   editedAt: Date | null;
   helpfulCount: number;
@@ -60,7 +65,7 @@ export type CommentView = {
   canEdit: boolean;
 };
 
-export type PostDetail = PostSummary & { deleted: boolean; comments: CommentView[] };
+export type PostDetail = PostSummary & { deleted: boolean; hidden: boolean; comments: CommentView[] };
 
 const FAMILY_TITLE = new Map(FAMILIES.map((family) => [family.id, family.title]));
 
@@ -192,7 +197,13 @@ export async function editPost(user: User, postId: string, input: { title: strin
   const cutoff = new Date(Date.now() - EDIT_WINDOW_MS);
   const updated = await db
     .update(communityPosts)
-    .set({ title: input.title, body: input.body, editedAt: sql`now()`, updatedAt: sql`now()` })
+    .set({
+      // A shared card keeps its archetype name as the title; only the student's line can change.
+      title: sql`case when ${communityPosts.kind} = 'archetype' then ${communityPosts.title} else ${input.title} end`,
+      body: input.body,
+      editedAt: sql`now()`,
+      updatedAt: sql`now()`,
+    })
     .where(
       and(
         eq(communityPosts.id, postId),
@@ -258,6 +269,7 @@ export async function listPosts(
       authorUserId: communityPosts.authorUserId,
       roleType: communityPosts.roleType,
       atlasFamily: communityPosts.atlasFamily,
+      archetypeId: communityPosts.archetypeId,
       employerName: employers.name,
       createdAt: communityPosts.createdAt,
       editedAt: communityPosts.editedAt,
@@ -277,6 +289,7 @@ export async function listPosts(
     title: row.title,
     body: row.body,
     tags: tagsFor(row),
+    archetype: sharedArchetype(row.archetypeId),
     createdAt: row.createdAt,
     editedAt: row.editedAt,
     answerCount: Number(row.answerCount),
@@ -287,8 +300,14 @@ export async function listPosts(
   }));
 }
 
-/** A visible post or an erased tombstone, with its visible answers. Hidden and removed posts are not found. */
-export async function getPost(viewer: User, postId: string): Promise<PostDetail | null> {
+/**
+ * A visible post or an erased tombstone, with its visible answers. Hidden and removed posts are not
+ * found, except that founders (checked by the caller with isFounderEmail) also get hidden posts and
+ * hidden answers, flagged, so they can read reports in context.
+ */
+export async function getPost(viewer: User, postId: string, options: { founder?: boolean } = {}): Promise<PostDetail | null> {
+  const postStatuses = options.founder ? ["visible", "deleted", "hidden"] : ["visible", "deleted"];
+  const commentStatuses = options.founder ? ["visible", "hidden"] : ["visible"];
   const [row] = await db
     .select({
       id: communityPosts.id,
@@ -299,6 +318,7 @@ export async function getPost(viewer: User, postId: string): Promise<PostDetail 
       authorUserId: communityPosts.authorUserId,
       roleType: communityPosts.roleType,
       atlasFamily: communityPosts.atlasFamily,
+      archetypeId: communityPosts.archetypeId,
       employerName: employers.name,
       createdAt: communityPosts.createdAt,
       editedAt: communityPosts.editedAt,
@@ -307,21 +327,13 @@ export async function getPost(viewer: User, postId: string): Promise<PostDetail 
     })
     .from(communityPosts)
     .leftJoin(employers, eq(employers.id, communityPosts.employerId))
-    .where(and(eq(communityPosts.id, postId), inArray(communityPosts.status, ["visible", "deleted"])))
+    .where(and(eq(communityPosts.id, postId), inArray(communityPosts.status, postStatuses)))
     .limit(1);
   if (!row) return null;
   const comments = await db
-    .select({
-      id: communityComments.id,
-      body: communityComments.body,
-      authorUserId: communityComments.authorUserId,
-      createdAt: communityComments.createdAt,
-      editedAt: communityComments.editedAt,
-      helpfulCount: sql<number>`(select count(*)::int from community_helpful h where h.comment_id = ${communityComments.id})`,
-      helpedByMe: sql<boolean>`exists (select 1 from community_helpful h where h.comment_id = ${communityComments.id} and h.user_id = ${viewer.id}::uuid)`,
-    })
+    .select(commentFields(viewer))
     .from(communityComments)
-    .where(and(eq(communityComments.postId, postId), eq(communityComments.status, "visible")))
+    .where(and(eq(communityComments.postId, postId), inArray(communityComments.status, commentStatuses)))
     .orderBy(communityComments.createdAt);
   const now = Date.now();
   const deleted = row.status === "deleted";
@@ -331,25 +343,89 @@ export async function getPost(viewer: User, postId: string): Promise<PostDetail 
     title: deleted ? "" : row.title,
     body: deleted ? "" : row.body,
     tags: deleted ? [] : tagsFor(row),
+    archetype: deleted ? null : sharedArchetype(row.archetypeId),
     createdAt: row.createdAt,
     editedAt: row.editedAt,
-    answerCount: comments.length,
+    answerCount: comments.filter((comment) => comment.status === "visible").length,
     helpfulCount: Number(row.helpfulCount),
     helpedByMe: Boolean(row.helpedByMe),
     mine: !deleted && row.authorUserId === viewer.id,
     canEdit: !deleted && row.authorUserId === viewer.id && editWindowOpen(row.createdAt, now),
     deleted,
-    comments: comments.map((comment) => ({
-      id: comment.id,
-      body: comment.body,
-      createdAt: comment.createdAt,
-      editedAt: comment.editedAt,
-      helpfulCount: Number(comment.helpfulCount),
-      helpedByMe: Boolean(comment.helpedByMe),
-      mine: comment.authorUserId === viewer.id,
-      canEdit: comment.authorUserId === viewer.id && editWindowOpen(comment.createdAt, now),
-    })),
+    hidden: row.status === "hidden",
+    comments: comments.map((comment) => commentView(viewer, comment, now)),
   };
+}
+
+function commentFields(viewer: User) {
+  return {
+    id: communityComments.id,
+    body: communityComments.body,
+    status: communityComments.status,
+    reviewId: communityComments.reviewId,
+    authorUserId: communityComments.authorUserId,
+    createdAt: communityComments.createdAt,
+    editedAt: communityComments.editedAt,
+    helpfulCount: sql<number>`(select count(*)::int from community_helpful h where h.comment_id = ${communityComments.id})`,
+    helpedByMe: sql<boolean>`exists (select 1 from community_helpful h where h.comment_id = ${communityComments.id} and h.user_id = ${viewer.id}::uuid)`,
+  };
+}
+
+type CommentRow = {
+  id: string;
+  body: string;
+  status: string;
+  authorUserId: string;
+  createdAt: Date;
+  editedAt: Date | null;
+  helpfulCount: number;
+  helpedByMe: boolean;
+};
+
+function commentView(viewer: User, comment: CommentRow, now: number): CommentView {
+  return {
+    id: comment.id,
+    body: comment.body,
+    hidden: comment.status === "hidden",
+    createdAt: comment.createdAt,
+    editedAt: comment.editedAt,
+    helpfulCount: Number(comment.helpfulCount),
+    helpedByMe: Boolean(comment.helpedByMe),
+    mine: comment.authorUserId === viewer.id,
+    canEdit: comment.authorUserId === viewer.id && editWindowOpen(comment.createdAt, now),
+  };
+}
+
+/**
+ * Visible comments on shared review notes (item 16), grouped by review id. The caller passes only
+ * the review ids whose notes this viewer can see right now (see company/review-comments.ts).
+ */
+export async function loadReviewComments(viewer: User, reviewIds: readonly string[]): Promise<Record<string, CommentView[]>> {
+  const grouped: Record<string, CommentView[]> = {};
+  if (reviewIds.length === 0) return grouped;
+  const found = await db
+    .select(commentFields(viewer))
+    .from(communityComments)
+    .where(and(inArray(communityComments.reviewId, [...reviewIds]), eq(communityComments.status, "visible")))
+    .orderBy(communityComments.createdAt);
+  const now = Date.now();
+  for (const row of found) {
+    if (!row.reviewId) continue;
+    (grouped[row.reviewId] ??= []).push(commentView(viewer, row, now));
+  }
+  return grouped;
+}
+
+/** Inserts a comment on a review. Only call after checking the viewer can see that review's note. */
+export async function insertReviewComment(user: User, reviewId: string, body: string): Promise<{ id: string }> {
+  requireCommunityTerms(user);
+  await takeRateSlot(user.id, "comment");
+  const [row] = await db
+    .insert(communityComments)
+    .values({ reviewId, authorUserId: user.id, body })
+    .returning({ id: communityComments.id });
+  if (!row) throw new Error("community_comment_insert_failed");
+  return row;
 }
 
 // ---- Answers ------------------------------------------------------------------------------

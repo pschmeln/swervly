@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { focusRing } from "@/components/ui/focus-ring";
+import { ACTION_HREF } from "@/features/action-ui/paths";
 import { ROUTES } from "@/lib/constants";
 
 type Step = {
@@ -12,11 +13,11 @@ type Step = {
   y: number;
 };
 
-// Self -> Direction -> Action -> Review -> Self. Action is not built yet (founder decision, Nov 18).
+// Self -> Direction -> Action -> Review -> Self.
 export const CYCLE_STEPS: readonly Step[] = [
   { key: "self", title: "Self", subtitle: "Know yourself", href: ROUTES.profile, x: 50, y: 13 },
   { key: "direction", title: "Direction", subtitle: "Choose a path", href: ROUTES.direction, x: 83, y: 50 },
-  { key: "action", title: "Action", subtitle: "Coming soon", href: null, x: 50, y: 87 },
+  { key: "action", title: "Action", subtitle: "Take the next step", href: ACTION_HREF, x: 50, y: 87 },
   { key: "review", title: "Review", subtitle: "Reflect and update", href: ROUTES.reviews, x: 17, y: 50 },
 ];
 
@@ -48,10 +49,10 @@ export function CycleGraphic() {
         </defs>
         {/* Self -> Direction */}
         <path d="M84 12 C 100 12, 104 22, 104 37" stroke="url(#cycle-ring)" strokeWidth="1.1" markerEnd="url(#cycle-arrow)" />
-        {/* Direction -> Action (not built yet) */}
-        <path d="M104 63 C 104 78, 99 88, 85 88" stroke="#c3cee3" strokeWidth="1.1" strokeDasharray="2.4 2.4" markerEnd="url(#cycle-arrow)" />
-        {/* Action -> Review (not built yet) */}
-        <path d="M40 88 C 26 88, 21 78, 21 63" stroke="#c3cee3" strokeWidth="1.1" strokeDasharray="2.4 2.4" markerEnd="url(#cycle-arrow)" />
+        {/* Direction -> Action */}
+        <path d="M104 63 C 104 78, 99 88, 85 88" stroke="url(#cycle-ring)" strokeWidth="1.1" markerEnd="url(#cycle-arrow)" />
+        {/* Action -> Review */}
+        <path d="M40 88 C 26 88, 21 78, 21 63" stroke="url(#cycle-ring)" strokeWidth="1.1" markerEnd="url(#cycle-arrow)" />
         {/* Review -> Self */}
         <path d="M21 37 C 21 22, 25 12, 41 12" stroke="url(#cycle-ring)" strokeWidth="1.1" markerEnd="url(#cycle-arrow)" />
       </svg>

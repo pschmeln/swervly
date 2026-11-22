@@ -8,6 +8,7 @@ import { InterestedButton } from "@/features/direction/components/interested-but
 import { loadChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionCard } from "@/features/direction/components/chosen-direction";
 import { loadDirection } from "@/features/direction/server";
+import { hasCommunityTerms } from "@/features/community/rules";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
 import { captureEvent } from "@/lib/analytics";
@@ -45,7 +46,7 @@ export default async function DirectionPage({
 
   return (
     <PageShell title="Direction">
-      {justFinishedQuiz ? <ArchetypeCard card={archetypeFor(direction.traits)} justFinished /> : null}
+      {justFinishedQuiz ? <ArchetypeCard card={archetypeFor(direction.traits)} justFinished share={{ agreed: hasCommunityTerms(user) }} /> : null}
       {atlasOn ? <ChosenDirectionCard chosen={chosen} /> : null}
       <p className="text-neutral-700">{direction.label}</p>
       {direction.academic.visible ? (
