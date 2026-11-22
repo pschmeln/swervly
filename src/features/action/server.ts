@@ -500,10 +500,3 @@ export async function exportActionData(userId: string): Promise<{
     throw error;
   }
 }
-
-/** Used by tests: ensure SQL mentions user scoping helpers still export. */
-export const actionTableNames = {
-  plans: sql`action_plans`,
-  tasks: sql`action_tasks`,
-  skills: sql`action_skill_progress`,
-};

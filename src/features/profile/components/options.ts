@@ -11,25 +11,3 @@ export const GOAL_OPTIONS = [
   { value: "grad_school", label: "Graduate school" },
   { value: "undecided", label: "Undecided" },
 ] as const;
-
-export const RIASEC_SCORES = [
-  { key: "R", label: "Realistic (R)" },
-  { key: "I", label: "Investigative (I)" },
-  { key: "A", label: "Artistic (A)" },
-  { key: "S", label: "Social (S)" },
-  { key: "E", label: "Enterprising (E)" },
-  { key: "C", label: "Conventional (C)" },
-] as const;
-
-export function optionLabel(
-  options: readonly { value: string; label: string }[],
-  value: string | null | undefined,
-): string {
-  if (!value) return "—";
-  return options.find((option) => option.value === value)?.label ?? value;
-}
-
-export function textOrDash(value: string | null | undefined): string {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : "—";
-}

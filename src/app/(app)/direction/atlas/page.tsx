@@ -2,7 +2,6 @@ import { Button, Card, PageShell } from "@/components/ui";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
-import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { loadAtlasState } from "@/features/atlas/server";
 import { loadDirection } from "@/features/direction/server";
 import { loadHomeArea } from "@/features/location/server";
@@ -13,10 +12,8 @@ import { ROUTES } from "@/lib/constants";
 export const metadata = { title: "Career map" };
 
 /**
- * Career Atlas prototype. Reads only the student's catalog major, major source
- * and Direction role marks (dismissed / Interested). Custom major text is never passed in.
- * Marks, answers and the chosen direction are saved per student once
- * migration 0007 is applied; before that they stay on screen only.
+ * Career Atlas. Reads only the student's catalog major, major source and Direction
+ * role marks (dismissed / Interested). Custom major text is never passed in.
  */
 export default async function CareerAtlasPage({
   searchParams,
@@ -24,21 +21,6 @@ export default async function CareerAtlasPage({
   searchParams: Promise<{ at?: string | string[] }>;
 }) {
   const user = await requireOnboardedUser();
-  if (!atlasPrototypeEnabled()) {
-    return (
-      <PageShell title="Career map">
-        <Card>
-          <p className="text-neutral-800">The career map is not available yet.</p>
-          <div className="mt-4">
-            <Button href={ROUTES.direction} variant="secondary" className="w-full sm:w-auto">
-              Back to Direction
-            </Button>
-          </div>
-        </Card>
-      </PageShell>
-    );
-  }
-
   const params = await searchParams;
   const at = typeof params.at === "string" ? params.at : null;
   const graph = atlasGraph();

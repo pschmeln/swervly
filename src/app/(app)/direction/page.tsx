@@ -2,7 +2,6 @@ import Link from "next/link";
 import { WhyMatched } from "@/features/direction/components/why-matched";
 import { Button, Card, PageShell } from "@/components/ui";
 import { familiesForRole } from "@/features/atlas/compat";
-import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { loadChosenDirection } from "@/features/direction/chosen";
@@ -42,12 +41,11 @@ export default async function DirectionPage({
   }
 
   await captureEvent("direction_viewed", user.id);
-  const atlasOn = atlasPrototypeEnabled();
 
   return (
     <PageShell title="Direction">
       {justFinishedQuiz ? <ArchetypeCard card={archetypeFor(direction.traits)} justFinished share={{ agreed: hasCommunityTerms(user) }} /> : null}
-      {atlasOn ? <ChosenDirectionCard chosen={chosen} /> : null}
+      <ChosenDirectionCard chosen={chosen} />
       <p className="text-neutral-700">{direction.label}</p>
       {direction.academic.visible ? (
         <Card>
@@ -99,11 +97,9 @@ export default async function DirectionPage({
               <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
                 Retake the quiz
               </Button>
-              {atlasOn ? (
-                <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
-                  Browse the career map
-                </Button>
-              ) : null}
+              <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
+                Browse the career map
+              </Button>
             </div>
           </Card>
         ) : null}
@@ -127,7 +123,7 @@ export default async function DirectionPage({
                 <DismissSuggestion roleType={suggestion.roleType} />
               </div>
             ) : null}
-            {atlasOn && familiesForRole(suggestion.roleType)[0] ? (
+            {familiesForRole(suggestion.roleType)[0] ? (
               <p className="mt-3 text-sm">
                 <Link
                   className="font-medium underline"
@@ -143,9 +139,7 @@ export default async function DirectionPage({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button href={ROUTES.community} className="w-full sm:w-auto">See companies in Community</Button>
         <Button href={ROUTES.reviews} variant="secondary" className="w-full sm:w-auto">Review a co-op</Button>
-        {atlasOn ? (
-          <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">Browse the career map</Button>
-        ) : null}
+        <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">Browse the career map</Button>
       </div>
     </PageShell>
   );

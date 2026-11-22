@@ -1,11 +1,6 @@
 import type { CSSProperties } from "react";
 
 /** Official brand colors from the Swervly logo assets. */
-export const BRAND = {
-  blue: "#1D42D8",
-  navy: "#0F172A",
-} as const;
-
 export const BRAND_ICON_SIZES = [16, 32, 64] as const;
 export type BrandIconSize = (typeof BRAND_ICON_SIZES)[number];
 

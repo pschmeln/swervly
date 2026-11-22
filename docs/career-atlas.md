@@ -1,6 +1,6 @@
 # Career Atlas
 
-Status: B1 (data, graph, tests) is on `main`. B2 adds the `/direction/atlas` drill-down (live in production since 2026-11-18; `ATLAS_LIVE` in `src/features/atlas/prototype.ts` turns it off) and O*NET 31.0 content: descriptions, top tasks, standout skills, in-demand software, Job Zone and related occupations. Stage C adds compare, organizations and Direction evidence. Stage D adds saved choices (migration 0007, applied to dev-peter, dev-li and production on 2026-11-18) and the scale plan in `docs/career-atlas-stage-d.md`.
+Status: B1 (data, graph, tests) is on `main`. B2 adds the `/direction/atlas` drill-down (live in production since 2026-11-18; the on/off switch was removed on 2026-11-22) and O*NET 31.0 content: descriptions, top tasks, standout skills, in-demand software, Job Zone and related occupations. Stage C adds compare, organizations and Direction evidence. Stage D adds saved choices (migration 0007, applied to dev-peter, dev-li and production on 2026-11-18) and the scale plan in `docs/career-atlas-stage-d.md`.
 
 Full design (Stage A): the "Career Atlas — Stage A Architecture Proposal" doc shared by the founders.
 

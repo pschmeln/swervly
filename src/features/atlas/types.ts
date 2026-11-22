@@ -97,6 +97,3 @@ export function levelOf(id: string): AtlasLevel | null {
   return null;
 }
 
-export function occupationId(onetCode: string): OccupationId {
-  return `occ:onet:${onetCode}`;
-}
