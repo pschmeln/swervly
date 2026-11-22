@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ONET_DETAILS } from "@/content/atlas/onet-details";
+import { goalById, searchGoals } from "@/features/action-ui/catalog";
 import { COMMUNITY_AREA_OPTIONS, COMMUNITY_ROLE_OPTIONS, PostInput } from "@/features/community/rules";
 import { tagsFor } from "@/features/community/server";
 import { buildDirection, type SimilarReview } from "@/features/direction/rules";
@@ -90,5 +91,11 @@ describe("engineering audience on every surface", () => {
       }
     }
     expect(checked).toBeGreaterThan(0);
+  });
+
+  it("offers no hidden career in the Action goal picker", () => {
+    expect(searchGoals("nurse")).toEqual([]);
+    expect(goalById("spec:physician")).toBeNull();
+    expect(searchGoals("circuit").length).toBeGreaterThan(0);
   });
 });
