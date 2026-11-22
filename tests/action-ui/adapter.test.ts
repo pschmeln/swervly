@@ -9,7 +9,7 @@ import {
   updateTaskBody,
 } from "@/features/action-ui/adapter";
 import { bodyHasServerOwnedFields, loadAfterDispatch, requestFor } from "@/features/action-ui/api";
-import { ACTION_LIMITS } from "@/features/action-ui/limits";
+import { ACTION_LIMITS } from "@/features/action/types";
 import { filledBundle } from "@/features/action-ui/mock";
 import { ACTION_API } from "@/features/action-ui/paths";
 import type { DashboardLoad, TaskPatch } from "@/features/action-ui/types";
@@ -94,7 +94,7 @@ describe("request bodies", () => {
     expect(updateTaskBody(patch)).toEqual({ title: "Hi" });
   });
 
-  it("mirrors the backend limits", () => {
+  it("uses the Action limits from the server module", () => {
     expect(ACTION_LIMITS).toEqual({
       maxTasksPerPlan: 40,
       maxSkillsPerPlan: 30,

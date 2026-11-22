@@ -1,3 +1,4 @@
+import { ACTION_LIMITS, SKILL_PROGRESS, TASK_STATUSES } from "@/features/action/types";
 import {
   addTaskBody,
   applyPlan,
@@ -16,7 +17,6 @@ import {
   upsertTask,
 } from "@/features/action-ui/adapter";
 import { goalById } from "@/features/action-ui/catalog";
-import { ACTION_LIMITS } from "@/features/action-ui/limits";
 import { freshDashboard } from "@/features/action-ui/mock";
 import { ACTION_API } from "@/features/action-ui/paths";
 import type { ActionDataSource } from "@/features/action-ui/source";
@@ -290,9 +290,9 @@ export function loadAfterDispatch(current: DashboardLoad, result: DispatchResult
 }
 
 export function isSkillProgress(value: string): value is SkillProgress {
-  return value === "unrated" || value === "learning" || value === "comfortable";
+  return SKILL_PROGRESS.some((item) => item === value);
 }
 
 export function isTaskStatus(value: string): value is TaskStatus {
-  return value === "todo" || value === "doing" || value === "done";
+  return TASK_STATUSES.some((item) => item === value);
 }

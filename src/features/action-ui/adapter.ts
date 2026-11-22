@@ -1,4 +1,14 @@
-import { ACTION_LIMITS } from "@/features/action-ui/limits";
+import {
+  ACTION_LIMITS,
+  EVIDENCE_LEVELS,
+  GOAL_LEVELS,
+  GOAL_SOURCES,
+  SKILL_PROGRESS,
+  SKILL_SCOPES,
+  TASK_ORIGINS,
+  TASK_PHASES,
+  TASK_STATUSES,
+} from "@/features/action/types";
 import type {
   ActionPlanBundleDto,
   ActionPlanDto,
@@ -20,14 +30,14 @@ import type {
 
 const GOAL_NODE_ID = /^((spec):[a-z0-9-]+|occ:onet:[0-9]{2}-[0-9]{4}[.][0-9]{2})$/;
 
-const GOAL_LEVELS = new Set<string>(["specialization", "occupation"]);
-const GOAL_SOURCES = new Set<string>(["atlas_pursuing", "manual"]);
-const TASK_STATUSES = new Set<string>(["todo", "doing", "done"]);
-const TASK_ORIGINS = new Set<string>(["template", "user", "preserved"]);
-const TASK_PHASES = new Set<string>(["practice", "prepare", "explore", "reflect"]);
-const SKILL_PROGRESS = new Set<string>(["unrated", "learning", "comfortable"]);
-const SKILL_SCOPES = new Set<string>(["shared", "occupation_specific", "optional_exploration"]);
-const EVIDENCE = new Set<string>(["known", "suggested", "unknown"]);
+const goalLevels = new Set<string>(GOAL_LEVELS);
+const goalSources = new Set<string>(GOAL_SOURCES);
+const taskStatuses = new Set<string>(TASK_STATUSES);
+const taskOrigins = new Set<string>(TASK_ORIGINS);
+const taskPhases = new Set<string>(TASK_PHASES);
+const skillProgress = new Set<string>(SKILL_PROGRESS);
+const skillScopes = new Set<string>(SKILL_SCOPES);
+const evidenceLevels = new Set<string>(EVIDENCE_LEVELS);
 
 export function isGoalNodeId(value: string): boolean {
   return GOAL_NODE_ID.test(value);
@@ -62,9 +72,9 @@ export function toTaskView(raw: ActionTaskDto): TaskView | null {
   const status = asText(raw.status);
   const origin = asText(raw.origin);
   const id = asText(raw.id);
-  if (!title || !id || !status || !TASK_STATUSES.has(status) || !origin || !TASK_ORIGINS.has(origin)) return null;
+  if (!title || !id || !status || !taskStatuses.has(status) || !origin || !taskOrigins.has(origin)) return null;
   const phase = raw.phase == null ? null : asText(raw.phase);
-  if (phase != null && !TASK_PHASES.has(phase)) return null;
+  if (phase != null && !taskPhases.has(phase)) return null;
   return {
     id,
     title,
@@ -87,8 +97,8 @@ export function toSkillView(raw: ActionSkillDto): SkillView | null {
   const evidence = asText(raw.evidence);
   const progress = asText(raw.progress);
   const skillSource = asText(raw.skillSource);
-  if (!id || !name || !scope || !SKILL_SCOPES.has(scope) || !evidence || !EVIDENCE.has(evidence)) return null;
-  if (!progress || !SKILL_PROGRESS.has(progress)) return null;
+  if (!id || !name || !scope || !skillScopes.has(scope) || !evidence || !evidenceLevels.has(evidence)) return null;
+  if (!progress || !skillProgress.has(progress)) return null;
   if (skillSource !== "onet" && skillSource !== "editorial") return null;
   return {
     id,
@@ -111,7 +121,7 @@ export function toDashboard(bundle: ActionPlanBundleDto | null | undefined): Das
   const title = asText(plan.goalTitle);
   const nodeId = asText(plan.goalNodeId);
   const id = asText(plan.id);
-  if (!id || !title || !nodeId || !level || !GOAL_LEVELS.has(level) || !source || !GOAL_SOURCES.has(source)) return null;
+  if (!id || !title || !nodeId || !level || !goalLevels.has(level) || !source || !goalSources.has(source)) return null;
   if (!Array.isArray(bundle.tasks) || !Array.isArray(bundle.skills)) return null;
   const tasks = bundle.tasks.map((task) => toTaskView(task)).filter((task): task is TaskView => task != null);
   const skills = bundle.skills.map((skill) => toSkillView(skill)).filter((skill): skill is SkillView => skill != null);

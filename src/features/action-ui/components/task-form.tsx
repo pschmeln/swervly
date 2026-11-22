@@ -2,31 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Button, Field, Select, Textarea, TextInput } from "@/components/ui";
-import { ACTION_LIMITS } from "@/features/action-ui/limits";
-import type { TaskPhase, TaskStatus, TaskView } from "@/features/action-ui/types";
+import { ACTION_LIMITS, TASK_STATUSES } from "@/features/action/types";
+import type { TaskDraft } from "@/features/action-ui/task-draft";
+import type { TaskPhase, TaskStatus } from "@/features/action-ui/types";
 import { PHASES, STATUS_LABEL } from "@/features/action-ui/view";
-
-export type TaskDraft = {
-  title: string;
-  description: string;
-  phase: TaskPhase | "";
-  dueOn: string;
-  status: TaskStatus;
-};
-
-export function draftFromTask(task: TaskView): TaskDraft {
-  return {
-    title: task.title,
-    description: task.description ?? "",
-    phase: task.phase ?? "",
-    dueOn: task.dueOn ?? "",
-    status: task.status,
-  };
-}
-
-export function emptyDraft(): TaskDraft {
-  return { title: "", description: "", phase: "", dueOn: "", status: "todo" };
-}
 
 export function TaskForm({
   initial,
@@ -98,7 +77,7 @@ export function TaskForm({
             id={statusId}
             value={draft.status}
             onChange={(value) => setDraft({ ...draft, status: value as TaskStatus })}
-            options={(["todo", "doing", "done"] as const).map((status) => ({ value: status, label: STATUS_LABEL[status] }))}
+            options={TASK_STATUSES.map((status) => ({ value: status, label: STATUS_LABEL[status] }))}
           />
         </Field>
       ) : null}

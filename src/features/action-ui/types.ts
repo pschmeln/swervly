@@ -1,98 +1,38 @@
-/**
- * Mirror of the client-safe Action wire DTOs in src/features/action/dto.ts at
- * PR #50 commit 4995fab (dto.ts@4995fab). Flat goal fields. Skill field is
- * skillName. Timestamps are ISO-8601 strings. dueOn is YYYY-MM-DD or null.
- *
- * TODO: once PR #50 merges, delete the local DTO declarations below and replace
- * them with:
- * export type { ActionPlanBundleJson } from "@/features/action/dto";
- */
+import type {
+  EvidenceLevel,
+  GoalLevel,
+  GoalSource,
+  SkillProgress,
+  SkillScope,
+  SkillSourceKind,
+  TaskOrigin,
+  TaskPhase,
+  TaskStatus,
+} from "@/features/action/types";
 
-export const GOAL_LEVELS = ["specialization", "occupation"] as const;
-export type GoalLevel = (typeof GOAL_LEVELS)[number];
+/** Client-safe Action wire types from main (PR #50). */
+export type { ActionPlanBundleJson } from "@/features/action/wire";
+export type {
+  ActionPlanBundleDto,
+  ActionPlanDto,
+  ActionPlanJson,
+  ActionSkillDto,
+  ActionSkillJson,
+  ActionTaskDto,
+  ActionTaskJson,
+} from "@/features/action/wire";
 
-export const GOAL_SOURCES = ["atlas_pursuing", "manual"] as const;
-export type GoalSource = (typeof GOAL_SOURCES)[number];
-
-export const TASK_STATUSES = ["todo", "doing", "done"] as const;
-export type TaskStatus = (typeof TASK_STATUSES)[number];
-
-export const TASK_ORIGINS = ["template", "user", "preserved"] as const;
-export type TaskOrigin = (typeof TASK_ORIGINS)[number];
-
-export const TASK_PHASES = ["practice", "prepare", "explore", "reflect"] as const;
-export type TaskPhase = (typeof TASK_PHASES)[number];
-
-export const SKILL_PROGRESS = ["unrated", "learning", "comfortable"] as const;
-export type SkillProgress = (typeof SKILL_PROGRESS)[number];
-
-export const SKILL_SCOPES = ["shared", "occupation_specific", "optional_exploration"] as const;
-export type SkillScope = (typeof SKILL_SCOPES)[number];
-
-export const EVIDENCE_LEVELS = ["known", "suggested", "unknown"] as const;
-export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
-
-export type SkillSourceKind = "onet" | "editorial";
-
-export type ActionPlanDto = {
-  id: string;
-  userId: string;
-  goalNodeId: string;
-  goalLevel: GoalLevel;
-  goalTitle: string;
-  goalSource: GoalSource;
-  draftSource: "template_v1";
-  status: "active" | "archived";
-  weeklyHours: number | null;
-  horizonWeeks: number | null;
-  createdAt: string;
-  updatedAt: string;
+export type {
+  EvidenceLevel,
+  GoalLevel,
+  GoalSource,
+  SkillProgress,
+  SkillScope,
+  SkillSourceKind,
+  TaskOrigin,
+  TaskPhase,
+  TaskStatus,
 };
-
-export type ActionTaskDto = {
-  id: string;
-  planId: string;
-  userId: string;
-  title: string;
-  description: string | null;
-  phase: TaskPhase | null;
-  status: TaskStatus;
-  sortOrder: number;
-  origin: TaskOrigin;
-  originKey: string | null;
-  explanation: string;
-  dueOn: string | null;
-  completedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ActionSkillDto = {
-  id: string;
-  planId: string;
-  userId: string;
-  skillName: string;
-  scope: SkillScope;
-  evidence: EvidenceLevel;
-  skillSource: SkillSourceKind;
-  progress: SkillProgress;
-  originKey: string;
-  explanation: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ActionPlanBundleDto = {
-  plan: ActionPlanDto;
-  tasks: ActionTaskDto[];
-  skills: ActionSkillDto[];
-};
-
-/** Aliases matching dto.ts@4995fab so the swap is one import line. */
-export type ActionPlanBundleJson = ActionPlanBundleDto;
-export type ActionPlanJson = ActionPlanDto;
-export type ActionTaskJson = ActionTaskDto;
-export type ActionSkillJson = ActionSkillDto;
 
 /** Career the student marked as pursuing on the career map. The id stays on the server. */
 export type PursuingDisplay = {
@@ -119,7 +59,7 @@ export type SkillView = {
   name: string;
   scope: SkillScope;
   evidence: EvidenceLevel;
-  skillSource: "onet" | "editorial";
+  skillSource: SkillSourceKind;
   progress: SkillProgress;
   originKey: string;
   explanation: string;

@@ -1,6 +1,7 @@
 import { Button, Card } from "@/components/ui";
-import { TaskForm, draftFromTask, emptyDraft, type TaskDraft } from "@/features/action-ui/components/task-form";
+import { TaskForm } from "@/features/action-ui/components/task-form";
 import { TaskRow } from "@/features/action-ui/components/task-row";
+import { draftFromTask, emptyDraft, type TaskDraft } from "@/features/action-ui/task-draft";
 import type { TaskStatus, TaskView } from "@/features/action-ui/types";
 import { phaseCountSentence, phaseGroups, READINESS_NOTE } from "@/features/action-ui/view";
 
