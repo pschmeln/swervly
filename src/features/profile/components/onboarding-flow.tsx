@@ -34,6 +34,7 @@ import { AssessmentInput } from "@/features/profile/schemas";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
 import { GOAL_OPTIONS, YEAR_OPTIONS } from "./options";
+import { suggestsMajors } from "@/lib/audience";
 
 const PAGE_SIZE = 5;
 const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
@@ -547,7 +548,7 @@ export function OnboardingFlow({
               })}
             </div>
             {fieldErrors.answers ? <ErrorNote>{fieldErrors.answers}</ErrorNote> : null}
-            {questionPage === PAGE_COUNT - 1 && form.major.source !== "undecided" ? (
+            {suggestsMajors && questionPage === PAGE_COUNT - 1 && form.major.source !== "undecided" ? (
               <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2">
                 <Checkbox
                   id="exploringMajors"

@@ -11,6 +11,7 @@ import {
   type CatalogMajor,
   type MajorSearchContext,
 } from "./catalog";
+import { suggestsMajors } from "@/lib/audience";
 
 export const MajorSelectionInput = z.discriminatedUnion("source", [
   z.object({
@@ -263,6 +264,8 @@ export function academicExploration(input: {
   goal: "industry" | "grad_school" | "undecided";
   traits?: TraitScores | null;
 }): AcademicExploration {
+  // Hidden for this audience (src/lib/audience.ts): no card, no note.
+  if (!suggestsMajors) return { visible: false, note: "", suggestions: [] };
   const confirmed = input.source === "catalog" || input.source === "custom";
   const visible = input.source === "undecided" || (confirmed && input.exploringMajors);
   if (!visible) {

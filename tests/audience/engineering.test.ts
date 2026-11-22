@@ -6,7 +6,8 @@ import { CATALOG_COMPANIES } from "@/features/explore/companies";
 import { atlasGraph, ATLAS_DATA } from "@/features/atlas/graph";
 import { matchCatalog, searchMajors, UNDECIDED_LABEL } from "@/features/majors/catalog";
 import type { TraitScores } from "@/features/profile/scoring";
-import { AUDIENCE, audienceRules, showsRole } from "@/lib/audience";
+import { academicExploration } from "@/features/majors/selection";
+import { AUDIENCE, audienceRules, offersUndecided, showsRole, suggestsMajors } from "@/lib/audience";
 
 const peopleFirst: TraitScores = { extraversion: 18, agreeableness: 18, conscientiousness: 12, neuroticism: 8, openness: 12 };
 
@@ -70,11 +71,22 @@ describe("engineering audience", () => {
     }
   });
 
+  it("assumes students are settled in their major: no Undecided, no suggested majors", () => {
+    expect(offersUndecided).toBe(false);
+    expect(suggestsMajors).toBe(false);
+    expect(academicExploration({ source: "catalog", exploringMajors: true, goal: "industry", traits: peopleFirst })).toEqual({
+      visible: false,
+      note: "",
+      suggestions: [],
+    });
+  });
+
   it("brings everything back when the audience is all", () => {
     const all = audienceRules("all");
     expect(all.showsMajorCategory("Healthcare & Life Sciences")).toBe(true);
     expect(all.showsFamily("fam:clinical-care")).toBe(true);
     expect(all.showsRole("teaching")).toBe(true);
+    expect(all.offersUndecided && all.suggestsMajors).toBe(true);
     expect(SPECIALIZATIONS.every(all.showsSpecialization)).toBe(true);
   });
 });

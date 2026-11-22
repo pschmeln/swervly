@@ -6,5 +6,14 @@ import { audienceRules } from "@/lib/audience";
  */
 export { audienceRules };
 export type { Audience } from "@/lib/audience";
-export const { AUDIENCE, showsMajorCategory, showsFamily, showsSpecialization, showsRole, showsCompany, AUDIENCE_COPY } =
-  audienceRules("all");
+export const {
+  AUDIENCE,
+  offersUndecided,
+  suggestsMajors,
+  showsMajorCategory,
+  showsFamily,
+  showsSpecialization,
+  showsRole,
+  showsCompany,
+  AUDIENCE_COPY,
+} = audienceRules("all");

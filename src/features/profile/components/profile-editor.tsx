@@ -18,6 +18,7 @@ import type { MajorPickerValue } from "@/features/majors/selection";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
 import { GOAL_OPTIONS, YEAR_OPTIONS } from "./options";
+import { suggestsMajors } from "@/lib/audience";
 
 export type ProfileEditorValues = {
   school: string;
@@ -123,7 +124,7 @@ export function ProfileEditor({
             error={fieldErrors.major}
             onChange={(value) => update("major", value)}
           />
-          {form.major.source !== "undecided" ? (
+          {suggestsMajors && form.major.source !== "undecided" ? (
             <Checkbox
               id="exploringMajors"
               name="exploringMajors"

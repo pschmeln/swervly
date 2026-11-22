@@ -2,8 +2,9 @@
  * Who Swervly is built for right now (founder decision, Nov 22, 2026).
  *
  * "engineering": students see only engineering and computing majors, the careers
- * engineers actually go into, and engineering employers. Everything else stays in
- * the code and the data, just hidden from students.
+ * engineers actually go into, and engineering employers. They are expected to be
+ * settled in their major, so "Undecided" and suggested majors are hidden too.
+ * Everything else stays in the code and the data, just hidden from students.
  * "all": every major and career, as before.
  *
  * Flip this one constant to bring the hidden parts back. Nothing is deleted.
@@ -88,6 +89,10 @@ export function audienceRules(audience: Audience) {
   const showsFamily = (familyId: string) => all || ENGINEERING_FAMILIES.has(familyId);
   return {
     AUDIENCE: audience,
+    /** "Undecided / Not sure" in the major picker. */
+    offersUndecided: all,
+    /** Suggested majors on Direction, and the opt-in for them in onboarding and on the profile. */
+    suggestsMajors: all,
     showsMajorCategory: (category: string) => all || ENGINEERING_MAJOR_CATEGORIES.has(category),
     showsFamily,
     /** Shows when it is not hidden and at least one of its families shows. */
@@ -101,5 +106,14 @@ export function audienceRules(audience: Audience) {
   };
 }
 
-export const { AUDIENCE, showsMajorCategory, showsFamily, showsSpecialization, showsRole, showsCompany, AUDIENCE_COPY } =
-  audienceRules(CURRENT);
+export const {
+  AUDIENCE,
+  offersUndecided,
+  suggestsMajors,
+  showsMajorCategory,
+  showsFamily,
+  showsSpecialization,
+  showsRole,
+  showsCompany,
+  AUDIENCE_COPY,
+} = audienceRules(CURRENT);
