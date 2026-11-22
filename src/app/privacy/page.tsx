@@ -170,6 +170,17 @@ export default function PrivacyPage() {
             school&apos;s advisors.
           </p>
           <p>
+            Advisors see your own details only if you turn on sharing with your
+            school&apos;s advisors in Settings, and only while you&apos;re on their
+            roster. Settings lists exactly what they see: your email, major,
+            year and goal; your work-style card; your chosen direction; your
+            co-op history; and your review ratings with any notes you already
+            chose to share. They never see your pay or notes you kept private.
+            Every time an advisor opens your details, Settings shows their name,
+            the date and what they saw. You can stop sharing at any time and it
+            takes effect right away.
+          </p>
+          <p>
             Comments on a shared review note follow the same rules. They are
             shown, without your name, only to students who can see that note:
             students in the note writer&apos;s major, once the company page for that

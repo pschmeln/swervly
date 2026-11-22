@@ -21,6 +21,7 @@ vi.mock("next/navigation", async (importOriginal) => ({
 import PrivacyPage from "@/app/privacy/page";
 import { POST as rosterPost } from "@/app/api/advisors/roster/route";
 import { AdvisorDashboardView, FEWER_THAN_TWO, ROSTER_OFF } from "@/features/advisors/components/advisor-dashboard";
+import { ADVISOR_CONSENT_VERSION } from "@/features/advisors/consent";
 import { extractEmails, ROSTER_BATCH_MAX } from "@/features/advisors/emails";
 import { changeRoster, groupStats, optedInRosterIds, type GroupStats, type StudentFacts } from "@/features/advisors/roster";
 import { RosterInput } from "@/features/advisors/schemas";
@@ -107,7 +108,8 @@ describe("who roster stats count", () => {
     expect(await optedInRosterIds(SCHOOL, SECRET)).toEqual([]);
     expect(captured).toHaveLength(1);
     expect(captured[0]!.sql).toContain('"advisor_grants"."revoked_at" is null');
-    expect(captured[0]!.params).toEqual([SCHOOL]);
+    expect(captured[0]!.sql).toContain('"advisor_grants"."consent_version" = $');
+    expect(captured[0]!.params).toEqual([SCHOOL, ADVISOR_CONSENT_VERSION]);
   });
 
   it("returns granted students whose hash is on the roster", async () => {
@@ -163,12 +165,12 @@ describe("stats", () => {
 
   it("renders withheld numbers as 'Fewer than 2', says when the roster is off, and shows no addresses", () => {
     const empty: GroupStats = { students: null, onboarded: null, quizDone: null, reviewed: null, topDirections: [], topCompanies: [] };
-    const html = renderToStaticMarkup(<AdvisorDashboardView dashboard={{ rosterEnabled: false, rosterSize: 0, roster: empty, school: { ...empty, students: 12 } }} />);
+    const html = renderToStaticMarkup(<AdvisorDashboardView dashboard={{ rosterEnabled: false, rosterSize: 0, roster: empty, school: { ...empty, students: 12 }, students: [] }} />);
     expect(html).toContain(FEWER_THAN_TWO);
     expect(html).toContain(ROSTER_OFF.split("'")[0]!);
     expect(html).toContain(">12<");
     expect(html).not.toContain("@");
-    const on = renderToStaticMarkup(<AdvisorDashboardView dashboard={{ rosterEnabled: true, rosterSize: 5, roster: empty, school: empty }} />);
+    const on = renderToStaticMarkup(<AdvisorDashboardView dashboard={{ rosterEnabled: true, rosterSize: 5, roster: empty, school: empty, students: [] }} />);
     expect(on).toContain("5 emails on your roster");
   });
 });

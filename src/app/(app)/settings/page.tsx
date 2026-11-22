@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
 import { PageShell } from "@/components/ui";
+import { studentAdvisorState } from "@/features/advisors/access";
+import { AdvisorSharing } from "@/features/advisors/components/advisor-sharing";
 import { SettingsForm } from "@/features/profile/components/settings-form";
 import { referralSummary } from "@/features/profile/referrals";
 import { hasOutdatedShareReviewsConsent, hasShareReviewsConsent } from "@/features/privacy/share-consent";
@@ -10,7 +12,7 @@ export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await requireUser();
-  const [headerList, summary] = await Promise.all([headers(), referralSummary(user.id)]);
+  const [headerList, summary, advisorState] = await Promise.all([headers(), referralSummary(user.id), studentAdvisorState(user)]);
   const host = headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "app.swervly.com";
   const proto = headerList.get("x-forwarded-proto") ?? "https";
 
@@ -25,6 +27,7 @@ export default async function SettingsPage() {
         points={summary.points}
         founder={isFounderEmail(user.email)}
       />
+      <AdvisorSharing state={advisorState} />
     </PageShell>
   );
 }
