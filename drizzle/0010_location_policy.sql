@@ -1,5 +1,8 @@
 -- Location for any college, work city on co-ops, priorities, privacy policy version (Nov 2026, Stage 3).
 --
+-- Numbered 0010: 0009 is action plans (cursor/action-stage-c-persistence), already applied to
+-- production and both dev branches on Nov 21, 2026.
+--
 -- profiles
 --   Adds home city (Census place GEOID, label, internal point), radius, "Open to anywhere",
 --   "Open to remote" and up to 3 priorities (collected from PR 3.5; empty until then).

@@ -39,8 +39,8 @@ describe("privacy policy version 2", () => {
     expect(server).not.toContain("consent_privacy_at = coalesce");
   });
 
-  it("migration 0009 backfills location and the policy version", () => {
-    const sql = readFileSync(path.join(process.cwd(), "drizzle/0009_location_policy.sql"), "utf8");
+  it("migration 0010 backfills location and the policy version", () => {
+    const sql = readFileSync(path.join(process.cwd(), "drizzle/0010_location_policy.sql"), "utf8");
     expect(sql).toContain(`WHEN 'cincinnati_only' THEN 25 ELSE 250`);
     expect(sql).toContain(`"open_to_anywhere" = true WHERE "location_constraint" = 'anywhere'`);
     expect(sql).toContain(`"privacy_policy_version" = 1 WHERE "consent_privacy_at" IS NOT NULL`);

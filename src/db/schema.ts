@@ -53,7 +53,7 @@ export const profiles = pgTable("profiles", {
   school: text("school"),                                     // self-reported; null until onboarding saves it
   goal: text("goal").notNull(),                               // 'industry' | 'grad_school' | 'undecided'
   goalNotes: text("goal_notes"),
-  // Legacy, no longer written (0009). 'cincinnati_only' | 'within_drive' | 'anywhere'. Drop in a later cleanup.
+  // Legacy, no longer written (0010). 'cincinnati_only' | 'within_drive' | 'anywhere'. Drop in a later cleanup.
   locationConstraint: text("location_constraint"),
   constraintsNotes: text("constraints_notes"),
   // Home city: a Census place (src/content/places). Label and point copied from the place on save.
