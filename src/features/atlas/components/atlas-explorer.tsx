@@ -34,6 +34,9 @@ import {
 
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2";
 
+/** Organizations shown per area before "Show all". */
+const COMPANIES_SHOWN = 8;
+
 function Badge({ children }: { children: string }) {
   return <span className="inline-block rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700">{children}</span>;
 }
@@ -135,6 +138,7 @@ export function AtlasExplorer({
   const [pursuing, setPursuing] = useState<AtlasNodeId | null>(saved?.pursuing ?? null);
   const [query, setQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answers>(saved?.available ? saved.answers : initialAnswers);
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -203,6 +207,7 @@ export function AtlasExplorer({
   function go(next: AtlasNodeId[]) {
     setTrail(next);
     setShowHidden(false);
+    setShowAllCompanies(false);
     setNotice(null);
   }
 
@@ -512,7 +517,7 @@ export function AtlasExplorer({
               <h2 className="text-lg font-semibold">Organizations in this area</h2>
               <p className="mt-1 text-sm text-neutral-600">{COMPANY_NOTE}</p>
               <ul className="mt-3 grid gap-2">
-                {companies.map((company) => (
+                {(showAllCompanies ? companies : companies.slice(0, COMPANIES_SHOWN)).map((company) => (
                   <li key={company.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
                     <p className="font-medium text-neutral-900">{company.name}</p>
                     <p className="text-sm text-neutral-600">{company.field} · Listed under {company.areas.join(" and ")}</p>
@@ -527,6 +532,16 @@ export function AtlasExplorer({
                   </li>
                 ))}
               </ul>
+              {companies.length > COMPANIES_SHOWN ? (
+                <button
+                  type="button"
+                  aria-expanded={showAllCompanies}
+                  onClick={() => setShowAllCompanies((value) => !value)}
+                  className={`mt-2 min-h-12 rounded px-1 text-sm text-sky-800 underline ${focusRing}`}
+                >
+                  {showAllCompanies ? "Show fewer" : `Show all ${companies.length} organizations`}
+                </button>
+              ) : null}
             </Card>
           ) : null}
 
