@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { CAREER_LINK_CHECKS } from "@/content/career-link-checks";
 import { CATALOG_COMPANIES } from "@/features/explore/companies";
 import { COMPANIES } from "@/content/companies";
 import {
@@ -29,8 +30,9 @@ afterAll(() => {
 });
 
 describe("verified career links", () => {
-  it("keeps 12 https links on the organization hosts", () => {
-    expect(VERIFIED_CAREER_LINKS).toHaveLength(12);
+  it("keeps every accepted check as an https link on the organization's host", () => {
+    expect(VERIFIED_CAREER_LINKS).toHaveLength(CAREER_LINK_CHECKS.filter((check) => check.accepted).length);
+    expect(VERIFIED_CAREER_LINKS.length).toBeGreaterThan(150);
     const finals = new Set<string>();
     for (const link of VERIFIED_CAREER_LINKS) {
       expect(link.httpStatus).toBe(200);
@@ -46,13 +48,13 @@ describe("verified career links", () => {
         expect(careerPageHref(link.requestedUrl)).toBeNull();
       }
     }
-    expect(VERIFIED_CAREER_LINKS.every((link) => link.checkedOn === "2026-11-17")).toBe(true);
+    expect(VERIFIED_CAREER_LINKS.every((link) => link.checkedOn === "2026-11-21")).toBe(true);
   });
 
   it("stops showing a link 90 days after its check", () => {
     const link = VERIFIED_CAREER_LINKS[0];
-    expect(careerPageHref(link.finalUrl, new Date("2027-02-15T12:00:00Z"))).toBe(link.finalUrl);
-    expect(careerPageHref(link.finalUrl, new Date("2027-02-16T12:00:00Z"))).toBeNull();
+    expect(careerPageHref(link.finalUrl, new Date("2027-02-19T12:00:00Z"))).toBe(link.finalUrl);
+    expect(careerPageHref(link.finalUrl, new Date("2027-02-20T12:00:00Z"))).toBeNull();
   });
 
   it("rejects anything that is not an exact checked URL", () => {
@@ -79,8 +81,8 @@ describe("company catalog", () => {
   it("lists exactly the companies with a checked careers page, and no placeholder", () => {
     const linked = CATALOG_COMPANIES.filter((company) => company.careerLinkId);
     expect(linked).toHaveLength(CATALOG_COMPANIES.length);
-    expect(linked).toHaveLength(12);
-    expect(new Set(linked.map((company) => company.careerLinkId)).size).toBe(12);
+    expect(linked).toHaveLength(VERIFIED_CAREER_LINKS.length);
+    expect(new Set(linked.map((company) => company.careerLinkId)).size).toBe(VERIFIED_CAREER_LINKS.length);
     expect(CATALOG_COMPANIES.some((company) => /sample|placeholder/i.test(company.name))).toBe(false);
     // Every directory company is also an employer the co-op form offers.
     const companyIds = new Set(COMPANIES.map((company) => company.id));
@@ -126,7 +128,9 @@ describe("local prototype actions", () => {
     if (!model) throw new Error("expected prototype model");
     expect(filterQuestions(model.questions, "company:mayo")).toEqual([]);
     expect(filterQuestions(model.questions, "role:clinical-operations")).toHaveLength(1);
-    expect(companiesForRole(model.companies, "Finance").map((company) => company.id)).toEqual(["cleveland-fed", "pnc"]);
+    const finance = companiesForRole(model.companies, "Finance");
+    expect(finance.map((company) => company.id)).toEqual(expect.arrayContaining(["cleveland-fed", "pnc"]));
+    expect(finance.every((company) => company.roleCategories.includes("Finance"))).toBe(true);
     expect(companiesForRole(model.companies, "Missing category")).toEqual([]);
 
     const missing = addQuestion(model.questions, { scopeValue: "role:nope", title: "Hi", body: "Details", id: "x" }, model.scopes);

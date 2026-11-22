@@ -1,3 +1,4 @@
+import { VERIFIED_CAREER_LINKS } from "@/features/explore/links";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PageShell } from "@/components/ui";
@@ -91,7 +92,7 @@ describe("career exploration prototype", () => {
     expect(text).not.toContain("Sample Org With No Page On File");
     expect(text).toContain("No sample answers yet.");
     expect(text).toContain(DEMO_FOUNDER_LABEL);
-    expect(text).toContain("Link checked 2026-11-17.");
+    expect(text).toContain("Link checked 2026-11-21.");
     expect(html).toContain('aria-label="Exploration sections"');
     expect(html).toContain('href="#demo-preview"');
     expect(html).not.toContain('href="#student-experiences"');
@@ -106,9 +107,9 @@ describe("career exploration prototype", () => {
 
     const anchors = [...html.matchAll(/<a\b[^>]*>/g)].map((match) => match[0]);
     const external = anchors.filter((tag) => /href="https:/.test(tag));
-    expect(external).toHaveLength(12);
+    expect(external).toHaveLength(VERIFIED_CAREER_LINKS.length);
     for (const tag of external) {
-      const href = /href="([^"]+)"/.exec(tag)?.[1];
+      const href = /href="([^"]+)"/.exec(tag)?.[1]?.replaceAll("&amp;", "&");
       expect(href).toBeTruthy();
       expect(careerPageHref(href ?? "")).toBe(href);
       expect(tag).toContain('target="_blank"');
