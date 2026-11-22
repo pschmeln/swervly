@@ -48,7 +48,10 @@ export default function PrivacyPage() {
             that you are open to anywhere, and whether you are open to remote work.
             It can also include notes and, if you choose, up to 3 things that
             matter most to you in a co-op. If you join through another student&apos;s
-            invite link, we store that connection. Our sign-in provider processes
+            invite link, we store who invited you. Every account has an invite code
+            that appears in that link instead of an internal id. When someone you
+            invited finishes onboarding, we record 100 points for you, for up to 10
+            friends. Points can be spent on things coming soon. Our sign-in provider processes
             the information needed to authenticate you, including a password if
             you set one. We also store when you consent to the Privacy Policy,
             to storing your data, and to including reviews in anonymous company
@@ -136,6 +139,11 @@ export default function PrivacyPage() {
             to other students.
           </p>
           <p>
+            Your invite code, who invited you, and your points are shown to you.
+            Other students do not see your points or who you invited. The founders
+            can see these records because they operate the service.
+          </p>
+          <p>
             Community posts and answers are shown to other signed-in students
             right away, without your name. The founders can see who wrote them.
             Helpful counts are shown; who marked them is not. Reports go only to
@@ -181,12 +189,16 @@ export default function PrivacyPage() {
             profile, quiz answers, and co-ops (including employers, ratings,
             optional pay, and optional free text), copy an invite link, and delete
             your account by typing DELETE. The download includes the Community
-            posts and answers you wrote. Deletion removes your profile, quiz
-            answers, co-ops and internships, reviews, and Community answers,
-            Helpful marks and reports from the application database, and deletes
-            your sign-in account. Your Community posts are deleted too, except a
-            post other students answered: its text and tags are erased and it is
-            no longer linked to you, so their answers stay.
+            posts and answers you wrote, your invite code, and your points.
+            Deletion removes your profile, quiz answers, co-ops and internships,
+            reviews, points, and Community answers, Helpful marks and reports from
+            the application database, and deletes your sign-in account. Your
+            Community posts are deleted too, except a post other students answered:
+            its text and tags are erased and it is no longer linked to you, so
+            their answers stay. If a friend you invited deletes their account,
+            points you already earned stay, and they are no longer linked to that
+            friend. If the student who invited you deletes their account, your
+            account is no longer linked to them.
           </p>
         </section>
 

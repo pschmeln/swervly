@@ -6,7 +6,7 @@ import PrivacyPage from "@/app/privacy/page";
 import { POLICY_CHANGES, PolicyAgreeInput } from "@/features/privacy/agree";
 import { needsPolicyAgreement, PRIVACY_POLICY_VERSION } from "@/features/privacy/policy-version";
 
-describe("privacy policy version 2", () => {
+describe("privacy policy version", () => {
   it("asks people who agreed to an older version, and nobody else", () => {
     const at = new Date();
     expect(needsPolicyAgreement({ consentPrivacyAt: at, privacyPolicyVersion: 1 })).toBe(true);

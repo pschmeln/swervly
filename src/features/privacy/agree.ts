@@ -24,4 +24,8 @@ export const POLICY_CHANGES: Record<number, readonly string[]> = {
     "Company lists show organizations headquartered in your area first. Nothing is hidden.",
     "You can add the city where you worked to a co-op. It's optional and not shown to other students.",
   ],
+  3: [
+    "We store who invited you and an invite code for your link. When a friend finishes onboarding, you earn 100 points, for up to 10 friends. Points can be spent on things coming soon.",
+    "Your data download includes your invite code and points. Deleting your account removes your points. If a friend deletes their account, points you earned stay and are no longer linked to them. If the student who invited you deletes their account, your account is no longer linked to them.",
+  ],
 };

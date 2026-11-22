@@ -64,6 +64,7 @@ function userRow(id: string, clerkId: string, email: string, onboardedAt: Date |
     onboardedAt,
     school: "mail.uc.edu",
     invitedByUserId: null,
+    referralCode: "0123456789abcdef0123456789abcdef",
     shareFreeTextDefault: false,
     majorSource: "catalog",
     customMajorText: null,

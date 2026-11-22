@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp,
-  uniqueIndex, uuid, vector,
+  unique, uniqueIndex, uuid, vector,
 } from "drizzle-orm/pg-core";
 
 const createdAt = timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -40,6 +40,8 @@ export const users = pgTable("users", {
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   source: text("source").notNull().default("early"),   // 'early' | 'launch'
   invitedByUserId: uuid("invited_by_user_id").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
+  // Invite links use this, never users.id. Migration 0012 backfills existing rows.
+  referralCode: text("referral_code").notNull().default(sql`md5(gen_random_uuid()::text)`).unique(),
   shareFreeTextDefault: boolean("share_free_text_default").notNull().default(false),
   createdAt,
   updatedAt,
@@ -328,6 +330,23 @@ export const communityRateBuckets = pgTable("community_rate_buckets", {
   count: integer("count").notNull().default(0),
 }, (t) => [primaryKey({ columns: [t.userId, t.action, t.windowStart], name: "community_rate_buckets_pk" })]);
 
+// Points a student earns. Migration 0012. One row per onboarded friend, at most 10 per referrer.
+// Deleting the referrer removes their rows. Deleting the friend keeps the points and clears the link.
+export const pointsLedger = pgTable("points_ledger", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(),
+  reason: text("reason").notNull(),
+  referredUserId: uuid("referred_user_id").references(() => users.id, { onDelete: "set null" }),
+  slot: integer("slot").notNull(),
+  createdAt,
+}, (t) => [
+  check("points_ledger_reason", sql`${t.reason} in ('referral_onboarded')`),
+  check("points_ledger_slot_range", sql`${t.slot} between 1 and 10`),
+  unique("points_ledger_user_reason_slot_uq").on(t.userId, t.reason, t.slot),
+  unique("points_ledger_reason_referred_uq").on(t.reason, t.referredUserId),
+]);
+
 export type User = typeof users.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Assessment = typeof assessments.$inferSelect;
@@ -342,6 +361,7 @@ export type CareerAtlasMark = typeof careerAtlasMarks.$inferSelect;
 export type CareerAtlasAnswer = typeof careerAtlasAnswers.$inferSelect;
 export type CommunityPost = typeof communityPosts.$inferSelect;
 export type CommunityComment = typeof communityComments.$inferSelect;
+export type PointsLedger = typeof pointsLedger.$inferSelect;
 
 // Action plans (migration 0009). One active plan per student; archived plans stay intact.
 // Child rows use composite FK (plan_id, user_id) so a task/skill cannot reference another user's plan.
