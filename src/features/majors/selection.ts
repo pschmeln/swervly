@@ -193,7 +193,7 @@ export type AcademicExploration = {
 
 /**
  * Personal reason for one major: the student's own result on the trait the
- * major leans on, then what the work is like. A clue, never a fit score.
+ * major leans on, then what the work is like. Describes the student's own answer; never a score.
  */
 export function majorReason(
   link: MajorTraitLink,
@@ -209,7 +209,7 @@ export function majorReason(
     return { score, text: `${name} ${link.why}. ${tail}` };
   }
   const headline = traitHeadline(link.trait, band);
-  if (score === 2) return { score, text: `${headline}. ${name} ${link.why}, so it may suit you.` };
+  if (score === 2) return { score, text: `${headline}. ${name} ${link.why}, so it fits how you work.` };
   if (score === 1) return { score, text: `${headline}. ${name} ${link.why}, something you can grow into.` };
   return { score, text: `${headline}. ${name} ${link.why}, so it would stretch you. That can be a good thing if the subject interests you.` };
 }
@@ -234,7 +234,7 @@ function suggestionsFor(
       suggestion: {
         name: match.name,
         category: match.category,
-        reason: personal?.text ?? `Worth exploring because ${because}. ${match.name} is one place to look. This is not a fit score.`,
+        reason: personal?.text ?? `${match.name} is a strong option because ${because}.`,
       },
     });
   });
@@ -284,8 +284,8 @@ export function academicExploration(input: {
   return {
     visible: true,
     note: input.traits
-      ? "Picked from your goal and described using your quiz. Personality is one clue, not a fit score."
-      : "These are places to look from the goal you stated. They are not a fit score.",
+      ? "Picked from your goal and matched to your quiz."
+      : "Picked from the goal you stated.",
     suggestions: suggestionsFor(input.goal === "industry" ? INDUSTRY_MAJORS : GRAD_MAJORS, input.goal, input.traits ?? null),
   };
 }

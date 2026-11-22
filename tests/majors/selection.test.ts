@@ -123,7 +123,7 @@ describe("major selection", () => {
     expect(undecided.visible).toBe(true);
     expect(undecided.suggestions.length).toBeGreaterThan(0);
     expect(undecided.suggestions.every((item) => !/\d+\s*%/.test(item.reason))).toBe(true);
-    expect(undecided.suggestions.every((item) => item.reason.toLowerCase().includes("not a fit score"))).toBe(true);
+    expect(undecided.suggestions.every((item) => !/fit score|proven|guarantee/i.test(item.reason))).toBe(true);
 
     const confirmed = academicExploration({ source: "catalog", exploringMajors: false, goal: "industry" });
     expect(confirmed.visible).toBe(false);

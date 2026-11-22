@@ -12,8 +12,9 @@
 export const INSTRUMENT = "mini_ipip_20";
 export const CONTENT_VERSION = 1;
 
-export const QUIZ_EXPLORATORY_DISCLAIMER =
-  "This is a short, lightly reworded personality quiz for exploration. It is not a clinical test, and the scores are not a career diagnosis.";
+/** Shown with the quiz. Confident about what the answers are for; no clinical or hiring claim. */
+export const QUIZ_INTRO =
+  "Answer for how you usually are, not how you'd like to be. Swervly uses your answers to match you with roles that fit how you work.";
 
 export const RESPONSE_LABELS = [
   "Very inaccurate",

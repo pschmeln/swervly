@@ -16,7 +16,7 @@ import {
   Textarea,
   TextInput,
 } from "@/components/ui";
-import { INSTRUMENT, QUIZ_EXPLORATORY_DISCLAIMER, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
+import { INSTRUMENT, QUIZ_INTRO, QUIZ_ITEMS, RESPONSE_LABELS } from "@/content/mini-ipip";
 import { MajorPicker } from "@/features/majors/components/major-picker";
 import type { MajorSearchContext } from "@/features/majors/catalog";
 import { isSelectableCatalogName, ProfileWriteInput, type MajorPickerValue } from "@/features/majors/selection";
@@ -43,7 +43,6 @@ const FIELD_COPY: Record<string, string> = {
   majorSelection: "Choose a major, Undecided, or enter the one that is missing.",
   "majorSelection.name": "Enter your major (2–120 characters).",
   year: "Select your year.",
-  coopTrack: "Use 40 characters or fewer.",
   goal: "Select a goal.",
   goalNotes: "Use 500 characters or fewer.",
   locationConstraint: "Select a location constraint.",
@@ -60,7 +59,6 @@ const STEP_ONE_KEYS = new Set([
   "majorSelection.name",
   "exploringMajors",
   "year",
-  "coopTrack",
 ]);
 
 const textLinkClass =
@@ -74,7 +72,6 @@ export type OnboardingDefaults = {
   major: MajorPickerValue;
   exploringMajors: boolean;
   year: string;
-  coopTrack: string;
   goal: string;
   goalNotes: string;
   locationConstraint: string;
@@ -102,7 +99,6 @@ function profilePayload(state: OnboardingDefaults): unknown {
   return {
     school: state.school.trim(),
     year: Number(state.year),
-    coopTrack: state.coopTrack.trim(),
     goal: state.goal,
     goalNotes: state.goalNotes.trim(),
     locationConstraint: state.locationConstraint,
@@ -132,7 +128,6 @@ export function stepOneErrors(
     errors.major = FIELD_COPY.major;
   }
   if (!YEAR_OPTIONS.some((option) => option.value === state.year)) errors.year = FIELD_COPY.year;
-  if (state.coopTrack.trim().length > 40) errors.coopTrack = FIELD_COPY.coopTrack;
   return errors;
 }
 
@@ -314,7 +309,8 @@ export function OnboardingFlow({
       parsed.data,
     );
     if (result.ok) {
-      router.push(ROUTES.direction);
+      // Direction opens with the new work-style card when it sees quiz=done.
+      router.push(`${ROUTES.direction}?quiz=done`);
       return;
     }
     setFormError(result.error.message);
@@ -415,20 +411,6 @@ export function OnboardingFlow({
                 placeholder="Select a year"
               />
             </Field>
-            <Field
-              label="Co-op track"
-              htmlFor="coopTrack"
-              hint="Optional"
-              error={fieldErrors.coopTrack}
-            >
-              <TextInput
-                id="coopTrack"
-                name="coopTrack"
-                value={form.coopTrack}
-                maxLength={40}
-                onChange={(event) => update("coopTrack", event.target.value)}
-              />
-            </Field>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button type="submit" className="w-full sm:w-auto">
                 Next
@@ -514,7 +496,7 @@ export function OnboardingFlow({
             <p className="text-sm text-neutral-700">
               About a minute. There are no right answers. Pick the line that sounds like you now.
             </p>
-            <p className="text-sm text-neutral-600">{QUIZ_EXPLORATORY_DISCLAIMER}</p>
+            <p className="text-sm text-neutral-600">{QUIZ_INTRO}</p>
             <p className="text-sm text-neutral-700" aria-live="polite">
               Questions {pageStart + 1}–{pageStart + pageItems.length} of {QUIZ_ITEMS.length}.{" "}
               {answeredCount} of {QUIZ_ITEMS.length} answered.

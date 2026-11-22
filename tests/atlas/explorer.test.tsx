@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
+import { ATLAS_BANNER } from "@/features/atlas/view";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 
@@ -12,7 +13,7 @@ describe("AtlasExplorer", () => {
     const html = renderToStaticMarkup(<AtlasExplorer entry={entry} dismissedRoles={[]} initialFocus={null} />);
     expect(html).toContain("Starting from Nursing");
     expect(html).toContain("Clinical Care");
-    expect(html).toContain("not a prediction of fit");
+    expect(html).toContain(ATLAS_BANNER);
     expect(html).toContain("Used under the CC BY 4.0 license");
   });
 
