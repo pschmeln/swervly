@@ -9,6 +9,9 @@ import {
 import { buildExploreModel, COMPANY_ROLE_FILTERS } from "@/features/explore/view-model";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/lib/copy-rules";
 
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
+
 // Career links expire 90 days after their check; pin "today" so this test does not.
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ["Date"] });

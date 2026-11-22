@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { GRAD_MAJORS, INDUSTRY_MAJORS } from "@/content/major-traits";
 import { matchCatalog } from "@/features/majors/catalog";
 import { academicExploration, majorReason } from "@/features/majors/selection";
 import type { TraitScores } from "@/features/profile/scoring";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const high: TraitScores = { extraversion: 18, agreeableness: 18, conscientiousness: 18, neuroticism: 12, openness: 18 };
 const low: TraitScores = { extraversion: 6, agreeableness: 6, conscientiousness: 6, neuroticism: 12, openness: 6 };

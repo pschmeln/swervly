@@ -11,6 +11,7 @@ import {
   type CatalogMajor,
   type MajorSearchContext,
 } from "./catalog";
+import { offersUndecided, showsMajorCategory, suggestsMajors } from "@/lib/audience";
 
 export const MajorSelectionInput = z.discriminatedUnion("source", [
   z.object({
@@ -90,6 +91,7 @@ export function resolveMajorWrite(
   const exploringRequested = input.exploringMajors === true;
 
   if (input.majorSelection?.source === "undecided") {
+    if (!offersUndecided) return { ok: false, message: "Choose a major from the list." };
     return {
       ok: true,
       write: {
@@ -105,6 +107,8 @@ export function resolveMajorWrite(
   if (input.majorSelection?.source === "catalog") {
     const match = matchCatalog(input.majorSelection.name, context);
     if (!match) return { ok: false, message: "Choose a major from the list." };
+    // A major outside the current audience (src/lib/audience.ts) is kept as the student's own text.
+    if (!showsMajorCategory(match.category)) return { ok: true, write: customWrite(match.name, exploringRequested) };
     return { ok: true, write: catalogWrite(match.name, exploringRequested) };
   }
 
@@ -114,7 +118,7 @@ export function resolveMajorWrite(
       return { ok: false, message: "Enter your major (2–120 characters)." };
     }
     const match = matchCatalog(rawName, context);
-    if (match && !match.legacy) {
+    if (match && !match.legacy && showsMajorCategory(match.category)) {
       return { ok: true, write: catalogWrite(match.name, exploringRequested) };
     }
     return { ok: true, write: customWrite(rawName, exploringRequested) };
@@ -123,7 +127,7 @@ export function resolveMajorWrite(
   if (input.major) {
     const rawName = cleanMajorName(input.major);
     const match = matchCatalog(rawName, context);
-    if (match) return { ok: true, write: catalogWrite(match.name, exploringRequested) };
+    if (match && showsMajorCategory(match.category)) return { ok: true, write: catalogWrite(match.name, exploringRequested) };
     if (rawName.length < 2 || rawName.length > 120) {
       return { ok: false, message: "Enter your major (2–120 characters)." };
     }
@@ -263,6 +267,8 @@ export function academicExploration(input: {
   goal: "industry" | "grad_school" | "undecided";
   traits?: TraitScores | null;
 }): AcademicExploration {
+  // Hidden for this audience (src/lib/audience.ts): no card, no note.
+  if (!suggestsMajors) return { visible: false, note: "", suggestions: [] };
   const confirmed = input.source === "catalog" || input.source === "custom";
   const visible = input.source === "undecided" || (confirmed && input.exploringMajors);
   if (!visible) {

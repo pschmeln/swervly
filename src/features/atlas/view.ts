@@ -4,9 +4,12 @@ import { CATALOG_COMPANIES } from "@/features/explore/companies";
 import { careerLinkById, careerPageHref } from "@/features/explore/links";
 import { familiesForRole } from "@/features/atlas/compat";
 import type { AtlasEntry } from "@/features/atlas/entry";
-import { childrenOf, familiesBlockedByRoles, pathsTo, visibilityOf, type AtlasGraph } from "@/features/atlas/graph";
+import { ATLAS_DATA, childrenOf, familiesBlockedByRoles, pathsTo, visibilityOf, type AtlasGraph } from "@/features/atlas/graph";
 import { ROLE_FAMILIES } from "@/features/atlas/compat";
 import { levelOf, type AtlasLevel, type AtlasNodeId, type FamilyId } from "@/features/atlas/types";
+
+/** Every occupation in the source data, shown or hidden. */
+const ALL_OCCUPATION_IDS: ReadonlySet<string> = new Set(ATLAS_DATA.occupations.map((item) => item.id));
 
 /** Shown on every Atlas screen. */
 export const ATLAS_BANNER = "A map of careers. Open any area to see the work, the skills it takes and where it leads.";
@@ -213,10 +216,12 @@ export function nodeModel(
         skills: record.skills,
         software: record.software,
         jobZone: record.jobZone !== null && ONET_JOB_ZONES[record.jobZone] ? { zone: record.jobZone, ...ONET_JOB_ZONES[record.jobZone] } : null,
-        related: record.related.map((item) => {
+        related: record.related.flatMap((item) => {
           const relatedId = `occ:onet:${item.onetCode}` as AtlasNodeId;
           const inMap = graph.nodes.has(relatedId);
-          return { title: item.title, id: inMap ? relatedId : null, href: inMap ? null : onetOnlineHref(item.onetCode) };
+          // In the full map but hidden for this audience (src/lib/audience.ts): leave it out.
+          if (!inMap && ALL_OCCUPATION_IDS.has(relatedId)) return [];
+          return [{ title: item.title, id: inMap ? relatedId : null, href: inMap ? null : onetOnlineHref(item.onetCode) }];
         }),
       }
     : null;

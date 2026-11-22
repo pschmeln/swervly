@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { withoutDismissedRoles } from "@/features/direction/career-roles";
 import { buildDirection, RULES_EVIDENCE_LABEL, suggestionsFromRules } from "@/features/direction/rules";
 import type { TraitScores } from "@/features/profile/scoring";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const openAndConscientious: TraitScores = {
   extraversion: 18,

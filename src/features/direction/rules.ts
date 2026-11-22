@@ -1,6 +1,7 @@
 import type { Trait } from "@/content/mini-ipip";
 import { careerRoleLabel, EXTRA_CAREER_ROLE_IDS, type ExtraCareerRole } from "@/features/direction/career-roles";
 import { majorFamily, usesEngineeringDirection, type MajorFamily } from "@/features/majors/catalog";
+import { showsRole } from "@/lib/audience";
 import type { TraitScores } from "@/features/profile/scoring";
 import { traitBand } from "@/features/profile/traits";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
@@ -434,7 +435,8 @@ function quizMatches(
     ? [...RULES.filter((rule) => !rule.fallback), ...EXTRA_RULES]
     : EXTRA_RULES;
   for (const rule of rules) {
-    if (!rule.when(context)) continue;
+    // Roles hidden for the current audience (src/lib/audience.ts) never score.
+    if (!showsRole(rule.role) || !rule.when(context)) continue;
     const current = best.get(rule.role);
     if (!current || rule.points > current.points) best.set(rule.role, { points: rule.points, reason: rule.reason });
   }
@@ -515,9 +517,13 @@ function insufficientSuggestion(): DirectionSuggestion {
 
 const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
 
+/** The major's own role list, without roles hidden for the current audience (src/lib/audience.ts). */
+function familyRows(major: string): readonly { role: RoleType | ExtraCareerRole; reason: string }[] {
+  return (FAMILY_SUGGESTIONS[majorFamily(major)] ?? []).filter((row) => showsRole(row.role));
+}
+
 function nonEngineeringSuggestions(context: DirectionContext, hidden: ReadonlySet<string>): DirectionSuggestion[] {
-  const family = majorFamily(context.major);
-  const rows = FAMILY_SUGGESTIONS[family] ?? [];
+  const rows = familyRows(context.major);
   const pick = (skip: ReadonlySet<string>) =>
     rows.length > 0 ? majorFamilySuggestions(context, rows, skip) : quizOnlySuggestions(context, skip);
   const chosen = pick(hidden);
@@ -710,9 +716,12 @@ export function buildDirection(
 ): DirectionResult {
   const hidden = new Set(dismissed);
   const fromRules = suggestionsFromRules(context, dismissed);
-  const evidence = suggestionsFromSimilar(context.traits, reviews).filter((item) => !hidden.has(item.roleType));
+  // Audience-hidden roles are filtered here, not added to `hidden`: `hidden` means "the student dismissed it".
+  const evidence = suggestionsFromSimilar(context.traits, reviews).filter(
+    (item) => showsRole(item.roleType) && !hidden.has(item.roleType),
+  );
   if (!keepsEngineeringCoopRules(context.major)) {
-    const rows = FAMILY_SUGGESTIONS[majorFamily(context.major)] ?? [];
+    const rows = familyRows(context.major);
     const quizOnly = rows.length === 0;
     const allowed = new Set<string>([...rows.map((row) => row.role), ...EXTRA_ROLE_ORDER]);
     const fromStudents = quizOnly ? [] : evidence.filter((item) => allowed.has(item.roleType));

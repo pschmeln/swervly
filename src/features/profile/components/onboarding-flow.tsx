@@ -34,6 +34,7 @@ import { AssessmentInput } from "@/features/profile/schemas";
 import { ROUTES } from "@/lib/constants";
 import { sendJson } from "./api";
 import { GOAL_OPTIONS, YEAR_OPTIONS } from "./options";
+import { offersUndecided, suggestsMajors } from "@/lib/audience";
 
 const PAGE_SIZE = 5;
 const PAGE_COUNT = Math.ceil(QUIZ_ITEMS.length / PAGE_SIZE);
@@ -43,13 +44,17 @@ export const DATA_USE_CONSENT_LABEL =
 
 export { SHARE_REVIEWS_CONSENT_LABEL };
 
+const MAJOR_FIELD_COPY = offersUndecided
+  ? "Choose a major, Undecided, or enter the one that is missing."
+  : "Choose a major, or enter the one that is missing.";
+
 const FIELD_COPY: Record<string, string> = {
   consentPrivacy: "Confirm that you have read the Privacy Policy.",
   consentDataUse:
     "Confirm that your answers and reviews can be stored as described.",
   school: "Enter your school (2–120 characters).",
-  major: "Choose a major, Undecided, or enter the one that is missing.",
-  majorSelection: "Choose a major, Undecided, or enter the one that is missing.",
+  major: MAJOR_FIELD_COPY,
+  majorSelection: MAJOR_FIELD_COPY,
   "majorSelection.name": "Enter your major (2–120 characters).",
   year: "Select your year.",
   goal: "Select a goal.",
@@ -547,7 +552,7 @@ export function OnboardingFlow({
               })}
             </div>
             {fieldErrors.answers ? <ErrorNote>{fieldErrors.answers}</ErrorNote> : null}
-            {questionPage === PAGE_COUNT - 1 && form.major.source !== "undecided" ? (
+            {suggestsMajors && questionPage === PAGE_COUNT - 1 && form.major.source !== "undecided" ? (
               <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2">
                 <Checkbox
                   id="exploringMajors"

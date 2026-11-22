@@ -1,13 +1,16 @@
-import { OCCUPATIONS } from "@/content/atlas/occupations";
-import { SPECIALIZATIONS } from "@/content/atlas/taxonomy";
+import { atlasGraph } from "@/features/atlas/graph";
 import { isGoalNodeId } from "@/features/action-ui/adapter";
 import type { GoalOption } from "@/features/action-ui/types";
 
-/** Alphabetical career list for the manual picker. This is not a ranked recommendation. */
+/**
+ * Alphabetical career list for the manual picker. This is not a ranked recommendation.
+ * Uses the student-facing map, so careers hidden for the audience (src/lib/audience.ts) are left out.
+ */
 export function goalCatalog(): GoalOption[] {
+  const { specializations, occupations } = atlasGraph().data;
   const options: GoalOption[] = [
-    ...SPECIALIZATIONS.map((item) => ({ nodeId: item.id, title: item.title, level: "specialization" as const })),
-    ...OCCUPATIONS.map((item) => ({ nodeId: item.id, title: item.title, level: "occupation" as const })),
+    ...specializations.map((item) => ({ nodeId: item.id, title: item.title, level: "specialization" as const })),
+    ...occupations.map((item) => ({ nodeId: item.id, title: item.title, level: "occupation" as const })),
   ];
   return options.filter((item) => isGoalNodeId(item.nodeId)).sort((a, b) => a.title.localeCompare(b.title) || a.nodeId.localeCompare(b.nodeId));
 }

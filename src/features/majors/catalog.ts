@@ -3,6 +3,8 @@
  * and are passed in as extras. "Undecided / Not sure" is not a row here.
  */
 
+import { showsMajorCategory } from "@/lib/audience";
+
 export const UNDECIDED_LABEL = "Undecided / Not sure";
 export const CUSTOM_MAJOR_PROMPT = "My major isn't listed";
 export const APPROVED_CUSTOM_CATEGORY = "Student-submitted";
@@ -260,7 +262,8 @@ function scoreMajor(major: CatalogMajor, query: string): number {
 }
 
 export function searchMajors(query: string, context: MajorSearchContext = {}): CatalogMajor[] {
-  const visible = pool(context).filter((major) => !major.legacy);
+  // Majors outside the current audience (src/lib/audience.ts) stay matchable but are not offered.
+  const visible = pool(context).filter((major) => !major.legacy && showsMajorCategory(major.category));
   const seen = new Set<string>();
   const unique: CatalogMajor[] = [];
   for (const major of visible) {

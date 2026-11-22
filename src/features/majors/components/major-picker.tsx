@@ -10,6 +10,7 @@ import {
   type MajorSearchContext,
 } from "@/features/majors/catalog";
 import type { MajorPickerValue } from "@/features/majors/selection";
+import { offersUndecided, showsMajorCategory } from "@/lib/audience";
 
 type Option =
   | { kind: "undecided"; key: string; label: string; detail: string }
@@ -47,7 +48,7 @@ export function MajorPicker({
         : "";
   const shown = query ?? selectedLabel;
   const customMatch = value.source === "custom" ? matchCatalog(value.name, context ?? {}) : null;
-  const matchedListed = customMatch && !customMatch.legacy ? customMatch : null;
+  const matchedListed = customMatch && !customMatch.legacy && showsMajorCategory(customMatch.category) ? customMatch : null;
 
   function choose(option: Option) {
     if (option.kind === "undecided") onChange({ source: "undecided", name: "" });
@@ -77,7 +78,7 @@ export function MajorPicker({
 
   return (
     <div className="grid gap-3">
-      <Field label="Major" htmlFor={id} error={error} hint="Search the list, pick Undecided, or enter a major that is missing.">
+      <Field label="Major" htmlFor={id} error={error} hint={offersUndecided ? "Search the list, pick Undecided, or enter a major that is missing." : "Search the list, or enter a major that is missing."}>
         <TextInput
           id={id}
           name="major"
@@ -151,10 +152,11 @@ export function MajorPicker({
 function buildOptions(query: string, context: MajorSearchContext): Option[] {
   const normalized = query.trim().toLowerCase();
   const showUndecided =
-    normalized.length === 0 ||
+    offersUndecided &&
+    (normalized.length === 0 ||
     "undecided".includes(normalized) ||
     "not sure".includes(normalized) ||
-    UNDECIDED_LABEL.toLowerCase().includes(normalized);
+    UNDECIDED_LABEL.toLowerCase().includes(normalized));
   const majors = searchMajors(query, context);
   const options: Option[] = [];
   if (showUndecided) {

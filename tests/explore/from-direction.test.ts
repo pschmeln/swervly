@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildDirection } from "@/features/direction/rules";
 import { DIRECTORY_WHY_SHOWN } from "@/features/explore/companies";
 import { directionExploreCopy } from "@/features/explore/from-direction";
 import { buildExploreModel } from "@/features/explore/view-model";
 import type { TraitScores } from "@/features/profile/scoring";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const traits: TraitScores = {
   extraversion: 12,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { EXTRA_CAREER_ROLE_IDS } from "@/features/direction/career-roles";
 import {
   buildDirection,
@@ -8,6 +8,9 @@ import {
 } from "@/features/direction/rules";
 import type { TraitScores } from "@/features/profile/scoring";
 import { ROLE_TYPE_VALUES } from "@/features/review/roles";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const curious: TraitScores = { extraversion: 12, agreeableness: 12, conscientiousness: 16, neuroticism: 10, openness: 18 };
 const peopleFirst: TraitScores = { extraversion: 18, agreeableness: 18, conscientiousness: 12, neuroticism: 8, openness: 12 };

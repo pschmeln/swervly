@@ -63,14 +63,14 @@ export default async function DirectionPage({
             </ul>
           ) : null}
         </Card>
-      ) : (
+      ) : direction.academic.note ? (
         <p className="text-sm text-neutral-600">
           {direction.academic.note}{" "}
           <Link className="font-medium underline" href={ROUTES.profile}>
             Edit your profile
           </Link>
         </p>
-      )}
+      ) : null}
       <Card>
         <h2 className="text-lg font-semibold">How you work</h2>
         <p className="mt-1 text-sm text-neutral-600">

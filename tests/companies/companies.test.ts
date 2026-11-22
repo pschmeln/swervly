@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CAREER_LINK_CHECKS } from "@/content/career-link-checks";
 import { COMPANIES } from "@/content/companies";
 import { EMPLOYERS_SEED } from "@/content/employers-seed";
@@ -7,6 +7,9 @@ import { hostMatches, isJobBoard } from "@/features/companies/link-check";
 import { EXTRA_CAREER_ROLE_IDS, isCareerRoleId } from "@/features/direction/career-roles";
 import { CATALOG_COMPANIES } from "@/features/explore/companies";
 import { normalizeEmployerName } from "@/features/review/normalize";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const graph = atlasGraph();
 
