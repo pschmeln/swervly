@@ -67,7 +67,6 @@ function userRow(overrides: Pick<User, "clerkId" | "email"> & Partial<User>): Us
     id: "00000000-0000-4000-8000-000000000001",
     major: null,
     year: null,
-    coopTrack: null,
     consentPrivacyAt: null,
     consentDataUseAt: null,
     shareReviewsConsentAt: null,

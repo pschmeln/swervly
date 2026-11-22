@@ -63,7 +63,6 @@ function userRow(overrides: Partial<User> = {}): User {
     email: "student@mail.uc.edu",
     major: null,
     year: null,
-    coopTrack: null,
     consentPrivacyAt: null,
     consentDataUseAt: null,
     shareReviewsConsentAt: null,
