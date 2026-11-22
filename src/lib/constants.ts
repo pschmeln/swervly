@@ -40,6 +40,7 @@ export const ROUTES = {
   directionDismiss: "/api/direction/dismiss",
   directionInterest: "/api/direction/interest",
   directionExplore: "/direction/explore",
+  community: "/community",
   directionAtlas: "/direction/atlas",
   atlasMarks: "/api/atlas/marks",
   atlasAnswers: "/api/atlas/answers",

@@ -7,7 +7,7 @@ import { AppNav, isActive, NAV } from "@/components/app-nav";
 
 describe("AppNav", () => {
   it("follows the Home cycle order", () => {
-    expect(NAV.map((item) => item.label)).toEqual(["Home", "Profile", "Direction", "Reviews", "Settings"]);
+    expect(NAV.map((item) => item.label)).toEqual(["Home", "Profile", "Direction", "Community", "Reviews", "Settings"]);
   });
 
   it("marks a section active on its own page and on pages under it", () => {
