@@ -1,36 +1,27 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui";
-import { ROUTES } from "@/lib/constants";
 
+/** Presentational Not for me control; parent serializes dismisses for the whole list. */
 export function DismissSuggestion({
   roleType,
-  onDismissed,
+  disabled = false,
+  pending = false,
+  onDismiss,
 }: {
   roleType: string;
-  /** Called after a successful save so the parent can update the list immediately. */
-  onDismissed?: (roleType: string) => void;
+  disabled?: boolean;
+  pending?: boolean;
+  onDismiss: (roleType: string) => void;
 }) {
-  const [pending, setPending] = useState(false);
-
-  async function dismiss() {
-    if (pending) return;
-    setPending(true);
-    try {
-      const response = await fetch(ROUTES.directionDismiss, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ roleType }),
-      });
-      if (response.ok) onDismissed?.(roleType);
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
-    <Button type="button" variant="secondary" className="w-full sm:w-auto" disabled={pending} onClick={() => void dismiss()}>
+    <Button
+      type="button"
+      variant="secondary"
+      className="w-full sm:w-auto"
+      disabled={disabled || pending}
+      onClick={() => onDismiss(roleType)}
+    >
       {pending ? "Saving…" : "Not for me"}
     </Button>
   );

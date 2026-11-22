@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Card } from "@/components/ui";
 import { familiesForRole } from "@/features/atlas/compat";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
+import {
+  beginDismiss,
+  DISMISS_GATE_IDLE,
+  failDismiss,
+  succeedDismissAwaitingRefresh,
+  type DismissGate,
+} from "@/features/direction/components/dismiss-gate";
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { WhyMatched } from "@/features/direction/components/why-matched";
 import {
   DIRECTION_EXHAUSTED_ACTION,
-  DIRECTION_EXHAUSTED_LABEL,
   FALLBACK_EVIDENCE_LABEL,
   type DirectionSuggestion,
 } from "@/features/direction/rules";
@@ -31,22 +37,9 @@ type CareerSuggestionsProps = {
   children?: ReactNode;
 };
 
-/** Pure: what the screen shows right after a successful Not for me (before refresh). */
-export function afterDismiss(
-  suggestions: readonly CareerSuggestionView[],
-  roleType: string,
-): { suggestions: CareerSuggestionView[]; exhausted: boolean; label: string | null } {
-  const next = suggestions.filter((item) => item.roleType !== roleType);
-  if (next.length === 0) {
-    return { suggestions: next, exhausted: true, label: DIRECTION_EXHAUSTED_LABEL };
-  }
-  return { suggestions: next, exhausted: false, label: null };
-}
-
 /**
- * Direction label + career cards with optimistic dismiss: the last "Not for me"
- * clears the list and shows the exhausted heading/message immediately, then refreshes.
- * Parent should remount via `key` when server props change after refresh (replacements).
+ * Direction label + career cards. Dismisses are serialized: one Not for me at a time,
+ * list updates only from server props after refresh (remount via parent `key`).
  */
 export function CareerSuggestions({
   initialLabel,
@@ -58,23 +51,55 @@ export function CareerSuggestions({
   children,
 }: CareerSuggestionsProps) {
   const router = useRouter();
-  const [suggestions, setSuggestions] = useState(initialSuggestions);
-  const [label, setLabel] = useState(initialLabel);
-  const [exhausted, setExhausted] = useState(initialExhausted);
+  const [gate, setGate] = useState<DismissGate>(DISMISS_GATE_IDLE);
+  const [error, setError] = useState(false);
+  const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function onDismissed(roleType: string) {
-    const next = afterDismiss(suggestions, roleType);
-    setSuggestions(next.suggestions);
-    if (next.label) setLabel(next.label);
-    if (next.exhausted) setExhausted(true);
-    router.refresh();
+  useEffect(() => {
+    return () => {
+      if (unlockTimer.current) clearTimeout(unlockTimer.current);
+    };
+  }, []);
+
+  const busy = gate.activeRole !== null;
+  const showExhausted = initialExhausted || initialSuggestions.length === 0;
+
+  function dismiss(roleType: string) {
+    // Functional update so two rapid clicks cannot both claim the idle gate.
+    let allowed = false;
+    setGate((current) => {
+      const next = beginDismiss(current, roleType);
+      if (!next) return current;
+      allowed = true;
+      return next;
+    });
+    if (!allowed) return;
+    void runDismiss(roleType);
   }
 
-  const showExhausted = exhausted || suggestions.length === 0;
+  async function runDismiss(roleType: string) {
+    setError(false);
+    try {
+      const response = await fetch(ROUTES.directionDismiss, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ roleType }),
+      });
+      if (!response.ok) throw new Error("dismiss failed");
+      setGate((current) => succeedDismissAwaitingRefresh(current));
+      router.refresh();
+      // Stay locked until remount with server suggestions; unlock if refresh never remounts.
+      if (unlockTimer.current) clearTimeout(unlockTimer.current);
+      unlockTimer.current = setTimeout(() => setGate(DISMISS_GATE_IDLE), 8_000);
+    } catch {
+      setGate((current) => failDismiss(current));
+      setError(true);
+    }
+  }
 
   return (
     <>
-      <p className="text-neutral-700">{label}</p>
+      <p className="text-neutral-700">{initialLabel}</p>
       {children}
       <h2 className="text-lg font-semibold">Career direction</h2>
       <div className="grid gap-4">
@@ -93,7 +118,7 @@ export function CareerSuggestions({
             </div>
           </Card>
         ) : null}
-        {suggestions.map((suggestion) => (
+        {initialSuggestions.map((suggestion) => (
           <Card key={suggestion.roleType}>
             <h2 className="text-lg font-semibold">{suggestion.roleLabel}</h2>
             {suggestion.evidenceLabel ? (
@@ -106,8 +131,16 @@ export function CareerSuggestions({
             )}
             {suggestion.roleType !== "insufficient" ? (
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start">
-                <InterestedButton roleType={suggestion.roleType} initial={interestedRoles.includes(suggestion.roleType)} />
-                <DismissSuggestion roleType={suggestion.roleType} onDismissed={onDismissed} />
+                <InterestedButton
+                  roleType={suggestion.roleType}
+                  initial={interestedRoles.includes(suggestion.roleType)}
+                />
+                <DismissSuggestion
+                  roleType={suggestion.roleType}
+                  disabled={busy}
+                  pending={gate.activeRole === suggestion.roleType}
+                  onDismiss={dismiss}
+                />
               </div>
             ) : null}
             {atlasOn && familiesForRole(suggestion.roleType)[0] ? (
@@ -122,6 +155,11 @@ export function CareerSuggestions({
             ) : null}
           </Card>
         ))}
+        {error ? (
+          <p role="alert" className="text-sm font-medium text-red-700">
+            Couldn&apos;t save that. Try again.
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button href={ROUTES.community} className="w-full sm:w-auto">
@@ -130,7 +168,7 @@ export function CareerSuggestions({
         <Button href={ROUTES.reviews} variant="secondary" className="w-full sm:w-auto">
           Review a co-op
         </Button>
-        {atlasOn && suggestions.length > 0 ? (
+        {atlasOn && initialSuggestions.length > 0 ? (
           <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
             Browse the career map
           </Button>
