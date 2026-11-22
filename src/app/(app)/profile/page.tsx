@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { assessments, profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
-import { locationValueFrom } from "@/features/location/components/location-fields";
+import { locationValueFrom } from "@/features/location/value";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
 import { loadChosenDirection } from "@/features/direction/chosen";
