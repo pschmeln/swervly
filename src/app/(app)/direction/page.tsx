@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WhyMatched } from "@/features/direction/components/why-matched";
 import { Button, Card, PageShell } from "@/components/ui";
 import { familiesForRole } from "@/features/atlas/compat";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
@@ -111,7 +112,11 @@ export default async function DirectionPage({
             {suggestion.evidenceLabel ? (
               <p className="mt-1 text-sm text-neutral-600">{suggestion.evidenceLabel}</p>
             ) : null}
-            <p className="mt-1 text-neutral-700">{suggestion.reason}</p>
+            {suggestion.reasons ? (
+              <WhyMatched reasons={suggestion.reasons} hasPriorities={direction.priorities.length > 0} />
+            ) : (
+              <p className="mt-1 text-neutral-700">{suggestion.reason}</p>
+            )}
             {suggestion.roleType !== "insufficient" ? (
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start">
                 <InterestedButton

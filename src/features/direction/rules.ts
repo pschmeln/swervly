@@ -67,6 +67,8 @@ export type DirectionSuggestion = {
   /** Distinct similar students behind an evidence-backed suggestion. */
   sampleSize?: number;
   evidenceLabel?: string;
+  /** "Why this matched": 1–3 lines, `reason` first, then the student's priorities (item 20). */
+  reasons?: string[];
 };
 
 export type SimilarReview = {

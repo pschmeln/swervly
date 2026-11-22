@@ -67,6 +67,12 @@ function profileFields(input: ProfileWriteInput) {
  * Keeps the original time only for consent to the current terms; consent to
  * older terms (a lower version) is replaced with now() and the current version.
  */
+/** A text[] literal from bound parameters; drizzle would otherwise expand a JS array into a list. */
+export function textArraySql(values: readonly string[]) {
+  if (values.length === 0) return sql`'{}'::text[]`;
+  return sql`array[${sql.join(values.map((value) => sql`${value}`), sql`, `)}]::text[]`;
+}
+
 /**
  * SET fragment recording agreement to the current privacy policy. Every profile save sends
  * consentPrivacy: true (onboarding asks for it; Profile can only be reached after it).
@@ -119,7 +125,7 @@ export async function saveProfile(
     insert into profiles (
       user_id, school, goal, goal_notes, constraints_notes,
       home_place_geoid, home_label, home_lat, home_lng, radius_miles, open_to_anywhere, open_to_remote,
-      updated_at
+      priorities, updated_at
     )
     select
       ${userId}::uuid,
@@ -134,6 +140,7 @@ export async function saveProfile(
       ${place.radiusMiles}::integer,
       ${place.openToAnywhere},
       ${place.openToRemote},
+      ${textArraySql(input.priorities ?? [])},
       now()
     from changed
     on conflict (user_id) do update set
@@ -148,6 +155,7 @@ export async function saveProfile(
       radius_miles = excluded.radius_miles,
       open_to_anywhere = excluded.open_to_anywhere,
       open_to_remote = excluded.open_to_remote,
+      priorities = ${input.priorities === undefined ? sql`profiles.priorities` : sql`excluded.priorities`},
       updated_at = now()
     returning user_id as id
   `;

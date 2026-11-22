@@ -27,6 +27,7 @@ const blankDefaults: OnboardingDefaults = {
   goal: "",
   goalNotes: "",
   location: EMPTY_LOCATION,
+  priorities: [],
   constraintsNotes: "",
 };
 
@@ -41,6 +42,7 @@ const readyWithoutShare: OnboardingDefaults = {
   goal: "industry",
   goalNotes: "",
   location: { ...EMPTY_LOCATION, openToAnywhere: true },
+  priorities: [],
   constraintsNotes: "",
 };
 

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { assessments, profiles } from "@/db/schema";
 import { loadMajorSearchContext } from "@/features/majors/load";
 import { selectionFromStored } from "@/features/majors/selection";
+import { readPriorities } from "@/features/direction/priorities";
 import { locationValueFrom } from "@/features/location/components/location-fields";
 import { ProfileEditor } from "@/features/profile/components/profile-editor";
 import { atlasPrototypeEnabled } from "@/features/atlas/prototype";
@@ -82,6 +83,7 @@ export default async function ProfilePage() {
             goal: profile.goal,
             goalNotes: profile.goalNotes ?? "",
             location: locationValueFrom(profile),
+            priorities: readPriorities(profile.priorities),
             constraintsNotes: profile.constraintsNotes ?? "",
           }}
         />

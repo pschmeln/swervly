@@ -10,6 +10,8 @@ import {
   locationPayload,
   type LocationValue,
 } from "@/features/location/components/location-fields";
+import { PrioritiesField } from "@/features/direction/components/priorities-field";
+import type { Priority } from "@/features/direction/priorities";
 import { MajorPicker } from "@/features/majors/components/major-picker";
 import type { MajorSearchContext } from "@/features/majors/catalog";
 import type { MajorPickerValue } from "@/features/majors/selection";
@@ -25,6 +27,7 @@ export type ProfileEditorValues = {
   goal: string;
   goalNotes: string;
   location: LocationValue;
+  priorities: Priority[];
   constraintsNotes: string;
 };
 
@@ -87,6 +90,7 @@ export function ProfileEditor({
       goal: form.goal,
       goalNotes: form.goalNotes.trim(),
       ...locationPayload(form.location),
+      priorities: form.priorities,
       constraintsNotes: form.constraintsNotes.trim(),
       consentPrivacy: true,
       consentDataUse: true,
@@ -143,6 +147,7 @@ export function ProfileEditor({
           <Field label="Goal notes" htmlFor="goalNotes" hint="Optional" error={fieldErrors.goalNotes}>
             <Textarea id="goalNotes" name="goalNotes" value={form.goalNotes} maxLength={500} disabled={pending} onChange={(event) => update("goalNotes", event.target.value)} />
           </Field>
+          <PrioritiesField value={form.priorities} onChange={(value) => update("priorities", value)} error={fieldErrors.priorities} disabled={pending} />
           <LocationFields value={form.location} onChange={updateLocation} errors={fieldErrors} disabled={pending} />
           <Field label="Other constraints" htmlFor="constraintsNotes" hint="Optional" error={fieldErrors.constraintsNotes}>
             <Textarea id="constraintsNotes" name="constraintsNotes" value={form.constraintsNotes} maxLength={500} disabled={pending} onChange={(event) => update("constraintsNotes", event.target.value)} />
