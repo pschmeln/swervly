@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { withoutDismissedRoles } from "@/features/direction/career-roles";
-import { buildDirection, RULES_EVIDENCE_LABEL, suggestionsFromRules } from "@/features/direction/rules";
+import {
+  buildDirection,
+  FALLBACK_EVIDENCE_LABEL,
+  RULES_EVIDENCE_LABEL,
+  suggestionsFromRules,
+} from "@/features/direction/rules";
 import type { TraitScores } from "@/features/profile/scoring";
 
 // These tests cover every major and career, including those hidden from engineering students.
@@ -47,7 +52,11 @@ describe("direction outside engineering", () => {
       expect(suggestions.map((item) => item.roleType)).not.toContain(role);
     }
     expect(suggestions.every((item) => item.source === "rules")).toBe(true);
-    expect(suggestions.every((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
+    expect(
+      suggestions.every(
+        (item) => item.evidenceLabel === RULES_EVIDENCE_LABEL || item.evidenceLabel === FALLBACK_EVIDENCE_LABEL,
+      ),
+    ).toBe(true);
     expectNoFitClaim(suggestions);
   });
 
@@ -158,7 +167,9 @@ describe("direction outside engineering", () => {
     expect(direction.suggestions[0]?.source).toBe("similar_students");
     expect(direction.suggestions[0]?.evidenceLabel).toBe("Backed by 3 students");
     const fromRules = direction.suggestions.find((item) => item.source === "rules");
-    if (fromRules) expect(fromRules.evidenceLabel).toBe(RULES_EVIDENCE_LABEL);
+    if (fromRules) {
+      expect([RULES_EVIDENCE_LABEL, FALLBACK_EVIDENCE_LABEL]).toContain(fromRules.evidenceLabel);
+    }
   });
 
   it("drops a dismissed role without refilling it", () => {

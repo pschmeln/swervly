@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDirection,
   evidenceBackedRoles,
+  FALLBACK_EVIDENCE_LABEL,
   MIN_DISTINCT_STUDENTS_PER_ROLE,
   MIN_MEAN_ENJOYMENT,
   RULES_EVIDENCE_LABEL,
@@ -29,7 +30,44 @@ describe("direction rules", () => {
     expect(suggestions.map((item) => item.roleType)).toContain("software");
     expect(suggestions.every((item) => item.reason.length > 0)).toBe(true);
     expect(suggestions.every((item) => item.source === "rules")).toBe(true);
-    expect(suggestions.every((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
+    expect(
+      suggestions.every(
+        (item) => item.evidenceLabel === RULES_EVIDENCE_LABEL || item.evidenceLabel === FALLBACK_EVIDENCE_LABEL,
+      ),
+    ).toBe(true);
+    expect(suggestions.some((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(true);
+  });
+
+  it("labels a generic fill as a place to start, not a quiz match", () => {
+    // Materials Engineering stays on the engineering table but matches no major-band rule
+    // with middle traits, so only the always-on fallback and fills remain.
+    const suggestions = suggestionsFromRules({
+      traits: balanced,
+      major: "Materials Engineering",
+      goal: "undecided",
+    });
+    expect(suggestions.length).toBe(3);
+    expect(suggestions.every((item) => item.evidenceLabel === FALLBACK_EVIDENCE_LABEL)).toBe(true);
+    expect(suggestions.some((item) => item.evidenceLabel === RULES_EVIDENCE_LABEL)).toBe(false);
+  });
+
+  it("labels Manufacturing/Process as a place to start when only the soft major hint matches", () => {
+    const soft = suggestionsFromRules({
+      traits: balanced,
+      major: "Mechanical Engineering",
+      goal: "undecided",
+    });
+    const processSoft = soft.find((item) => item.roleType === "manufacturing_process");
+    expect(processSoft?.evidenceLabel).toBe(FALLBACK_EVIDENCE_LABEL);
+    expect(processSoft?.evidenceLabel).not.toBe(RULES_EVIDENCE_LABEL);
+
+    const quizMatch = suggestionsFromRules({
+      traits: { ...balanced, conscientiousness: 16 },
+      major: "Mechanical Engineering",
+      goal: "industry",
+    });
+    const processQuiz = quizMatch.find((item) => item.roleType === "manufacturing_process");
+    expect(processQuiz?.evidenceLabel).toBe(RULES_EVIDENCE_LABEL);
   });
 
   it("stays on rules when three close reviews span unrelated roles", () => {

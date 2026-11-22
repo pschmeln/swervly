@@ -6,6 +6,7 @@ import { interestedFirst, withoutDismissedRoles } from "@/features/direction/car
 import {
   buildDirection,
   evidenceGroup,
+  FALLBACK_EVIDENCE_LABEL,
   type DirectionSuggestion,
   type SimilarReview,
 } from "@/features/direction/rules";
@@ -154,11 +155,13 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
     suggestions: interestedFirst(
       withoutDismissedRoles(direction.suggestions, user.dismissedCareerRoles),
       user.interestedCareerRoles,
-    ).map((suggestion) =>
-      suggestion.roleType === "insufficient"
-        ? suggestion
-        : { ...suggestion, reasons: whyMatched(suggestion.reason, suggestion.roleType, priorities, pool) },
-    ),
+    ).map((suggestion) => {
+      // Fills / soft fallbacks are not quiz matches — skip "Why this matched".
+      if (suggestion.roleType === "insufficient" || suggestion.evidenceLabel === FALLBACK_EVIDENCE_LABEL) {
+        return suggestion;
+      }
+      return { ...suggestion, reasons: whyMatched(suggestion.reason, suggestion.roleType, priorities, pool) };
+    }),
     priorities,
     interestedRoles: [...user.interestedCareerRoles],
     academic: academicExploration({

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildDirection } from "@/features/direction/rules";
 import { DIRECTORY_WHY_SHOWN } from "@/features/explore/companies";
-import { directionExploreCopy } from "@/features/explore/from-direction";
+import { DIRECTION_EXHAUSTED_ACTION } from "@/features/direction/rules";
+import { directionExploreCopy, PATHS_READY } from "@/features/explore/from-direction";
 import { buildExploreModel } from "@/features/explore/view-model";
 import type { TraitScores } from "@/features/profile/scoring";
 
@@ -172,4 +173,60 @@ describe("direction explore integration", () => {
     }
     expect(dismissedAll.pathsIntro).not.toContain("No pathways are listed while those suggestions are dismissed");
   });
+
+  it("puts the pathways explanation only under pathsIntro, not also on direction.note", () => {
+    const ready = directionExploreCopy({
+      stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+      goal: "industry",
+      dismissedRoleIds: [],
+      direction: {
+        label: "Worth exploring from your major and stated goal.",
+        suggestions: [
+          {
+            roleType: "healthcare_clinical",
+            roleLabel: "Healthcare — clinical",
+            reason: "Clinical work is a place to explore.",
+            source: "rules",
+            evidenceLabel: "Matched to your quiz and major",
+          },
+        ],
+      },
+    });
+    expect(ready.pathsIntro).toBe(PATHS_READY);
+    expect(ready.direction.note).toBe("");
+    expect(ready.direction.note).not.toBe(ready.pathsIntro);
+
+    const insufficient = directionExploreCopy({
+      stored: { major: null, majorSource: "undecided", customMajorText: null },
+      goal: "undecided",
+      dismissedRoleIds: [],
+      direction: {
+        label: "No role stands out yet.",
+        suggestions: [
+          {
+            roleType: "insufficient",
+            roleLabel: "Not enough information",
+            reason: "Add your major.",
+            source: "rules",
+            evidenceLabel: "Not enough information",
+          },
+        ],
+      },
+    });
+    expect(insufficient.direction.note).toContain("not enough information");
+    expect(insufficient.pathsIntro).toBe("");
+    expect(insufficient.direction.exhausted).toBeFalsy();
+
+    expect(dismissedAllPreserved().direction.exhausted).toBe(true);
+    expect(dismissedAllPreserved().direction.note).toBe(DIRECTION_EXHAUSTED_ACTION);
+  });
 });
+
+function dismissedAllPreserved() {
+  return directionExploreCopy({
+    stored: { major: "Nursing", majorSource: "catalog", customMajorText: null },
+    goal: "industry",
+    dismissedRoleIds: ["healthcare_clinical"],
+    direction: { label: "Worth exploring.", suggestions: [] },
+  });
+}
