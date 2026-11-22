@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import {
   compareFrom,
@@ -13,6 +13,9 @@ import {
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import type { AtlasNodeId } from "@/features/atlas/types";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const graph = atlasGraph();
 const MECH: AtlasNodeId = "occ:onet:17-2141.00";

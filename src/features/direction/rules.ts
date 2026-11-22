@@ -1,6 +1,7 @@
 import type { Trait } from "@/content/mini-ipip";
 import { careerRoleLabel, EXTRA_CAREER_ROLE_IDS, type ExtraCareerRole } from "@/features/direction/career-roles";
 import { majorFamily, usesEngineeringDirection, type MajorFamily } from "@/features/majors/catalog";
+import { showsRole } from "@/lib/audience";
 import type { TraitScores } from "@/features/profile/scoring";
 import { traitBand } from "@/features/profile/traits";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
@@ -434,7 +435,8 @@ function quizMatches(
     ? [...RULES.filter((rule) => !rule.fallback), ...EXTRA_RULES]
     : EXTRA_RULES;
   for (const rule of rules) {
-    if (!rule.when(context)) continue;
+    // Roles hidden for the current audience (src/lib/audience.ts) never score.
+    if (!showsRole(rule.role) || !rule.when(context)) continue;
     const current = best.get(rule.role);
     if (!current || rule.points > current.points) best.set(rule.role, { points: rule.points, reason: rule.reason });
   }

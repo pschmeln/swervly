@@ -7,6 +7,7 @@ import { Button, Card } from "@/components/ui";
 import { focusRing } from "@/components/ui/focus-ring";
 import { ProductDemo } from "@/features/landing/demo";
 import { ROUTES } from "@/lib/constants";
+import { AUDIENCE_COPY } from "@/lib/audience";
 
 export default function Page() {
   return (
@@ -44,8 +45,7 @@ export function LandingPitch() {
               <em>Find your direction.</em>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white">
-              Most students pick co-ops with almost no information about what they&apos;ll actually enjoy. Swervly
-              learns how you work, then points you toward co-ops that fit.
+              {AUDIENCE_COPY.pitch}
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <Button href={ROUTES.signUp} variant="secondary" className="w-full sm:w-auto">
@@ -77,7 +77,7 @@ export function LandingPitch() {
         <Card className="md:col-span-3">
           <h2 className="text-lg font-semibold">Who it&apos;s for</h2>
           <p className="mt-2 leading-7 text-ink-2">
-            Any student with an email that ends in .edu. Swervly is free, and it is not affiliated with a university.
+            {AUDIENCE_COPY.whoFor}
           </p>
         </Card>
       </div>
@@ -88,7 +88,7 @@ export function LandingPitch() {
 const STEPS = [
   { title: "Take the quiz", body: "A minute of quick statements about how you like to work. There are no right answers." },
   { title: "Review your co-ops", body: "Rate what you enjoyed and learned. Your reviews help other students and sharpen your own Direction." },
-  { title: "Get your direction", body: "Careers and majors matched to how you work, sharper as more students review co-ops." },
+  { title: "Get your direction", body: AUDIENCE_COPY.directionStep },
 ] as const;
 
 async function Landing() {

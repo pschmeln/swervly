@@ -1,6 +1,7 @@
 import { COMPANIES } from "@/content/companies";
 import { careerRoleLabel, type CareerRoleId } from "@/features/direction/career-roles";
 import { hasCareerLink, type CareerLinkId } from "@/features/explore/links";
+import { showsCompany } from "@/lib/audience";
 
 export const DIRECTORY_WHY_SHOWN = "Included in this directory of official careers pages.";
 
@@ -21,7 +22,7 @@ export type CatalogCompany = {
  * check. Built from the same list as the co-op form's employers, so every company here
  * can be picked when a student logs a co-op. No placeholder or invented entries.
  */
-export const CATALOG_COMPANIES: readonly CatalogCompany[] = COMPANIES.filter((company) => hasCareerLink(company.id)).map(
+export const CATALOG_COMPANIES: readonly CatalogCompany[] = COMPANIES.filter((company) => hasCareerLink(company.id) && showsCompany(company)).map(
   (company) => ({
     id: company.id,
     name: company.name,

@@ -1,9 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { ATLAS_BANNER } from "@/features/atlas/view";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const graph = atlasGraph();
 

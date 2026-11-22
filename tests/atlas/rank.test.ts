@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PREFERENCE_QUESTIONS } from "@/content/atlas/questions";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph, buildGraph, ATLAS_DATA } from "@/features/atlas/graph";
 import { hasSignals, MAX_PER_FAMILY, nextQuestion, questionPool, rankSpecializations, topPicks, type Signals } from "@/features/atlas/rank";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const graph = atlasGraph();
 const me = atlasEntry(graph, { major: "Mechanical Engineering", majorSource: "catalog" });

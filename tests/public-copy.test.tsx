@@ -17,7 +17,7 @@ describe("public copy", () => {
     const html = renderToStaticMarkup(<LandingPitch />);
     const text = visibleText(html);
     expect(text).toContain(
-      "Most students pick co-ops with almost no information about what they'll actually enjoy",
+      "Most engineering students pick co-ops with almost no information about what they'll actually enjoy",
     );
     expect(text).toContain("Take the quiz");
     expect(text).toContain("Review your co-ops");

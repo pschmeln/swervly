@@ -10,6 +10,9 @@ import { CATALOG_COMPANIES } from "@/features/explore/companies";
 import { careerPageHref } from "@/features/explore/links";
 import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/lib/copy-rules";
 
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
+
 const graph = atlasGraph();
 // Career links expire 90 days after their check; pin "today" so this test does not.
 beforeAll(() => {

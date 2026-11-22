@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ALL_ROLE_IDS, familiesForRole, ROLE_FAMILIES, rolesForFamily } from "@/features/atlas/compat";
 import { atlasGraph } from "@/features/atlas/graph";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 const graph = atlasGraph();
 

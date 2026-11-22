@@ -9,6 +9,7 @@ import {
   type DomainId,
   type FamilyId,
 } from "@/features/atlas/types";
+import { AUDIENCE, showsFamily, showsSpecialization } from "@/lib/audience";
 
 export const ATLAS_DATA: AtlasData = {
   domains: DOMAINS,
@@ -64,11 +65,37 @@ export function buildGraph(data: AtlasData): AtlasGraph {
   return { data, nodes, children, parents };
 }
 
+/**
+ * The data a student of this audience sees (src/lib/audience.ts): hidden families,
+ * the specializations left without a shown family, and domains and occupations left
+ * with nothing above or below them are dropped. ATLAS_DATA itself keeps everything.
+ */
+export function audienceData(data: AtlasData): AtlasData {
+  if (AUDIENCE === "all") return data;
+  const families = data.families.filter((item) => showsFamily(item.id));
+  const familyIds = new Set<string>(families.map((item) => item.id));
+  const specializations = data.specializations
+    .filter(showsSpecialization)
+    .map((item) => ({ ...item, families: item.families.filter((id) => familyIds.has(id)) }));
+  const domainIds = new Set<string>(families.flatMap((item) => item.domains));
+  const occupationIds = new Set<string>(specializations.flatMap((item) => item.occupations.map((link) => link.id)));
+  return {
+    ...data,
+    domains: data.domains.filter((item) => domainIds.has(item.id)),
+    families,
+    specializations,
+    occupations: data.occupations.filter((item) => occupationIds.has(item.id)),
+    majorLinks: Object.fromEntries(
+      Object.entries(data.majorLinks).map(([major, links]) => [major, links.filter((link) => familyIds.has(link.family))]),
+    ),
+  };
+}
+
 let cached: AtlasGraph | null = null;
 
-/** The prototype's graph, built once. */
+/** The graph students see, built once. */
 export function atlasGraph(): AtlasGraph {
-  cached ??= buildGraph(ATLAS_DATA);
+  cached ??= buildGraph(audienceData(ATLAS_DATA));
   return cached;
 }
 

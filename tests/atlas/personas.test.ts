@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
 import { rankSpecializations, topPicks, type Signals } from "@/features/atlas/rank";
 import { rootModel } from "@/features/atlas/view";
+
+// These tests cover every major and career, including those hidden from engineering students.
+vi.mock("@/lib/audience", () => import("../helpers/audience-all"));
 
 /**
  * The seven personas from the Career Atlas brief. Synthetic students only.
