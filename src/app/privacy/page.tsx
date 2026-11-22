@@ -54,7 +54,11 @@ export default function PrivacyPage() {
             to storing your data, and to including reviews in anonymous company
             pages. If you use the career map, we store the careers you mark
             Interested or Not interested, the one you choose as your direction,
-            and your answers to its short preference questions.
+            and your answers to its short preference questions. If you use
+            Community, we store the posts and answers you write, any company,
+            role or career area you tag them with, the posts and answers you mark
+            Helpful, the reports you send, when you agreed to the Community rules,
+            and hourly counts used to limit posting.
           </p>
         </section>
 
@@ -123,6 +127,13 @@ export default function PrivacyPage() {
             to other students.
           </p>
           <p>
+            Community posts and answers are shown to other signed-in students
+            right away, without your name. The founders can see who wrote them.
+            Helpful counts are shown; who marked them is not. Reports go only to
+            the founders, who can hide, restore or remove reported posts. Hidden
+            posts disappear for everyone except the founders.
+          </p>
+          <p>
             The two Swervly founders can see records because they operate the
             service and approve new companies and skills in a review queue. A
             company or skill you add stays private to you until a founder
@@ -148,9 +159,13 @@ export default function PrivacyPage() {
             default for sharing a note, download a JSON file of your account,
             profile, quiz answers, and co-ops (including employers, ratings,
             optional pay, and optional free text), copy an invite link, and delete
-            your account by typing DELETE. Deletion removes your profile, quiz
-            answers, co-ops and internships, and reviews from the application
-            database, and deletes your sign-in account.
+            your account by typing DELETE. The download includes the Community
+            posts and answers you wrote. Deletion removes your profile, quiz
+            answers, co-ops and internships, reviews, and Community answers,
+            Helpful marks and reports from the application database, and deletes
+            your sign-in account. Your Community posts are deleted too, except a
+            post other students answered: its text and tags are erased and it is
+            no longer linked to you, so their answers stay.
           </p>
         </section>
 

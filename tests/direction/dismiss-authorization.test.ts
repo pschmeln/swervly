@@ -47,6 +47,8 @@ function userRow(id: string, clerkId: string, email: string): User {
     shareReviewsConsentAt: null,
     shareReviewsConsentVersion: null,
     privacyPolicyVersion: null,
+    communityTermsVersion: null,
+    communityTermsAt: null,
     onboardedAt: createdAt,
     school: "mail.uc.edu",
     invitedByUserId: null,

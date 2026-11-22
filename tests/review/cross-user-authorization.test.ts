@@ -59,6 +59,8 @@ function userRow(id: string, clerkId: string, email: string, onboardedAt: Date |
     shareReviewsConsentAt: new Date("2026-02-01T00:00:00.000Z"),
     shareReviewsConsentVersion: 1,
     privacyPolicyVersion: 2,
+    communityTermsVersion: null,
+    communityTermsAt: null,
     onboardedAt,
     school: "mail.uc.edu",
     invitedByUserId: null,

@@ -8,7 +8,7 @@ import { rankSpecializations, type Signals } from "@/features/atlas/rank";
 import { companiesFor, compareModel, familiesAbove } from "@/features/atlas/view";
 import { CATALOG_COMPANIES } from "@/features/explore/companies";
 import { careerPageHref } from "@/features/explore/links";
-import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/features/explore/local-state";
+import { FORBIDDEN_PROTOTYPE_CLAIM } from "@/lib/copy-rules";
 
 const graph = atlasGraph();
 // Career links expire 90 days after their check; pin "today" so this test does not.

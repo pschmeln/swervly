@@ -30,17 +30,28 @@ vi.mock("@clerk/nextjs/server", () => ({
   clerkClient: mocks.clerkClient,
 }));
 
-vi.mock("@/db", () => ({
-  db: {
-    delete: (table: unknown) => {
-      mocks.events.push("rows");
-      mocks.dbDelete(table);
-      return {
-        where: (condition: unknown) => mocks.deleteWhere(condition),
-      };
+vi.mock("@/db", () => {
+  const tableName = (table: unknown) => (table as Record<symbol, unknown>)[Symbol.for("drizzle:Name")];
+  return {
+    db: {
+      // Community clean-up (D11) runs in the same batch, before the users row; it is not what these tests check.
+      execute: () => Promise.resolve(),
+      select: () => ({ from: () => ({ where: () => ({}) }) }),
+      update: () => ({ set: () => ({ where: () => Promise.resolve() }) }),
+      batch: async (queries: readonly unknown[]) => {
+        for (const query of queries) await query;
+      },
+      delete: (table: unknown) => {
+        if (tableName(table) !== "users") return { where: () => Promise.resolve() };
+        mocks.events.push("rows");
+        mocks.dbDelete(table);
+        return {
+          where: (condition: unknown) => mocks.deleteWhere(condition),
+        };
+      },
     },
-  },
-}));
+  };
+});
 
 const userId = "00000000-0000-4000-8000-000000000001";
 const clerkId = "user_test";
@@ -58,6 +69,8 @@ function userRow(overrides: Partial<User> = {}): User {
     shareReviewsConsentAt: null,
     shareReviewsConsentVersion: null,
     privacyPolicyVersion: null,
+    communityTermsVersion: null,
+    communityTermsAt: null,
     onboardedAt: null,
     school: null,
     invitedByUserId: null,

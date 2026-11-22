@@ -15,7 +15,6 @@ function card(id: string, families: FamilyId[]): DirectoryCompany {
     field: "Engineering",
     roleCategories: ["Design"],
     whyShown: "Listed under an area of the career map.",
-    experienceCount: 0,
     careersUrl: null,
     linkCheckedOn: null,
     families,
