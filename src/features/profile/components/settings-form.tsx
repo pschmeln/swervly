@@ -160,8 +160,8 @@ export function SettingsForm({
         </p>
         {shareReviewsConsentOutdated && !shareReviews ? (
           <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            We changed this rule from 3 students to 2, so sharing is paused for your reviews. Turn it on
-            again if you agree to the new rule.
+            The sharing rules changed on November 21, 2026, so sharing is paused for your reviews. Read the
+            rule above and turn it on again if you agree.
           </p>
         ) : null}
         <div className="mt-4">

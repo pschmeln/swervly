@@ -1,8 +1,15 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { SKILLS } from "@/content/skills";
 import { db } from "@/db";
 import { employers, reviews, rotations, skills, users, type User } from "@/db/schema";
-import { aggregateForMajor, type PublicMajorView, type ReviewForAggregate } from "@/features/company/aggregate";
+import {
+  aggregateForMajor,
+  companyAverages,
+  hiddenView,
+  type CompanyAverages,
+  type PublicMajorView,
+  type ReviewForAggregate,
+} from "@/features/company/aggregate";
 import { publicAggregateMajor } from "@/features/majors/selection";
 import { hasShareReviewsConsent } from "@/features/privacy/share-consent";
 import { employerUsableByUser } from "@/features/review/server";
@@ -10,22 +17,10 @@ import type { CompanyPreviewInput } from "@/features/review/schemas";
 import { isWouldReturn, type WouldReturn } from "@/features/review/would-return";
 import { ApiError } from "@/lib/api";
 
-type LoadedReview = ReviewForAggregate & { rotationId: string };
+type LoadedReview = ReviewForAggregate & { rotationId: string; employerId: string };
 
 function hiddenMajorView(): PublicMajorView {
-  return {
-    visible: false,
-    major: "",
-    reviewCount: 0,
-    contributorCount: 0,
-    headline: "",
-    maybeLine: "",
-    basisLine: "",
-    averages: null,
-    topSkills: [],
-    payRange: null,
-    sharedNotes: [],
-  };
+  return hiddenView();
 }
 
 function asWouldReturn(value: string): WouldReturn {
@@ -41,10 +36,17 @@ export async function approvedSkillNames(): Promise<string[]> {
   return [...SKILLS, ...rows.map((row) => row.name)];
 }
 
-async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> {
+/**
+ * Reviews other students may see: only from students with current share consent and a public
+ * catalog major. No names, emails or ids leave the server; userId is used only for counting.
+ */
+async function loadSharedReviews(employerIds: readonly string[]): Promise<LoadedReview[]> {
+  if (employerIds.length === 0) return [];
   const rows = await db
     .select({
       rotationId: rotations.id,
+      employerId: rotations.employerId,
+      rotationNumber: rotations.rotationNumber,
       userId: rotations.userId,
       major: users.major,
       majorSource: users.majorSource,
@@ -63,7 +65,7 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
     .from(rotations)
     .innerJoin(reviews, eq(reviews.rotationId, rotations.id))
     .innerJoin(users, eq(users.id, rotations.userId))
-    .where(eq(rotations.employerId, employerId));
+    .where(inArray(rotations.employerId, [...employerIds]));
 
   return rows
     .filter((row) =>
@@ -77,6 +79,8 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
       if (!major) return [];
       return [{
       rotationId: row.rotationId,
+      employerId: row.employerId,
+      rotationNumber: row.rotationNumber,
       userId: row.userId,
       major,
       wouldReturn: asWouldReturn(row.wouldReturn),
@@ -92,21 +96,48 @@ async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> 
     });
 }
 
+async function loadEmployerReviews(employerId: string): Promise<LoadedReview[]> {
+  return loadSharedReviews([employerId]);
+}
+
+/** The company page: the viewer's own major, or the all-majors fallback when that is hidden (item 4). */
 export async function companyViewForUser(
   user: User,
   employerId: string,
-): Promise<{ employerName: string; view: PublicMajorView }> {
+): Promise<{ employerName: string; viewerMajor: string | null } & CompanyAverages> {
   const [employer] = await db.select().from(employers).where(eq(employers.id, employerId)).limit(1);
   if (!employer || !employerUsableByUser(employer, user.id)) {
     throw new ApiError(404, "employer_not_found", "Employer not found.");
   }
   const viewerMajor = publicAggregateMajor(user);
-  if (!viewerMajor) {
-    return { employerName: employer.name, view: hiddenMajorView() };
-  }
   const loaded = await loadEmployerReviews(employer.id);
-  const view = aggregateForMajor(loaded, viewerMajor, await approvedSkillNames());
-  return { employerName: employer.name, view };
+  return { employerName: employer.name, viewerMajor, ...companyAverages(loaded, viewerMajor, await approvedSkillNames()) };
+}
+
+export type DirectoryAverages = { employerId: string } & CompanyAverages;
+
+/**
+ * Averages for directory companies, keyed by normalized employer name (companies.ts and the
+ * employers table share it). Approved employers only. One query for every company.
+ */
+export async function directoryAverages(
+  user: User,
+  normalizedNames: readonly string[],
+): Promise<Map<string, DirectoryAverages>> {
+  const result = new Map<string, DirectoryAverages>();
+  if (normalizedNames.length === 0) return result;
+  const rows = await db
+    .select({ id: employers.id, normalizedName: employers.normalizedName })
+    .from(employers)
+    .where(and(inArray(employers.normalizedName, [...normalizedNames]), eq(employers.status, "approved")));
+  if (rows.length === 0) return result;
+  const viewerMajor = publicAggregateMajor(user);
+  const [reviewsLoaded, approvedSkills] = await Promise.all([loadSharedReviews(rows.map((row) => row.id)), approvedSkillNames()]);
+  for (const row of rows) {
+    const forEmployer = reviewsLoaded.filter((review) => review.employerId === row.id);
+    result.set(row.normalizedName, { employerId: row.id, ...companyAverages(forEmployer, viewerMajor, approvedSkills) });
+  }
+  return result;
 }
 
 export async function previewCompany(
@@ -141,6 +172,8 @@ export async function previewCompany(
         userId: user.id,
         major: viewerMajor,
         wouldReturn: input.wouldReturn,
+        // The draft counts as the student's latest co-op here.
+        rotationNumber: Number.MAX_SAFE_INTEGER,
         enjoyment: input.enjoyment,
         learning: input.learning,
         mentorship: input.mentorship,
