@@ -1,6 +1,7 @@
 import type { Trait } from "@/content/mini-ipip";
 import { careerRoleLabel, EXTRA_CAREER_ROLE_IDS, type ExtraCareerRole } from "@/features/direction/career-roles";
 import { majorFamily, usesEngineeringDirection, type MajorFamily } from "@/features/majors/catalog";
+import { joinParts, majorPart, type ReasonPart } from "@/features/direction/explain";
 import { showsRole } from "@/lib/audience";
 import type { TraitScores } from "@/features/profile/scoring";
 import { roleLabel, ROLE_TYPE_VALUES, type RoleType } from "@/features/review/roles";
@@ -83,13 +84,16 @@ export type DirectionContext = {
 export type DirectionSuggestion = {
   roleType: RoleType | ExtraCareerRole;
   roleLabel: string;
+  /** All of `parts` as one line, for places that show a single sentence. */
   reason: string;
+  /** The reason split by where it comes from: quiz, major, goal, reviews or a neutral start. */
+  parts: ReasonPart[];
   source: "rules" | "similar_students";
   /** Distinct similar students behind an evidence-backed suggestion. */
   sampleSize?: number;
   evidenceLabel?: string;
-  /** "Why this matched": 1–3 lines, `reason` first, then the student's priorities (item 20). */
-  reasons?: string[];
+  /** "Why this matched": `parts` first, then lines from the student's priorities (item 20). */
+  explanation?: ReasonPart[];
 };
 
 export type SimilarReview = {
@@ -128,9 +132,21 @@ export function traitDistance(left: TraitScores, right: TraitScores): number {
   return Math.sqrt(sum);
 }
 
-function asSuggestion(role: CareerRole, reason: string, evidenceLabel = RULES_EVIDENCE_LABEL): DirectionSuggestion {
-  return { roleType: role, roleLabel: careerRoleLabel(role), reason, source: "rules", evidenceLabel };
+function asSuggestion(role: CareerRole, parts: ReasonPart[], evidenceLabel = RULES_EVIDENCE_LABEL): DirectionSuggestion {
+  return { roleType: role, roleLabel: careerRoleLabel(role), reason: joinParts(parts), parts, source: "rules", evidenceLabel };
 }
+
+/** A matched rule's lines: the quiz half, the goal half, then the major's coursework line. */
+function ruleParts(rule: QuizRule, context: DirectionContext): ReasonPart[] {
+  if (rule.fallback) return [{ kind: "general", text: rule.reason }];
+  const parts: ReasonPart[] = [];
+  if (rule.reason) parts.push({ kind: "quiz", text: rule.reason });
+  if (rule.goal) parts.push({ kind: "goal", text: rule.goal });
+  if (rule.major) parts.push(majorPart(context.major, rule.role));
+  return parts;
+}
+
+const general = (text: string): ReasonPart[] => [{ kind: "general", text }];
 
 const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
 
@@ -142,7 +158,7 @@ const EXTRA_ROLE_ORDER: readonly ExtraCareerRole[] = EXTRA_CAREER_ROLE_IDS.filte
 const ROLE_ORDER: readonly CareerRole[] = [...ROLE_TYPE_VALUES.filter((role) => role !== "other"), ...EXTRA_ROLE_ORDER];
 
 /** `fallback`: the rule is a generic fallback, not a quiz signal (see QuizRule.fallback). */
-type Match = { points: number; reason: string; fallback: boolean };
+type Match = { points: number; parts: ReasonPart[]; fallback: boolean };
 
 /**
  * The strongest matching rule for each role. Skips roles in `skip` (dismissed) and
@@ -153,7 +169,9 @@ function bestByRole(rules: readonly QuizRule[], context: DirectionContext, skip:
   for (const rule of rules) {
     if (skip.has(rule.role) || !showsRole(rule.role) || !rule.when(context)) continue;
     const current = best.get(rule.role);
-    if (!current || rule.points > current.points) best.set(rule.role, { points: rule.points, reason: rule.reason, fallback: rule.fallback === true });
+    if (!current || rule.points > current.points) {
+      best.set(rule.role, { points: rule.points, parts: ruleParts(rule, context), fallback: rule.fallback === true });
+    }
   }
   return best;
 }
@@ -190,9 +208,11 @@ function majorFamilySuggestions(
     .sort((left, right) => pointsOf(right.row.role) - pointsOf(left.row.role) || left.index - right.index)
     .map((item) => item.row);
 
-  const familyReason = (row: { role: CareerRole; reason: string }) => {
+  const familyReason = (row: { role: CareerRole; reason: string }): ReasonPart[] => {
     const match = quiz.get(row.role);
-    return match ? `${match.reason} Your major points here too.` : row.reason;
+    return match
+      ? [...match.parts, { kind: "major", text: "Your major points here too." }]
+      : [{ kind: "major", text: row.reason }];
   };
 
   const chosen = ordered.slice(0, 2).map((row) => asSuggestion(row.role, familyReason(row)));
@@ -200,17 +220,20 @@ function majorFamilySuggestions(
   // Best remaining by quiz points; ties go to the major's own roles, then editorial order.
   // When the student dismissed some of the major's roles, the next best fill the empty slots.
   const candidates = [
-    ...ordered.slice(2).map((row) => ({ role: row.role, points: pointsOf(row.role), reason: familyReason(row) })),
+    ...ordered.slice(2).map((row) => ({ role: row.role, points: pointsOf(row.role), parts: familyReason(row) })),
     ...outside.map((role) => ({
       role,
       points: pointsOf(role),
-      reason: `${quiz.get(role)?.reason ?? ""} It's outside your major's usual paths, but it fits how you work.`,
+      parts: [
+        ...(quiz.get(role)?.parts ?? []),
+        { kind: "major", text: "It's outside your major's usual paths, but it fits how you work." },
+      ] as ReasonPart[],
     })),
   ];
   while (chosen.length < 3 && candidates.length > 0) {
     const bestIndex = candidates.reduce((best, item, index) => (item.points > candidates[best].points ? index : best), 0);
     const [next] = candidates.splice(bestIndex, 1);
-    chosen.push(asSuggestion(next.role, next.reason));
+    chosen.push(asSuggestion(next.role, next.parts));
   }
   return chosen;
 }
@@ -220,7 +243,7 @@ function quizOnlySuggestions(context: DirectionContext, hidden: ReadonlySet<stri
   return ranked(quizMatches(context, true))
     .filter(([role]) => !hidden.has(role))
     .slice(0, 3)
-    .map(([role, match]) => asSuggestion(role, match.reason));
+    .map(([role, match]) => asSuggestion(role, match.parts));
 }
 
 function insufficientSuggestion(): DirectionSuggestion {
@@ -228,6 +251,7 @@ function insufficientSuggestion(): DirectionSuggestion {
     roleType: "insufficient",
     roleLabel: careerRoleLabel("insufficient"),
     reason: DIRECTION_INSUFFICIENT_LABEL,
+    parts: general(DIRECTION_INSUFFICIENT_LABEL),
     source: "rules",
     evidenceLabel: "Not enough information",
   };
@@ -266,12 +290,12 @@ export function suggestionsFromRules(context: DirectionContext, dismissed: reado
 
   const chosen = ranked(bestByRole(RULES, context, hidden))
     .slice(0, 3)
-    .map(([role, match]) => asSuggestion(role, match.reason, match.fallback ? FALLBACK_EVIDENCE_LABEL : RULES_EVIDENCE_LABEL));
+    .map(([role, match]) => asSuggestion(role, match.parts, match.fallback ? FALLBACK_EVIDENCE_LABEL : RULES_EVIDENCE_LABEL));
   // Fewer than three matched: fill from the core co-op roles.
   for (const role of FILL_ORDER) {
     if (chosen.length === 3) break;
     if (hidden.has(role) || chosen.some((item) => item.roleType === role)) continue;
-    chosen.push(asSuggestion(role, fillReason(role), FALLBACK_EVIDENCE_LABEL));
+    chosen.push(asSuggestion(role, general(fillReason(role)), FALLBACK_EVIDENCE_LABEL));
   }
   return chosen;
 }
@@ -328,14 +352,18 @@ export function suggestionsFromSimilar(
   self: TraitScores,
   reviews: readonly SimilarReview[],
 ): DirectionSuggestion[] {
-  return evidenceBackedRoles(self, reviews).map((row) => ({
-    roleType: row.roleType,
-    roleLabel: roleLabel(row.roleType),
-    reason: `${row.sampleSize} students with profiles like yours rated co-ops in this role ${row.meanEnjoyment.toFixed(1)}/5 for enjoyment.`,
-    source: "similar_students" as const,
-    sampleSize: row.sampleSize,
-    evidenceLabel: `Backed by ${row.sampleSize} students`,
-  }));
+  return evidenceBackedRoles(self, reviews).map((row) => {
+    const text = `${row.sampleSize} students with profiles like yours rated co-ops in this role ${row.meanEnjoyment.toFixed(1)}/5 for enjoyment.`;
+    return {
+      roleType: row.roleType,
+      roleLabel: roleLabel(row.roleType),
+      reason: text,
+      parts: [{ kind: "reviews", text }] as ReasonPart[],
+      source: "similar_students" as const,
+      sampleSize: row.sampleSize,
+      evidenceLabel: `Backed by ${row.sampleSize} students`,
+    };
+  });
 }
 
 /**

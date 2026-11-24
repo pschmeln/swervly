@@ -3,7 +3,10 @@
 import { Button } from "@/components/ui";
 import { focusRing } from "@/components/ui/focus-ring";
 import {
+  CHOOSE_PROMPT,
   DIRECTION_COLUMN_NOTE,
+  GROUPING_SOURCE_LABEL,
+  ONET_SOURCE_LABEL,
   EMPTY_SIDE_HINT,
   EMPTY_SIDE_PROMPT,
   type ComparePanelModel,
@@ -15,10 +18,21 @@ import type { CompareSide } from "@/features/atlas/view";
 
 export const COMPARE_PANEL_ID = "compare-panel";
 
+function SourceTag({ children }: { children: string }) {
+  return (
+    <span className="ml-1.5 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 align-middle text-xs font-semibold text-neutral-700">
+      {children}
+    </span>
+  );
+}
+
 function SideDetails({ side }: { side: CompareSide }) {
   return (
     <>
-      <p className="text-xs text-neutral-600">O*NET-SOC {side.onetCode}</p>
+      <p className="text-xs text-neutral-600">
+        O*NET-SOC {side.onetCode}
+        <SourceTag>{ONET_SOURCE_LABEL}</SourceTag>
+      </p>
       {side.description ? <p className="mt-2 text-sm text-neutral-800">{side.description}</p> : null}
       <h4 className="mt-3 text-sm font-semibold">Top tasks</h4>
       <ul className="mt-1 list-disc pl-5 text-sm text-neutral-800">
@@ -34,13 +48,26 @@ function SideDetails({ side }: { side: CompareSide }) {
           <p className="text-sm text-neutral-800">{side.preparation}</p>
         </>
       ) : null}
-      <h4 className="mt-3 text-sm font-semibold">Areas in this map</h4>
+      <h4 className="mt-3 text-sm font-semibold">
+        Areas in this map
+        <SourceTag>{GROUPING_SOURCE_LABEL}</SourceTag>
+      </h4>
       <p className="text-sm text-neutral-800">{side.areas.join(", ")}</p>
     </>
   );
 }
 
-function FilledSide({ side, onClear }: { side: CompareSide; onClear: () => void }) {
+function FilledSide({
+  side,
+  chosen,
+  onClear,
+  onChoose,
+}: {
+  side: CompareSide;
+  chosen: boolean;
+  onClear: () => void;
+  onChoose: () => void;
+}) {
   return (
     <section aria-label={side.title} className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4">
       <div className="flex items-start justify-between gap-2">
@@ -55,6 +82,14 @@ function FilledSide({ side, onClear }: { side: CompareSide; onClear: () => void 
         </button>
       </div>
       <SideDetails side={side} />
+      <Button
+        variant={chosen ? "primary" : "secondary"}
+        aria-pressed={chosen}
+        onClick={onChoose}
+        className="mt-4 w-full"
+      >
+        {chosen ? "My direction ✓" : "Make this my direction"}
+      </Button>
     </section>
   );
 }
@@ -101,7 +136,10 @@ function DirectionSide({ column }: { column: DirectionColumn }) {
         <SideDetails side={column.side} />
       ) : (
         <>
-          <p className="mt-2 text-sm text-neutral-800">{column.summary}</p>
+          <p className="mt-2 text-sm text-neutral-800">
+            {column.summary}
+            <SourceTag>{GROUPING_SOURCE_LABEL}</SourceTag>
+          </p>
           {column.occupations.length > 0 ? (
             <>
               <h4 className="mt-3 text-sm font-semibold">Occupations in this specialization</h4>
@@ -116,15 +154,34 @@ function DirectionSide({ column }: { column: DirectionColumn }) {
 
 export function ComparePanel({
   model,
+  pursuing,
   onPick,
   onClear,
+  onChoose,
   onClose,
 }: {
   model: ComparePanelModel;
+  /** The student's current direction, if any. */
+  pursuing: AtlasNodeId | null;
   onPick: (id: AtlasNodeId) => void;
   onClear: (side: CompareSlot) => void;
+  /** Make an occupation the student's direction (or clear it when it already is). */
+  onChoose: (id: AtlasNodeId) => void;
   onClose: () => void;
 }) {
+  const side = (slot: CompareSlot) => {
+    const filled = model[slot];
+    return filled ? (
+      <FilledSide
+        side={filled}
+        chosen={pursuing === filled.id}
+        onClear={() => onClear(slot)}
+        onChoose={() => onChoose(filled.id)}
+      />
+    ) : (
+      <EmptySide picks={model.quickPicks} onPick={onPick} />
+    );
+  };
   const columns = model.direction ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2";
   return (
     <section
@@ -137,8 +194,8 @@ export function ComparePanel({
         <Button variant="secondary" onClick={onClose} className="shrink-0">Close</Button>
       </div>
       <div className={`mt-3 grid gap-4 ${columns}`}>
-        {model.left ? <FilledSide side={model.left} onClear={() => onClear("left")} /> : <EmptySide picks={model.quickPicks} onPick={onPick} />}
-        {model.right ? <FilledSide side={model.right} onClear={() => onClear("right")} /> : <EmptySide picks={model.quickPicks} onPick={onPick} />}
+        {side("left")}
+        {side("right")}
         {model.direction ? <DirectionSide column={model.direction} /> : null}
       </div>
       {model.shared ? (
@@ -148,6 +205,7 @@ export function ComparePanel({
           {model.shared.areas.length > 0 ? <li>{`Both sit under: ${model.shared.areas.join(", ")}.`}</li> : null}
         </ul>
       ) : null}
+      {model.left && model.right ? <p className="mt-3 font-semibold text-neutral-900">{CHOOSE_PROMPT}</p> : null}
     </section>
   );
 }

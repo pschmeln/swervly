@@ -1,4 +1,5 @@
 import { wouldGoBackByStudent, type WouldReturn } from "@/features/review/would-return";
+import type { ReasonPart } from "./explain";
 import { PRIORITY_LABELS, type Priority } from "./priorities";
 
 /** A shared review of a co-op in some role, from a consenting student in the viewer's group of majors. */
@@ -18,8 +19,8 @@ export type RoleReview = {
 export const MIN_PRIORITY_STUDENTS = 2;
 /** Pay needs 3, as on company pages (D5). */
 export const MIN_PRIORITY_PAY_STUDENTS = 3;
-/** At most this many reasons per suggestion. */
-export const MAX_REASONS = 3;
+/** At most this many priority lines per suggestion, after the suggestion's own lines. */
+export const MAX_PRIORITY_REASONS = 2;
 
 const RATING_FIELD = {
   mentorship: "mentorship",
@@ -67,22 +68,27 @@ export function priorityReason(priority: Priority, reviews: readonly RoleReview[
 }
 
 /**
- * 1–3 reasons for a role suggestion: the rule or evidence reason first, then one sentence per
- * chosen priority that real reviews of this role can back. Nothing is invented: a priority with
- * too few students simply adds no reason.
+ * "Why this matched" for a role suggestion: the suggestion's own lines first (quiz, goal,
+ * major, reviews), then up to MAX_PRIORITY_REASONS lines for priorities the student chose
+ * that real reviews of this role can back. Nothing is invented: a priority with too few
+ * students simply adds no line.
  */
 export function whyMatched(
-  baseReason: string,
+  base: readonly ReasonPart[],
   roleType: string,
   priorities: readonly Priority[],
   reviews: readonly RoleReview[],
-): string[] {
+): ReasonPart[] {
   const forRole = reviews.filter((review) => review.roleType === roleType);
-  const reasons = [baseReason];
+  const lines: ReasonPart[] = [...base];
+  let added = 0;
   for (const priority of priorities) {
-    if (reasons.length >= MAX_REASONS) break;
-    const line = priorityReason(priority, forRole);
-    if (line) reasons.push(line);
+    if (added >= MAX_PRIORITY_REASONS) break;
+    const text = priorityReason(priority, forRole);
+    if (text) {
+      lines.push({ kind: "priority", text });
+      added += 1;
+    }
   }
-  return reasons;
+  return lines;
 }

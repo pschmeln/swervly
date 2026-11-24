@@ -155,8 +155,10 @@ export function AtlasExplorer({
   const comparePanelElement = compare.open ? (
     <ComparePanel
       model={comparison}
+      pursuing={pursuing}
       onPick={pickForCompare}
       onClear={(side) => dispatchCompare({ type: "clear", side })}
+      onChoose={choose}
       onClose={() => dispatchCompare({ type: "close" })}
     />
   ) : null;

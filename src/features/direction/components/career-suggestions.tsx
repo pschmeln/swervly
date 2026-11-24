@@ -28,9 +28,7 @@ import {
 } from "@/features/direction/rules";
 import { ROUTES } from "@/lib/constants";
 
-export type CareerSuggestionView = DirectionSuggestion & {
-  reasons?: string[];
-};
+export type CareerSuggestionView = DirectionSuggestion;
 
 type CareerSuggestionsProps = {
   initialLabel: string;
@@ -156,8 +154,8 @@ export function CareerSuggestions({
             {suggestion.evidenceLabel ? (
               <p className="mt-1 text-sm text-neutral-600">{suggestion.evidenceLabel}</p>
             ) : null}
-            {suggestion.reasons && suggestion.evidenceLabel !== FALLBACK_EVIDENCE_LABEL ? (
-              <WhyMatched reasons={suggestion.reasons} hasPriorities={hasPriorities} />
+            {suggestion.roleType !== "insufficient" && suggestion.evidenceLabel !== FALLBACK_EVIDENCE_LABEL ? (
+              <WhyMatched parts={suggestion.explanation ?? suggestion.parts} hasPriorities={hasPriorities} />
             ) : (
               <p className="mt-1 text-neutral-700">{suggestion.reason}</p>
             )}

@@ -16,7 +16,15 @@ export type QuizRule = {
   role: CareerRole;
   points: number;
   when: (context: DirectionContext) => boolean;
+  /**
+   * What the student's quiz answers say (shown as "Your quiz"), or "" when the rule uses no
+   * quiz trait. For a fallback rule, the neutral line about the role (shown as "Starting point").
+   */
   reason: string;
+  /** The goal half of the rule, shown as "Your goal". */
+  goal?: string;
+  /** The rule depends on the major: Direction adds a coursework line (explain.ts majorPart). */
+  major?: true;
   /** Matches everyone. Used to fill engineering suggestions, never as a quiz signal. */
   fallback?: true;
 };
@@ -68,7 +76,8 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
     role: "design",
     points: 3,
     when: (context) => traitBand(context.traits.openness) === "high" && DESIGN.has(context.major),
-    reason: "You like unfamiliar problems, and your major lines up with design work.",
+    reason: "You like unfamiliar problems, which suits design work.",
+    major: true,
   },
   {
     role: "design",
@@ -99,7 +108,8 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
     points: 3,
     // High conscientiousness is a real quiz signal with a process major: keep "Matched to your quiz and major".
     when: (context) => PROCESS.has(context.major) && traitBand(context.traits.conscientiousness) === "high",
-    reason: "Your major and the way you follow a plan line up with process work.",
+    reason: "The way you follow a plan suits process work.",
+    major: true,
   },
   {
     role: "manufacturing_process",
@@ -113,19 +123,22 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
     role: "manufacturing_process",
     points: 2,
     when: (context) => context.goal === "industry" && traitBand(context.traits.conscientiousness) === "high",
-    reason: "You want industry work, and you like a process you can tighten.",
+    reason: "You like a process you can tighten.",
+    goal: "You want industry work.",
   },
   {
     role: "software",
     points: 3,
     when: (context) => SOFTWARE.has(context.major),
-    reason: "Your major lines up directly with software work.",
+    reason: "",
+    major: true,
   },
   {
     role: "software",
     points: 2,
     when: (context) => traitBand(context.traits.openness) === "high" && SOFTWARE.has(context.major),
-    reason: "You like new problems, and your major is close to software.",
+    reason: "You like new problems.",
+    major: true,
   },
   {
     role: "data_analytics",
@@ -135,6 +148,7 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
       traitBand(context.traits.conscientiousness) !== "low" &&
       traitBand(context.traits.openness) !== "low",
     reason: "You can follow a method and still dig into a new question, which fits data work.",
+    major: true,
   },
   {
     role: "data_analytics",
@@ -147,7 +161,8 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
     role: "research",
     points: 3,
     when: (context) => context.goal === "grad_school" && traitBand(context.traits.openness) !== "low",
-    reason: "Graduate school is your goal, and you are open to unfamiliar questions.",
+    reason: "You are open to unfamiliar questions.",
+    goal: "Graduate school is your goal.",
   },
   {
     role: "research",
@@ -157,12 +172,14 @@ export const RULES: readonly (QuizRule & { role: RoleType })[] = [
       traitBand(context.traits.openness) === "high" &&
       traitBand(context.traits.extraversion) !== "high",
     reason: "You like new ideas and quieter focus, which fits research.",
+    major: true,
   },
   {
     role: "field_site",
     points: 3,
     when: (context) => FIELD.has(context.major) && traitBand(context.traits.extraversion) !== "low",
-    reason: "Your major often means site work, and you are comfortable around people.",
+    reason: "You are comfortable around people, which site work asks for.",
+    major: true,
   },
   {
     role: "field_site",
@@ -313,7 +330,8 @@ export const EXTRA_RULES: readonly QuizRule[] = [
     role: "policy_research",
     points: 3,
     when: (c) => c.goal === "grad_school" && traitBand(c.traits.openness) === "high",
-    reason: "Graduate school is your goal, and you like unfamiliar questions.",
+    reason: "You like unfamiliar questions.",
+    goal: "Graduate school is your goal.",
   },
   {
     role: "policy_research",
