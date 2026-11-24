@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Card } from "@/components/ui";
 import { familiesForRole } from "@/features/atlas/compat";
+import { discussionLinksForRole } from "@/features/atlas/context-links";
 import { DismissSuggestion } from "@/features/direction/components/dismiss-suggestion";
 import {
   claimFlight,
@@ -180,25 +181,30 @@ export function CareerSuggestions({
                 </div>
               </div>
             ) : null}
-            {familiesForRole(suggestion.roleType)[0] ? (
-              <p className="mt-3 text-sm">
+            <div className="mt-3 flex flex-col text-sm sm:flex-row sm:gap-4">
+              {familiesForRole(suggestion.roleType)[0] ? (
                 <Link
-                  className="font-medium underline"
+                  className="inline-flex min-h-12 items-center font-medium underline"
                   href={`${ROUTES.directionAtlas}?at=${encodeURIComponent(familiesForRole(suggestion.roleType)[0])}`}
                 >
                   See careers in this area
                 </Link>
-              </p>
-            ) : null}
+              ) : null}
+              {discussionLinksForRole(suggestion.roleType).map((item) => (
+                <Link key={item.role} className="inline-flex min-h-12 items-center font-medium underline" href={item.href}>
+                  Ask students about {item.label}
+                </Link>
+              ))}
+            </div>
           </Card>
         ))}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button href={ROUTES.community} className="w-full sm:w-auto">
-          See companies in Community
+        <Button href={`${ROUTES.community}?tab=companies`} variant="secondary" className="w-full sm:w-auto">
+          Companies for your direction
         </Button>
         <Button href={ROUTES.reviews} variant="secondary" className="w-full sm:w-auto">
-          Review a co-op
+          Reflect on a co-op
         </Button>
         {initialSuggestions.length > 0 ? (
           <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">

@@ -16,6 +16,7 @@ import {
   ChildrenSection,
   OccupationDetails,
   OrganizationsCard,
+  FromStudentsCard,
   PicksSection,
   PursuingCard,
   QuestionCard,
@@ -24,6 +25,7 @@ import {
   WhyShown,
 } from "@/features/atlas/components/atlas-sections";
 import { ComparePanel, COMPARE_PANEL_ID } from "@/features/atlas/components/compare-panel";
+import { discussionLinksForNode } from "@/features/atlas/context-links";
 import { atlasGraph } from "@/features/atlas/graph";
 import { ROUTES } from "@/lib/constants";
 import type { AtlasNodeId } from "@/features/atlas/types";
@@ -309,6 +311,7 @@ export function AtlasExplorer({
             <ChildrenSection key={visit} heading={view.childrenHeading} shown={view.children} hidden={view.hiddenChildren} onOpen={openChild} />
           ) : null}
           {companies.length > 0 ? <OrganizationsCard key={visit} companies={companies} /> : null}
+          {view.level !== "domain" ? <FromStudentsCard discussions={discussionLinksForNode(graph, view.id)} /> : null}
           {view.alsoUnder.length > 0 ? <AlsoUnder items={view.alsoUnder} onGo={go} /> : null}
           <WhyShown why={view.why} unknowns={view.unknowns} />
         </>
