@@ -19,12 +19,12 @@ describe("major line (V1-07)", () => {
   it("names the coursework instead of asserting a direct major fit", () => {
     expect(majorPart("Electrical Engineering", "software")).toEqual({
       kind: "major",
-      text: "Electrical Engineering coursework usually covers programming, digital logic and embedded systems, which software work builds on.",
+      text: "Electrical Engineering coursework includes programming, digital logic and embedded systems, which software work builds on.",
     });
   });
 
-  it("falls back to a plain line when Swervly has no coursework for the pair", () => {
-    expect(majorPart("Environmental Engineering", "software").text).toBe("Environmental Engineering often leads to software work.");
+  it("falls back to a confident plain line when Swervly has no coursework for the pair", () => {
+    expect(majorPart("Environmental Engineering", "software").text).toBe("Environmental Engineering is a common path into software work.");
   });
 
   it("only lists coursework for a major the matching rule can actually fire for", () => {

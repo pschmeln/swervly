@@ -25,7 +25,7 @@ function review(overrides: Partial<RoleReview> = {}): RoleReview {
 const PEOPLE_CLAIM = /students?/i;
 
 describe("why this matched (item 20)", () => {
-  const majorLine: ReasonPart = { kind: "major", text: "Computer Science coursework usually covers programming, algorithms and software design, which software work builds on." };
+  const majorLine: ReasonPart = { kind: "major", text: "Computer Science coursework includes programming, algorithms and software design, which software work builds on." };
 
   it("starts with the suggestion's own lines and adds a real average for each chosen priority", () => {
     const reviews = [review({ userId: "a", mentorship: 5 }), review({ userId: "b", mentorship: 4 }), review({ userId: "c", roleType: "design", mentorship: 1 })];

@@ -23,11 +23,11 @@ import {
 const software: CareerSuggestionView = {
   roleType: "software",
   roleLabel: "Software",
-  reason: "Electrical Engineering coursework usually covers programming, digital logic and embedded systems, which software work builds on.",
+  reason: "Electrical Engineering coursework includes programming, digital logic and embedded systems, which software work builds on.",
   parts: [
     {
       kind: "major",
-      text: "Electrical Engineering coursework usually covers programming, digital logic and embedded systems, which software work builds on.",
+      text: "Electrical Engineering coursework includes programming, digital logic and embedded systems, which software work builds on.",
     },
   ],
   source: "rules",

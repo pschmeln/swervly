@@ -36,9 +36,10 @@ const ROLE_WORK: Partial<Record<CareerRole, string>> = {
 };
 
 /**
- * Coursework a major usually includes that carries into a role. Editorial, written for
- * engineering and computing majors (draft for founder review). Topics are typical of the
- * major, not read from the student's transcript, and the copy says "usually".
+ * Coursework a major includes that carries into a role. Editorial, written for
+ * engineering and computing majors (draft for founder review). Topics are core to the
+ * major's curriculum, not read from the student's transcript, so the copy says what the
+ * coursework includes and never that the student has the skill.
  */
 const COURSEWORK: Readonly<Record<string, Partial<Record<CareerRole, string>>>> = {
   "Electrical Engineering": {
@@ -99,15 +100,15 @@ const COURSEWORK: Readonly<Record<string, Partial<Record<CareerRole, string>>>> 
 };
 
 /**
- * The major's line for a role: names typical coursework when Swervly has it, otherwise
- * says only that the major often leads there. Never claims the student has a skill.
+ * The major's line for a role: names the coursework when Swervly has it, otherwise says the
+ * major is a common path into the work. Confident, and never claims the student has a skill.
  */
 export function majorPart(major: string, role: CareerRole): ReasonPart {
   const work = ROLE_WORK[role] ?? "this kind of work";
   const topics = COURSEWORK[major]?.[role];
   const text = topics
-    ? `${major} coursework usually covers ${topics}, which ${work} builds on.`
-    : `${major || "Your major"} often leads to ${work}.`;
+    ? `${major} coursework includes ${topics}, which ${work} builds on.`
+    : `${major || "Your major"} is a common path into ${work}.`;
   return { kind: "major", text };
 }
 
