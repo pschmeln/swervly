@@ -160,7 +160,7 @@ export async function loadDirection(user: User): Promise<DirectionPayload | null
       if (suggestion.roleType === "insufficient" || suggestion.evidenceLabel === FALLBACK_EVIDENCE_LABEL) {
         return suggestion;
       }
-      return { ...suggestion, reasons: whyMatched(suggestion.reason, suggestion.roleType, priorities, pool) };
+      return { ...suggestion, explanation: whyMatched(suggestion.parts, suggestion.roleType, priorities, pool) };
     }),
     priorities,
     interestedRoles: [...user.interestedCareerRoles],

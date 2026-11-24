@@ -25,6 +25,11 @@ export type CompareAction =
 export const EMPTY_SIDE_PROMPT = "Pick another occupation to compare";
 export const EMPTY_SIDE_HINT = "Open any occupation in the map and tap Compare, or pick one of these:";
 export const DIRECTION_COLUMN_NOTE = "Stays here while you compare. It changes only when you change your direction.";
+/** Source labels in Compare (V1-07): official O*NET content vs Swervly's own grouping. */
+export const ONET_SOURCE_LABEL = "From O*NET";
+export const GROUPING_SOURCE_LABEL = "Swervly grouping";
+/** Shown once both sides are filled: the next step after comparing is to choose one. */
+export const CHOOSE_PROMPT = "Compared enough? Make one of them your direction.";
 
 const MAX_QUICK_PICKS = 5;
 

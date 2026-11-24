@@ -2,8 +2,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import PrivacyPage from "@/app/privacy/page";
 import { PrioritiesInput, readPriorities } from "@/features/direction/priorities";
-import { WhyMatched } from "@/features/direction/components/why-matched";
-import { MAX_REASONS, priorityReason, whyMatched, type RoleReview } from "@/features/direction/why-matched";
+import { CORRECTION_PROMPT, WhyMatched } from "@/features/direction/components/why-matched";
+import type { ReasonPart } from "@/features/direction/explain";
+import { MAX_PRIORITY_REASONS, priorityReason, whyMatched, type RoleReview } from "@/features/direction/why-matched";
 import { ProfileInput } from "@/features/profile/schemas";
 
 function review(overrides: Partial<RoleReview> = {}): RoleReview {
@@ -24,12 +25,14 @@ function review(overrides: Partial<RoleReview> = {}): RoleReview {
 const PEOPLE_CLAIM = /students?/i;
 
 describe("why this matched (item 20)", () => {
-  it("starts with the rule reason and adds a real average for each chosen priority", () => {
+  const majorLine: ReasonPart = { kind: "major", text: "Computer Science coursework usually covers programming, algorithms and software design, which software work builds on." };
+
+  it("starts with the suggestion's own lines and adds a real average for each chosen priority", () => {
     const reviews = [review({ userId: "a", mentorship: 5 }), review({ userId: "b", mentorship: 4 }), review({ userId: "c", roleType: "design", mentorship: 1 })];
-    const reasons = whyMatched("Your major lines up directly with software work.", "software", ["mentorship"], reviews);
-    expect(reasons).toEqual([
-      "Your major lines up directly with software work.",
-      "You chose Mentorship as a top priority. 2 students in majors like yours rated mentorship in this role 4.5/5.",
+    const lines = whyMatched([majorLine], "software", ["mentorship"], reviews);
+    expect(lines).toEqual([
+      majorLine,
+      { kind: "priority", text: "You chose Mentorship as a top priority. 2 students in majors like yours rated mentorship in this role 4.5/5." },
     ]);
   });
 
@@ -50,13 +53,15 @@ describe("why this matched (item 20)", () => {
     expect(line).toBe('You chose "A co-op I\'d go back to" as a top priority. 50% of 2 students in majors like yours would go back to their co-op in this role.');
   });
 
-  it("never gives more than 3 reasons, and every claim about students carries a number", () => {
+  it("adds at most 2 priority lines, and every claim about students carries a number", () => {
     const reviews = ["a", "b", "c"].map((userId) => review({ userId }));
-    const reasons = whyMatched("Base reason.", "software", ["mentorship", "learning", "enjoyment"], reviews);
-    expect(reasons).toHaveLength(MAX_REASONS);
-    for (const reason of reasons.slice(1)) {
-      expect(reason).toMatch(PEOPLE_CLAIM);
-      expect(reason).toMatch(/\d/);
+    const base: ReasonPart[] = [{ kind: "quiz", text: "You like new problems." }, majorLine];
+    const lines = whyMatched(base, "software", ["mentorship", "learning", "enjoyment"], reviews);
+    expect(lines).toHaveLength(base.length + MAX_PRIORITY_REASONS);
+    for (const line of lines.slice(base.length)) {
+      expect(line.kind).toBe("priority");
+      expect(line.text).toMatch(PEOPLE_CLAIM);
+      expect(line.text).toMatch(/\d/);
     }
   });
 
@@ -69,12 +74,22 @@ describe("why this matched (item 20)", () => {
     expect(ProfileInput.shape.priorities.safeParse(undefined).success).toBe(true);
   });
 
-  it("renders the list and points students without priorities to their Profile", () => {
-    const html = renderToStaticMarkup(<WhyMatched reasons={["One.", "Two."]} hasPriorities={false} />);
+  it("labels where every line comes from and points students without priorities to their Profile", () => {
+    const parts: ReasonPart[] = [{ kind: "quiz", text: "One." }, majorLine, { kind: "reviews", text: "2 students rated it 4.5/5." }];
+    const html = renderToStaticMarkup(<WhyMatched parts={parts} hasPriorities={false} />);
     expect(html).toContain("Why this matched");
-    expect(html).toContain("<li>One.</li>");
+    expect(html).toMatch(/Your quiz<\/span>One\./);
+    expect(html).toMatch(/Your major<\/span>Computer Science coursework/);
+    expect(html).toMatch(/Student reviews<\/span>2 students/);
+    expect(html).toContain("Pick what matters most");
+    expect(renderToStaticMarkup(<WhyMatched parts={parts} hasPriorities />)).not.toContain("Pick what matters most");
+  });
+
+  it("lets a student correct the inputs behind the reasons", () => {
+    const html = renderToStaticMarkup(<WhyMatched parts={[majorLine]} hasPriorities />);
+    expect(html).toContain(CORRECTION_PROMPT);
     expect(html).toContain('href="/profile"');
-    expect(renderToStaticMarkup(<WhyMatched reasons={["One."]} hasPriorities />)).not.toContain('href="/profile"');
+    expect(html).toContain('href="/onboarding?retake=1"');
   });
 
   it("says in the privacy policy that priorities are collected and how they are used", () => {

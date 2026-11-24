@@ -23,16 +23,22 @@ import {
 const software: CareerSuggestionView = {
   roleType: "software",
   roleLabel: "Software",
-  reason: "Your major lines up directly with software work.",
+  reason: "Electrical Engineering coursework usually covers programming, digital logic and embedded systems, which software work builds on.",
+  parts: [
+    {
+      kind: "major",
+      text: "Electrical Engineering coursework usually covers programming, digital logic and embedded systems, which software work builds on.",
+    },
+  ],
   source: "rules",
   evidenceLabel: RULES_EVIDENCE_LABEL,
-  reasons: ["Your major lines up directly with software work."],
 };
 
 const processFill: CareerSuggestionView = {
   roleType: "manufacturing_process",
   roleLabel: "Manufacturing/Process",
   reason: "Manufacturing and process work is a common engineering co-op path and a solid place to start.",
+  parts: [{ kind: "general", text: "Manufacturing and process work is a common engineering co-op path and a solid place to start." }],
   source: "rules",
   evidenceLabel: FALLBACK_EVIDENCE_LABEL,
 };
@@ -41,6 +47,7 @@ const fieldFill: CareerSuggestionView = {
   roleType: "field_site",
   roleLabel: "Field/Site",
   reason: "Field and site work is a common engineering co-op path and a solid place to start.",
+  parts: [{ kind: "general", text: "Field and site work is a common engineering co-op path and a solid place to start." }],
   source: "rules",
   evidenceLabel: FALLBACK_EVIDENCE_LABEL,
 };
