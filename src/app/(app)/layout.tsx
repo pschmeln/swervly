@@ -1,5 +1,5 @@
-import { UserButton } from "@clerk/nextjs";
 import { Suspense } from "react";
+import { AccountMenu } from "@/components/account-menu";
 import { AppNav } from "@/components/app-nav";
 import { SentryUser } from "@/components/sentry-user";
 import { redirect } from "next/navigation";
@@ -24,7 +24,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-full flex-1 flex-col">
       <SentryUser userId={user.id} />
       <header>
-        <AppNav account={<UserButton />} />
+        <AppNav account={<AccountMenu />} />
       </header>
       <div className="flex flex-1 flex-col">{children}</div>
     </div>

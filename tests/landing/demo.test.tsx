@@ -1,11 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LandingPitch } from "@/app/page";
+import { LandingPitch, STEPS } from "@/app/page";
 import { BEATS_PER_SCENE, BEAT_MS, DEMO_SCENES, demoFrame, ProductDemo } from "@/features/landing/demo";
 
 describe("landing demo timing", () => {
-  it("plays quiz, direction, review, then the loop, and repeats", () => {
-    expect(DEMO_SCENES.map((scene) => scene.key)).toEqual(["quiz", "direction", "review", "loop"]);
+  it("plays quiz, direction, plan, then the loop, and repeats", () => {
+    expect(DEMO_SCENES.map((scene) => scene.key)).toEqual(["quiz", "direction", "plan", "loop"]);
     const scenes = Array.from({ length: DEMO_SCENES.length * BEATS_PER_SCENE + 1 }, (_, tick) => demoFrame(tick, true).scene);
     expect(scenes.slice(0, 4)).toEqual([0, 0, 0, 0]);
     expect(scenes[4]).toBe(1);
@@ -35,7 +35,16 @@ describe("landing demo markup", () => {
 
   it("hides the moving picture from screen readers and keeps the caption readable", () => {
     expect(html).toContain('aria-hidden="true"');
-    expect(html).toContain("1. Take a one-minute quiz");
+    expect(html).toContain("1. Understand how you work");
+  });
+
+  it("follows the same three steps as the guide below it", () => {
+    expect(DEMO_SCENES.slice(0, 3).map((scene) => scene.caption)).toEqual([
+      STEPS[0].title,
+      "Explore and compare careers",
+      STEPS[2].title,
+    ]);
+    expect(STEPS[1].title).toBe("Explore and compare");
   });
 
   it("sits on the landing page with one Sign in and no Chinese text", () => {
