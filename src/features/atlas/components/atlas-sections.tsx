@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { REFLECT_LINE, type DiscussionLink } from "@/features/atlas/context-links";
+import { ROUTES } from "@/lib/constants";
 import { Button, Card, Field, TextInput } from "@/components/ui";
 import { COMPANY_NOTE } from "@/content/atlas/company-links";
 import { ANSWER_LABELS, type PreferenceQuestion, type QuestionAnswer } from "@/content/atlas/questions";
@@ -416,6 +419,32 @@ export function WhyShown({ why, unknowns }: { why: readonly string[]; unknowns: 
       <ul className="mt-2 list-disc pl-5 text-neutral-700">
         {unknowns.map((line) => <li key={line}>{line}</li>)}
       </ul>
+    </Card>
+  );
+}
+
+/** Where to go next for a career: student discussions about it, and an optional co-op reflection. */
+export function FromStudentsCard({ discussions }: { discussions: readonly DiscussionLink[] }) {
+  return (
+    <Card>
+      <h2 className="text-lg font-semibold">From students</h2>
+      {discussions.length > 0 ? (
+        <ul className="mt-2 grid gap-1">
+          {discussions.map((item) => (
+            <li key={item.role}>
+              <Link href={item.href} className={`inline-flex min-h-12 items-center font-medium text-sky-800 underline ${focusRing}`}>
+                Questions and advice about {item.label} in Community
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-2 text-sm text-neutral-700">
+        {REFLECT_LINE}{" "}
+        <Link href={ROUTES.reviewsNew} className={`inline-flex min-h-12 items-center font-medium text-sky-800 underline ${focusRing}`}>
+          Reflect on a co-op
+        </Link>
+      </p>
     </Card>
   );
 }

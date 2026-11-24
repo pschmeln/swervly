@@ -28,7 +28,7 @@ export default async function DirectionPage({
           <p className="text-neutral-700">Take the quiz first. Direction matches roles to how you work.</p>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
             <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">Take the quiz</Button>
-            <Button href={ROUTES.community} variant="secondary" className="w-full sm:w-auto">
+            <Button href={`${ROUTES.community}?tab=companies`} variant="secondary" className="w-full sm:w-auto">
               See companies in Community
             </Button>
           </div>
