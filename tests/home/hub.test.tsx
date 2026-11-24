@@ -5,12 +5,14 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
 
 import { DIRECTION_EXHAUSTED_ACTION, DIRECTION_EXHAUSTED_LABEL } from "@/features/direction/rules";
 import { CYCLE_STEPS } from "@/features/home/cycle-graphic";
-import { HomeHub, homeTraits, majorLine, type HomeHubProps } from "@/features/home/hub";
+import { HomeHub, homeTraits, majorLine, NO_COOP_REVIEW_LINE, RETAKE_PROMPT, type HomeHubProps } from "@/features/home/hub";
+import { nextStep } from "@/features/home/next-step";
 import { readTraits } from "@/features/profile/traits";
 
 const scores = { extraversion: 6, agreeableness: 19, conscientiousness: 12, neuroticism: 20, openness: 15 };
 
 const base: HomeHubProps = {
+  next: nextStep({ onboarded: true, quizDone: true, chosenTitle: null, plan: null }),
   quizDone: true,
   canReview: true,
   rotationCount: 2,
@@ -71,16 +73,44 @@ describe("Home profile and direction windows", () => {
   });
 
   it("asks for the quiz before showing readings or careers", () => {
-    const t = text(renderToStaticMarkup(<HomeHub {...base} quizDone={false} traits={[]} suggestions={[]} interested={[]} />));
+    const quiz = nextStep({ onboarded: true, quizDone: false, chosenTitle: null, plan: null });
+    const t = text(renderToStaticMarkup(<HomeHub {...base} next={quiz} quizDone={false} traits={[]} suggestions={[]} interested={[]} />));
     expect(t).toContain("Take the quiz");
     expect(t).toContain("Your direction appears after the quiz");
     expect(t).not.toContain("Saved careers");
   });
 
-  it("offers Log a co-op review when none are logged", () => {
+  it("offers an optional, secondary review link when no co-op is logged", () => {
     const html = renderToStaticMarkup(<HomeHub {...base} rotationCount={0} />);
     expect(html).toContain('href="/reviews/new"');
-    expect(text(html)).toContain("No co-ops logged yet.");
+    expect(text(html)).toContain(NO_COOP_REVIEW_LINE);
+    expect(text(html)).not.toContain("Log a co-op review");
+  });
+
+  it("has exactly one primary button, the next step, for new and returning students", () => {
+    const cases = [
+      nextStep({ onboarded: false, quizDone: false, chosenTitle: null, plan: null }),
+      nextStep({ onboarded: true, quizDone: false, chosenTitle: null, plan: null }),
+      nextStep({ onboarded: true, quizDone: true, chosenTitle: null, plan: null }),
+      nextStep({ onboarded: true, quizDone: true, chosenTitle: "Mechanical Engineers", plan: null }),
+      nextStep({ onboarded: true, quizDone: true, chosenTitle: "Mechanical Engineers", plan: { goalTitle: "Mechanical Engineers", nextTask: "Read two job posts" } }),
+    ];
+    for (const next of cases) {
+      for (const props of [{ rotationCount: 0 }, { rotationCount: 2 }, { suggestions: [] }]) {
+        const html = renderToStaticMarkup(<HomeHub {...base} {...props} next={next} />);
+        // A pressed "Interested ✓" toggle shows saved state, not a call to action, so it doesn't count.
+        const primaries = (html.match(/<(a|button)\b[^>]*bg-ink text-white[^>]*>/g) ?? []).filter((tag) => !tag.includes('aria-pressed="true"'));
+        expect(primaries, next.key).toHaveLength(1);
+        expect(html).toContain(`href="${next.href}"`);
+        expect(text(html)).toContain(next.cta);
+      }
+    }
+  });
+
+  it("lets a student correct a reading where it's shown", () => {
+    const html = renderToStaticMarkup(<HomeHub {...base} />);
+    expect(text(html)).toContain(RETAKE_PROMPT);
+    expect(html).toContain('href="/onboarding?retake=1"');
   });
 
   it("hides the Top suggestions heading when the list is empty, and keeps exhausted copy plus nav", () => {

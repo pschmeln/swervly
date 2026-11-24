@@ -1,17 +1,27 @@
 import type { Trait } from "@/content/mini-ipip";
 import { Button, Card } from "@/components/ui";
+import { focusRing } from "@/components/ui/focus-ring";
 import type { ChosenDirection } from "@/features/direction/chosen";
 import { ChosenDirectionLine } from "@/features/direction/components/chosen-direction";
 import { InterestedButton } from "@/features/direction/components/interested-button";
 import { DIRECTION_EXHAUSTED_ACTION, DIRECTION_EXHAUSTED_LABEL } from "@/features/direction/rules";
 import { CycleGraphic } from "@/features/home/cycle-graphic";
+import type { NextStep } from "@/features/home/next-step";
 import type { User } from "@/db/schema";
 import { UNDECIDED_LABEL } from "@/features/majors/catalog";
 import { ROUTES } from "@/lib/constants";
 
+/** Lets a student correct a reading that doesn't fit, right where it's shown. */
+export const RETAKE_PROMPT = "Doesn't sound like you? Retake the quiz";
+
+/** Shown to students with no logged co-op: reviewing is optional and comes after a co-op. */
+export const NO_COOP_REVIEW_LINE = "Done a co-op or internship? Reflecting on it sharpens your suggestions.";
+
 export type HomeTrait = { trait: Trait; category: string; headline: string; strength: number };
 
 export type HomeHubProps = {
+  /** The one primary call to action (next-step.ts). */
+  next: NextStep;
   quizDone: boolean;
   canReview: boolean;
   rotationCount: number;
@@ -78,9 +88,7 @@ export function HomeHub(props: HomeHubProps) {
               <br />
               <em>Find your direction.</em>
             </h1>
-            <p className="mt-4 max-w-md text-lg leading-relaxed text-white">
-              Swervly learns how you work, suggests where you might fit, and gets sharper every time you review a co-op.
-            </p>
+            <NextStepCard next={props.next} />
           </div>
           <div className="glass rounded-[22px] p-3 sm:p-5">
             <CycleGraphic />
@@ -97,6 +105,22 @@ export function HomeHub(props: HomeHubProps) {
   );
 }
 
+/** The single primary action on Home. Every other button on the page is secondary. */
+function NextStepCard({ next }: { next: NextStep }) {
+  return (
+    <section aria-labelledby="next-step-heading" className="glass mt-6 max-w-md rounded-[22px] p-4 sm:p-5">
+      <p className="text-sm font-semibold text-accent">Your next step</p>
+      <h2 id="next-step-heading" className="mt-1 text-xl font-semibold tracking-tight text-ink">
+        {next.title}
+      </h2>
+      <p className="mt-1 text-ink-2">{next.body}</p>
+      <Button href={next.href} className="mt-4 w-full sm:w-auto">
+        {next.cta}
+      </Button>
+    </section>
+  );
+}
+
 function WindowHead({ title, href, linkLabel }: { title: string; href: string; linkLabel: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
@@ -108,10 +132,10 @@ function WindowHead({ title, href, linkLabel }: { title: string; href: string; l
   );
 }
 
-function ProfileWindow({ quizDone, canReview, majorLine, traits }: HomeHubProps) {
+function ProfileWindow({ quizDone, majorLine, traits }: HomeHubProps) {
   return (
     <Card>
-      <WindowHead title="Your profile" href={ROUTES.profile} linkLabel="Open profile" />
+      <WindowHead title="How you work" href={ROUTES.profile} linkLabel="Open profile" />
       <p className="mt-1 text-sm text-ink-3">{[majorLine, quizDone ? "From your quiz" : null].filter(Boolean).join(" · ") || "Your major, goals and quiz"}</p>
       {quizDone && traits.length > 0 ? (
         <>
@@ -132,14 +156,15 @@ function ProfileWindow({ quizDone, canReview, majorLine, traits }: HomeHubProps)
             ))}
           </ul>
           <p className="mt-3 text-xs text-ink-3">What your quiz says about how you work.</p>
+          <a
+            href={`${ROUTES.onboarding}?retake=1`}
+            className={`inline-flex min-h-12 items-center text-sm font-semibold text-accent underline-offset-4 hover:underline ${focusRing}`}
+          >
+            {RETAKE_PROMPT}
+          </a>
         </>
       ) : (
-        <div className="mt-4">
-          <p className="text-ink-2">Take the short quiz so Swervly can learn how you work. About a minute, no right answers.</p>
-          <Button href={canReview ? `${ROUTES.onboarding}?retake=1` : ROUTES.onboarding} className="mt-4 w-full sm:w-auto">
-            Take the quiz
-          </Button>
-        </div>
+        <p className="mt-4 text-ink-2">After the short quiz, this shows how you like to work. About a minute, no right answers.</p>
       )}
     </Card>
   );
@@ -150,14 +175,14 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
   const interestedIds = new Set(interested.map((item) => item.roleType));
   const reviewLine =
     rotationCount === 0
-      ? "No co-ops logged yet."
+      ? NO_COOP_REVIEW_LINE
       : rotationCount === 1
         ? "1 co-op or internship logged."
         : `${rotationCount} co-ops and internships logged.`;
 
   return (
     <Card>
-      <WindowHead title="Your direction" href={ROUTES.direction} linkLabel="See all" />
+      <WindowHead title="Direction you're exploring" href={ROUTES.direction} linkLabel="See all" />
       <ChosenDirectionLine chosen={chosen} />
       {quizDone ? (
         <>
@@ -186,7 +211,7 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
               <p className="font-medium text-ink">{DIRECTION_EXHAUSTED_LABEL}</p>
               <p className="mt-1 text-ink-2">{DIRECTION_EXHAUSTED_ACTION}</p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <Button href={`${ROUTES.onboarding}?retake=1`} className="w-full sm:w-auto">
+                <Button href={`${ROUTES.onboarding}?retake=1`} variant="secondary" className="w-full sm:w-auto">
                   Retake the quiz
                 </Button>
                 <Button href={ROUTES.directionAtlas} variant="secondary" className="w-full sm:w-auto">
@@ -211,18 +236,18 @@ function DirectionWindow({ quizDone, canReview, rotationCount, suggestions, inte
       ) : (
         <p className="mt-4 text-ink-2">Your direction appears after the quiz, and it gets sharper as more students review co-ops.</p>
       )}
-      <div className="mt-5 border-t border-neutral-100 pt-4">
-        <p className="text-sm text-ink-2">{reviewLine}</p>
-        {canReview ? (
-          <Button href={rotationCount === 0 ? ROUTES.reviewsNew : ROUTES.reviews} className="mt-3 w-full sm:w-auto">
-            {rotationCount === 0 ? "Log a co-op review" : "Review your co-ops"}
+      {canReview ? (
+        <div className="mt-5 border-t border-neutral-100 pt-4">
+          <p className="text-sm text-ink-2">{reviewLine}</p>
+          <Button
+            href={rotationCount === 0 ? ROUTES.reviewsNew : ROUTES.reviews}
+            variant="secondary"
+            className="mt-3 w-full sm:w-auto"
+          >
+            {rotationCount === 0 ? "Reflect on a co-op" : "Your co-op reviews"}
           </Button>
-        ) : (
-          <Button disabled className="mt-3 w-full sm:w-auto">
-            Log a co-op review
-          </Button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </Card>
   );
 }

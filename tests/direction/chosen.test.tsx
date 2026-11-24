@@ -6,10 +6,12 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
 import { chosenDirectionView } from "@/features/direction/chosen";
 import { ChosenDirectionCard, ChosenDirectionLine, NO_DIRECTION_LINE } from "@/features/direction/components/chosen-direction";
 import { HomeHub, type HomeHubProps } from "@/features/home/hub";
+import { nextStep } from "@/features/home/next-step";
 
 const MECH = "occ:onet:17-2141.00";
 
 const hub: HomeHubProps = {
+  next: nextStep({ onboarded: true, quizDone: true, chosenTitle: null, plan: null }),
   quizDone: true,
   canReview: true,
   rotationCount: 0,
