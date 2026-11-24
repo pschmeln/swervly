@@ -6,8 +6,8 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/direction/atlas" }));
 import { AppNav, isActive, NAV } from "@/components/app-nav";
 
 describe("AppNav", () => {
-  it("shows only the core journey plus Settings", () => {
-    expect(NAV.map((item) => item.label)).toEqual(["Home", "Self", "Explore", "My plan", "Settings"]);
+  it("shows only the core journey", () => {
+    expect(NAV.map((item) => item.label)).toEqual(["Home", "Self", "Explore", "My plan"]);
   });
 
   it("keeps Reviews, Community and Companies out of the top nav (they are contextual)", () => {
@@ -15,7 +15,8 @@ describe("AppNav", () => {
     expect(hrefs).not.toContain("/reviews");
     expect(hrefs).not.toContain("/community");
     expect(hrefs.some((href) => href.startsWith("/companies"))).toBe(false);
-    expect(hrefs).toContain("/settings");
+    // Settings lives in the account menu instead (tests/components/account-menu.test.tsx).
+    expect(hrefs).not.toContain("/settings");
   });
 
   it("marks a section active on its own page and on pages under it", () => {

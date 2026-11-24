@@ -9,7 +9,7 @@ import { ACTION_HREF } from "@/features/action-ui/paths";
 import { ROUTES } from "@/lib/constants";
 
 // The core journey only (V1 plan, Nov 24, 2026): Home, Self, Explore (Direction and the
-// Career map), My plan (Action). Settings stays for privacy and account controls.
+// Career map), My plan (Action). Settings is in the account menu (account-menu.tsx).
 // Reviews, Community and Companies are contextual: linked from Home, Direction and career
 // pages, not from here. Routes are unchanged, so every existing link still works.
 export const NAV = [
@@ -17,7 +17,6 @@ export const NAV = [
   { href: ROUTES.profile, label: "Self" },
   { href: ROUTES.direction, label: "Explore" },
   { href: ACTION_HREF, label: "My plan" },
-  { href: ROUTES.settings, label: "Settings" },
 ] as const;
 
 export function isActive(pathname: string, href: string): boolean {
