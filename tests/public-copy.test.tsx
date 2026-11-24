@@ -19,9 +19,13 @@ describe("public copy", () => {
     expect(text).toContain(
       "Most engineering students pick co-ops with almost no information about what they'll actually enjoy",
     );
-    expect(text).toContain("Take the quiz");
-    expect(text).toContain("Review your co-ops");
-    expect(text).toContain("Get your direction");
+    expect(text).toContain("Understand how you work");
+    expect(text).toContain("Explore and compare");
+    expect(text).toContain("Take a next step");
+    // A student with no internship history can follow every step.
+    expect(text).toContain("No co-op yet? You can do all three steps today.");
+    expect(text).not.toContain("Review your co-ops");
+    expect(text).not.toContain("co-ops that fit");
     expect(text).toContain(".edu");
     expect(html).toContain("Get started");
     expect(html).toContain('href="/sign-up"');

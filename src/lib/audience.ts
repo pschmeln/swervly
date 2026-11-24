@@ -66,19 +66,20 @@ const ENGINEERING_HIDDEN_ROLES: ReadonlySet<string> = new Set([
   "writing_media",
 ]);
 
-/** Landing copy per audience. The "all" lines are the copy used before Nov 22, 2026. */
+/** Landing copy per audience. Steps follow the V1 journey (Nov 24, 2026): understand how you work, explore and compare, take a next step. */
 const AUDIENCE_COPIES = {
   engineering: {
     pitch:
-      "Most engineering students pick co-ops with almost no information about what they'll actually enjoy. Swervly learns how you work, then points you toward co-ops that fit.",
-    directionStep: "Engineering careers matched to how you work, sharper as more students review co-ops.",
+      "Most engineering students pick co-ops with almost no information about what they'll actually enjoy. Swervly learns how you work, helps you explore and compare engineering careers, and suggests a next step, whether or not you've had a co-op yet.",
+    exploreStep:
+      "See engineering and computing careers that might suit you, with the reasons for each. Compare two side by side.",
     whoFor:
       "Engineering and computing students with an email that ends in .edu. Swervly is free, and it is not affiliated with a university.",
   },
   all: {
     pitch:
-      "Most students pick co-ops with almost no information about what they'll actually enjoy. Swervly learns how you work, then points you toward co-ops that fit.",
-    directionStep: "Careers and majors matched to how you work, sharper as more students review co-ops.",
+      "Most students pick co-ops with almost no information about what they'll actually enjoy. Swervly learns how you work, helps you explore and compare careers, and suggests a next step, whether or not you've had a co-op yet.",
+    exploreStep: "See careers and majors that might suit you, with the reasons for each. Compare two side by side.",
     whoFor: "Any student with an email that ends in .edu. Swervly is free, and it is not affiliated with a university.",
   },
 } as const;

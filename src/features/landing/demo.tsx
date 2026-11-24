@@ -13,10 +13,10 @@ import { focusRing } from "@/components/ui/focus-ring";
  * reduced motion; it then shows each scene's final state.
  */
 export const DEMO_SCENES = [
-  { key: "quiz", caption: "Take a one-minute quiz", detail: "Twenty quick statements. No right answers." },
-  { key: "direction", caption: "See careers that might fit", detail: "Mark the ones you want to explore." },
-  { key: "review", caption: "Review your co-ops", detail: "Every review makes Direction sharper." },
-  { key: "loop", caption: "Swervly grows with you", detail: "Know yourself, choose a path, reflect, repeat." },
+  { key: "quiz", caption: "Understand how you work", detail: "Quick statements about how you like to work. No right answers." },
+  { key: "direction", caption: "Explore and compare careers", detail: "See why each one might suit you. Mark the ones to explore." },
+  { key: "plan", caption: "Take a next step", detail: "Pick a direction and get a few small steps you can edit." },
+  { key: "loop", caption: "Swervly grows with you", detail: "After a co-op, reflect on it and your suggestions get sharper." },
 ] as const;
 
 export const BEATS_PER_SCENE = 4;
@@ -73,7 +73,7 @@ export function ProductDemo() {
         <div aria-hidden="true" className="relative h-[300px] bg-gradient-to-b from-[#f4f7fd] to-white px-4 py-5 sm:h-[340px] sm:px-8">
           {scene === 0 ? <QuizScene beat={beat} /> : null}
           {scene === 1 ? <DirectionScene beat={beat} /> : null}
-          {scene === 2 ? <ReviewScene beat={beat} /> : null}
+          {scene === 2 ? <PlanScene beat={beat} /> : null}
           {scene === 3 ? <LoopScene beat={beat} /> : null}
         </div>
       </div>
@@ -191,30 +191,32 @@ function DirectionScene({ beat }: { beat: number }) {
   );
 }
 
-function ReviewScene({ beat }: { beat: number }) {
-  const employer = "Test Employer A";
-  const typed = employer.slice(0, Math.min(employer.length, Math.round(((beat + 1) / 2) * employer.length)));
+const DEMO_STEPS = [
+  "Read two controls engineer job posts",
+  "Ask a senior about their controls co-op",
+  "Try a short PLC tutorial",
+];
+
+function PlanScene({ beat }: { beat: number }) {
   return (
-    <div className="mx-auto flex h-full max-w-lg flex-col justify-center gap-3">
-      <p className="font-serif text-2xl text-ink">Log a co-op</p>
-      <div className="rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-ink">
-        {typed}
-        {beat < 1 ? <span className="ml-0.5 inline-block h-4 w-px animate-pulse bg-ink align-middle" /> : null}
-      </div>
-      <p className="text-sm font-semibold text-ink">How much did you enjoy the work?</p>
-      <div className="grid grid-cols-5 gap-2">
-        {[1, 2, 3, 4, 5].map((score) => (
-          <Tap key={score} on={beat >= 2 && score === 5}>
-            {score}
-          </Tap>
-        ))}
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="inline-flex rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">Save co-op</span>
-        <Fade show={beat >= 3}>
-          <span className="rounded-full bg-[#e7f7ef] px-3 py-1.5 text-sm font-semibold text-[#0f7a4a]">Saved. Direction updated.</span>
+    <div className="mx-auto flex h-full max-w-lg flex-col justify-center gap-2.5">
+      <p className="text-xs font-semibold text-ink-3">Your goal</p>
+      <p className="font-serif text-2xl text-ink">Controls and automation</p>
+      <p className="mt-1 text-sm font-semibold text-ink">Your next three steps</p>
+      {DEMO_STEPS.map((step, index) => (
+        <Fade key={step} show={beat >= index || beat >= 2}>
+          <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+            <span
+              className={`flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors duration-300 ${
+                index === 0 && beat >= 3 ? "border-ink bg-ink text-white" : "border-neutral-300 bg-white text-ink-3"
+              }`}
+            >
+              {index === 0 && beat >= 3 ? "✓" : index + 1}
+            </span>
+            <p className="min-w-0 truncate text-ink">{step}</p>
+          </div>
         </Fade>
-      </div>
+      ))}
     </div>
   );
 }
@@ -232,15 +234,10 @@ function LoopScene({ beat }: { beat: number }) {
           <li key={step} className="flex items-center gap-2">
             <span
               className={`rounded-2xl border px-3.5 py-2 text-sm font-semibold transition-colors duration-300 ${
-                step === "Action"
-                  ? "border-dashed border-neutral-300 bg-neutral-50 text-ink-3"
-                  : index === beat
-                    ? "border-accent bg-accent-soft text-[#1d4ed8]"
-                    : "border-neutral-200 bg-white text-ink"
+                index === beat ? "border-accent bg-accent-soft text-[#1d4ed8]" : "border-neutral-200 bg-white text-ink"
               }`}
             >
               {step}
-              {step === "Action" ? " · soon" : ""}
             </span>
             {index < LOOP.length - 1 ? <span className="text-ink-3">→</span> : <span className="text-ink-3">↺</span>}
           </li>

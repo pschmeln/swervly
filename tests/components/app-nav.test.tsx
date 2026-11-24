@@ -1,13 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/reviews/new" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/direction/atlas" }));
 
 import { AppNav, isActive, NAV } from "@/components/app-nav";
 
 describe("AppNav", () => {
-  it("follows the Home cycle order", () => {
-    expect(NAV.map((item) => item.label)).toEqual(["Home", "Profile", "Direction", "Action", "Community", "Reviews", "Settings"]);
+  it("shows only the core journey", () => {
+    expect(NAV.map((item) => item.label)).toEqual(["Home", "Self", "Explore", "My plan"]);
+  });
+
+  it("keeps Reviews, Community and Companies out of the top nav (they are contextual)", () => {
+    const hrefs: string[] = NAV.map((item) => item.href);
+    expect(hrefs).not.toContain("/reviews");
+    expect(hrefs).not.toContain("/community");
+    expect(hrefs.some((href) => href.startsWith("/companies"))).toBe(false);
+    // Settings lives in the account menu instead (tests/components/account-menu.test.tsx).
+    expect(hrefs).not.toContain("/settings");
   });
 
   it("marks a section active on its own page and on pages under it", () => {
@@ -20,7 +29,8 @@ describe("AppNav", () => {
   it("marks only the current section with aria-current and renders the account slot", () => {
     const html = renderToStaticMarkup(<AppNav account={<span>ACCOUNT</span>} />);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="page"[^>]*>Reviews</);
+    // The Career map lives under Explore.
+    expect(html).toMatch(/aria-current="page"[^>]*>Explore</);
     expect(html).toContain("ACCOUNT");
     // The phone menu starts closed.
     expect(html).toContain('aria-expanded="false"');

@@ -74,6 +74,7 @@ export function LandingPitch() {
             <p className="mt-2 leading-7 text-ink-2">{step.body}</p>
           </Card>
         ))}
+        <p className="text-ink-2 md:col-span-3">{NO_COOP_NOTE}</p>
         <Card className="md:col-span-3">
           <h2 className="text-lg font-semibold">Who it&apos;s for</h2>
           <p className="mt-2 leading-7 text-ink-2">
@@ -85,11 +86,21 @@ export function LandingPitch() {
   );
 }
 
-const STEPS = [
-  { title: "Take the quiz", body: "A minute of quick statements about how you like to work. There are no right answers." },
-  { title: "Review your co-ops", body: "Rate what you enjoyed and learned. Your reviews help other students and sharpen your own Direction." },
-  { title: "Get your direction", body: AUDIENCE_COPY.directionStep },
+// Same order as the demo above. No step needs a past co-op; reviewing one comes later (see NO_COOP_NOTE).
+export const STEPS = [
+  {
+    title: "Understand how you work",
+    body: "A short quiz of quick statements about how you like to work. There are no right answers.",
+  },
+  { title: "Explore and compare", body: AUDIENCE_COPY.exploreStep },
+  {
+    title: "Take a next step",
+    body: "Pick a direction to try and get a short list of next steps you can edit.",
+  },
 ] as const;
+
+export const NO_COOP_NOTE =
+  "No co-op yet? You can do all three steps today. After a co-op, you can reflect on it and your suggestions get sharper.";
 
 async function Landing() {
   const { userId } = await auth();
