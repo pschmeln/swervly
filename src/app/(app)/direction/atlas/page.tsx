@@ -2,6 +2,7 @@ import { PageShell } from "@/components/ui";
 import { AtlasExplorer } from "@/features/atlas/components/atlas-explorer";
 import { atlasEntry } from "@/features/atlas/entry";
 import { atlasGraph } from "@/features/atlas/graph";
+import { companyPageHrefs } from "@/features/atlas/company-pages";
 import { loadAtlasState } from "@/features/atlas/server";
 import { loadDirection } from "@/features/direction/server";
 import { loadHomeArea } from "@/features/location/server";
@@ -42,7 +43,7 @@ export default async function CareerAtlasPage({
     // Atlas still works without Direction; it just has fewer signals.
   }
   // Saved choices for this student only. Unavailable (on-screen only) until migration 0007 is applied.
-  const [saved, homeArea] = await Promise.all([loadAtlasState(user.id), loadHomeArea(user.id)]);
+  const [saved, homeArea, companyPages] = await Promise.all([loadAtlasState(user.id), loadHomeArea(user.id), companyPageHrefs()]);
 
   return (
     <PageShell title="Career map" description="Browse careers from your major outward, or anywhere you like.">
@@ -55,6 +56,7 @@ export default async function CareerAtlasPage({
         saved={saved}
         initialFocus={initialFocus}
         homeArea={homeArea}
+        companyPages={companyPages}
       />
     </PageShell>
   );

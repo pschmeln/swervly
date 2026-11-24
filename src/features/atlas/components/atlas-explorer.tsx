@@ -79,6 +79,7 @@ export function AtlasExplorer({
   initialCompare = [],
   saved,
   homeArea = null,
+  companyPages = {},
 }: {
   entry: AtlasEntry;
   /** Direction role ids the student dismissed. Read only. */
@@ -97,6 +98,8 @@ export function AtlasExplorer({
   saved?: InitialSaved;
   /** Home city and radius: organizations headquartered inside it are listed first. */
   homeArea?: HomeArea | null;
+  /** Directory company id → Swervly's own company page, when one exists (company-pages.ts). */
+  companyPages?: Readonly<Record<string, string>>;
 }) {
   const persist = saved?.available === true;
   const graph = atlasGraph();
@@ -142,8 +145,12 @@ export function AtlasExplorer({
   // The chosen direction is the fixed third column: it depends on `pursuing` only.
   const comparison = useMemo(() => comparePanel(graph, compare, pursuing), [graph, compare, pursuing]);
   const companies = useMemo(
-    () => rankByHomeArea(current ? companiesFor(graph, current) : [], homeArea),
-    [graph, current, homeArea],
+    () =>
+      rankByHomeArea(current ? companiesFor(graph, current) : [], homeArea).map((company) => ({
+        ...company,
+        reviewsHref: companyPages[company.id] ?? null,
+      })),
+    [graph, current, homeArea, companyPages],
   );
 
   function pickForCompare(id: AtlasNodeId) {
