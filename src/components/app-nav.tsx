@@ -8,15 +8,15 @@ import { focusRing } from "@/components/ui/focus-ring";
 import { ACTION_HREF } from "@/features/action-ui/paths";
 import { ROUTES } from "@/lib/constants";
 
-// Order follows the cycle on Home: Self (Profile) -> Direction -> Action -> Review.
-// Community sits with the other sections, after Action.
+// The core journey only (V1 plan, Nov 24, 2026): Home, Self, Explore (Direction and the
+// Career map), My plan (Action). Settings stays for privacy and account controls.
+// Reviews, Community and Companies are contextual: linked from Home, Direction and career
+// pages, not from here. Routes are unchanged, so every existing link still works.
 export const NAV = [
   { href: ROUTES.home, label: "Home" },
-  { href: ROUTES.profile, label: "Profile" },
-  { href: ROUTES.direction, label: "Direction" },
-  { href: ACTION_HREF, label: "Action" },
-  { href: ROUTES.community, label: "Community" },
-  { href: ROUTES.reviews, label: "Reviews" },
+  { href: ROUTES.profile, label: "Self" },
+  { href: ROUTES.direction, label: "Explore" },
+  { href: ACTION_HREF, label: "My plan" },
   { href: ROUTES.settings, label: "Settings" },
 ] as const;
 
