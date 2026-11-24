@@ -1,0 +1,12 @@
+---
+description: Swervly rules for every agent (same as Claude, Grok and the rest)
+alwaysApply: true
+---
+
+Every agent in this repo follows the same rules. Before any task, read and follow:
+
+- `AGENTS.md` (the short rulebook)
+- `docs/AGENT_SAFETY.md` (permission levels, self-checks, sensitive files)
+- The shared checklists that AGENTS.md rule 9 lists in `.claude/skills/` (security review, database migrations, verification before push). They apply to Cursor too.
+
+Name your branch `cursor/<topic>`. Don't add rules here; change AGENTS.md and docs/AGENT_SAFETY.md instead.
