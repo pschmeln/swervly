@@ -354,7 +354,13 @@ export function ChildrenSection({
 }
 
 /** Organizations listed under this area. Remount it (key) to fold the full list back up. */
-export function OrganizationsCard({ companies }: { companies: readonly (CompanyModel & { nearby?: string | null })[] }) {
+export const COMPANY_PAGE_LABEL = "Co-op reviews on Swervly";
+
+export function OrganizationsCard({
+  companies,
+}: {
+  companies: readonly (CompanyModel & { nearby?: string | null; reviewsHref?: string | null })[];
+}) {
   const [showAll, setShowAll] = useState(false);
   return (
     <Card>
@@ -366,6 +372,13 @@ export function OrganizationsCard({ companies }: { companies: readonly (CompanyM
             <p className="font-medium text-neutral-900">{company.name}</p>
             <p className="text-sm text-neutral-600">{company.field} · Listed under {company.areas.join(" and ")}</p>
             {company.nearby ? <p className="mt-1 text-sm font-medium text-emerald-800">{company.nearby}</p> : null}
+            {company.reviewsHref ? (
+              <p className="mt-1 text-sm">
+                <Link href={company.reviewsHref} className={`inline-flex min-h-12 items-center font-medium text-sky-800 underline ${focusRing}`}>
+                  {COMPANY_PAGE_LABEL}
+                </Link>
+              </p>
+            ) : null}
             {company.careersUrl ? (
               <p className="mt-1 text-sm">
                 <a href={company.careersUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-sky-800 underline">
