@@ -13,8 +13,6 @@ import { ChosenDirectionCard } from "@/features/direction/components/chosen-dire
 import { hasCommunityTerms } from "@/features/community/rules";
 import { archetypeFor } from "@/features/profile/archetype";
 import { ArchetypeCard } from "@/features/profile/components/archetype-card";
-import { PointsBalance } from "@/features/profile/components/points-balance";
-import { referralSummary } from "@/features/profile/referrals";
 import { readTraits } from "@/features/profile/traits";
 import { scoresFromStored } from "@/features/profile/scoring";
 import { requireUser } from "@/lib/auth";
@@ -24,7 +22,6 @@ export const metadata = { title: "Profile" };
 
 export default async function ProfilePage() {
   const user = await requireUser();
-  const summary = await referralSummary(user.id);
   if (!user.onboardedAt) {
     return (
       <PageShell title="Profile">
@@ -34,7 +31,6 @@ export default async function ProfilePage() {
             <Button href={ROUTES.onboarding} className="w-full sm:w-auto">Finish your profile</Button>
           </div>
         </Card>
-        <PointsBalance points={summary.points} />
       </PageShell>
     );
   }
@@ -58,30 +54,11 @@ export default async function ProfilePage() {
 
   return (
     <PageShell title="Profile">
-      {archetype ? <ArchetypeCard card={archetype} share={{ agreed: hasCommunityTerms(user) }} /> : null}
+      {/* Order (V1-08): direction, how you work, your details; sharing comes last. Points live in Settings. */}
       <ChosenDirectionCard chosen={chosen} />
-      <PointsBalance points={summary.points} />
-      {user.school ? (
-        <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
-      ) : null}
-      {profile ? (
-        <ProfileEditor
-          majorSearch={majorSearch}
-          initial={{
-            school: profile.school ?? "",
-            major: selectionFromStored(user),
-            exploringMajors: user.exploringMajors,
-            year: user.year == null ? "" : String(user.year),
-            goal: profile.goal,
-            goalNotes: profile.goalNotes ?? "",
-            location: locationValueFrom(profile),
-            priorities: readPriorities(profile.priorities),
-            constraintsNotes: profile.constraintsNotes ?? "",
-          }}
-        />
-      ) : null}
       <Card>
-        <h2 className="text-lg font-semibold">Quiz result</h2>
+        <h2 className="text-lg font-semibold">How you work</h2>
+        <p className="mt-1 text-sm text-neutral-600">From your quiz. If a line doesn&apos;t sound like you, retake it.</p>
         {readings ? (
           <ul className="mt-4 grid gap-4">
             {readings.map((reading) => (
@@ -104,6 +81,26 @@ export default async function ProfilePage() {
           </Button>
         </div>
       </Card>
+      {user.school ? (
+        <p className="text-sm text-neutral-600">School domain from your sign-in: {user.school}</p>
+      ) : null}
+      {profile ? (
+        <ProfileEditor
+          majorSearch={majorSearch}
+          initial={{
+            school: profile.school ?? "",
+            major: selectionFromStored(user),
+            exploringMajors: user.exploringMajors,
+            year: user.year == null ? "" : String(user.year),
+            goal: profile.goal,
+            goalNotes: profile.goalNotes ?? "",
+            location: locationValueFrom(profile),
+            priorities: readPriorities(profile.priorities),
+            constraintsNotes: profile.constraintsNotes ?? "",
+          }}
+        />
+      ) : null}
+      {archetype ? <ArchetypeCard card={archetype} share={{ agreed: hasCommunityTerms(user) }} /> : null}
     </PageShell>
   );
 }
