@@ -102,7 +102,7 @@ describe("why this matched (item 20)", () => {
 describe("saving priorities", () => {
   it("binds each priority as its own parameter in a text[] literal", async () => {
     const { PgDialect } = await import("drizzle-orm/pg-core");
-    const { textArraySql } = await import("@/features/profile/server");
+    const { textArraySql } = await import("@/features/profile/text-array-sql");
     const dialect = new PgDialect();
     const query = dialect.sqlToQuery(textArraySql(["pay", "learning"]));
     expect(query.sql).toBe("array[$1, $2]::text[]");

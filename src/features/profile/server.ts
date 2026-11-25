@@ -39,6 +39,7 @@ import { type AssessmentInput } from "./schemas";
 import { captureEvent } from "@/lib/analytics";
 import { pointsLedgerExportQuery, referralOnboardingAward } from "./referrals";
 import { scoreMiniIpip, toProfileVector, VECTOR_VERSION } from "./scoring";
+import { textArraySql } from "./text-array-sql";
 import { resultRows } from "@/lib/db-errors";
 
 const CLERK_ERROR_CODE = /^[a-z0-9_]{1,64}$/;
@@ -76,12 +77,6 @@ function profileFields(input: ProfileWriteInput) {
  * Keeps the original time only for consent to the current terms; consent to
  * older terms (a lower version) is replaced with now() and the current version.
  */
-/** A text[] literal from bound parameters; drizzle would otherwise expand a JS array into a list. */
-export function textArraySql(values: readonly string[]) {
-  if (values.length === 0) return sql`'{}'::text[]`;
-  return sql`array[${sql.join(values.map((value) => sql`${value}`), sql`, `)}]::text[]`;
-}
-
 /**
  * SET fragment recording agreement to the current privacy policy. Every profile save sends
  * consentPrivacy: true (onboarding asks for it; Profile can only be reached after it).
