@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   selectLimit: vi.fn(),
   requestId: { current: "req" },
+  reclaim: vi.fn(),
   redirect: vi.fn((url: string): never => {
     throw new Error(`NEXT_REDIRECT:${url}`);
   }),
@@ -39,6 +40,8 @@ vi.mock("@clerk/nextjs/errors", async () => {
     isClerkAPIResponseError: actual.isClerkAPIResponseError,
   };
 });
+
+vi.mock("@/lib/orphan-account", () => ({ reclaimOrphanedEmail: mocks.reclaim }));
 
 vi.mock("@/db", () => ({
     db: {
@@ -142,6 +145,8 @@ describe("apiUser first sign-in", () => {
     mocks.insert.mockReset();
     mocks.selectLimit.mockReset();
     mocks.redirect.mockClear();
+    mocks.reclaim.mockReset();
+    mocks.reclaim.mockResolvedValue(false);
     signIn();
     mocks.selectLimit.mockImplementation(async (condition: unknown) => {
       const id = clerkIdFromLookup(condition);
@@ -212,6 +217,39 @@ describe("apiUser first sign-in", () => {
     expect(logged).not.toContain("User row missing after insert.");
     expect(rows.get("user_existing")).toEqual(existing);
     expect(rows.has(clerkId)).toBe(false);
+    expect(mocks.reclaim).toHaveBeenCalledWith(email, clerkId);
+    errorSpy.mockRestore();
+  });
+
+  it("signs up again when the email's old row had its Clerk account deleted elsewhere", async () => {
+    const orphan = userRow({ id: "00000000-0000-4000-8000-000000000003", clerkId: "user_deleted", email });
+    rows.set(orphan.clerkId, orphan);
+    const fresh = userRow({ clerkId, email });
+    let attempts = 0;
+    mocks.insert.mockImplementation(async (values: { clerkId: string }) => {
+      attempts += 1;
+      if (rows.has("user_deleted")) throw uniqueViolation("users_email_unique");
+      rows.set(values.clerkId, fresh);
+      return [{ id: fresh.id }];
+    });
+    mocks.reclaim.mockImplementation(async () => {
+      rows.delete("user_deleted");
+      return true;
+    });
+
+    await expect(resolveUser()).resolves.toEqual({ status: "ok", user: fresh });
+    expect(mocks.reclaim).toHaveBeenCalledTimes(1);
+    expect(attempts).toBe(2);
+  });
+
+  it("tries to reclaim only once, then shows the conflict", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    rows.set("user_existing", userRow({ id: "00000000-0000-4000-8000-000000000004", clerkId: "user_existing", email }));
+    mocks.insert.mockRejectedValue(uniqueViolation("users_email_unique"));
+    mocks.reclaim.mockResolvedValue(true); // claims success but the row is still there
+
+    await expect(resolveUser()).resolves.toEqual({ status: "email_conflict" });
+    expect(mocks.reclaim).toHaveBeenCalledTimes(1);
     errorSpy.mockRestore();
   });
 
