@@ -21,6 +21,7 @@ import {
   isDatabaseError,
 } from "@/lib/failure-chain";
 import { createReferralCode, INVITE_COOKIE, normalizeReferralCode, referrerForNewUser } from "@/lib/invites";
+import { reclaimOrphanedEmail } from "@/lib/orphan-account";
 import { markReported, reportFailure, setInternalUser } from "@/lib/sentry";
 
 export { isAllowedEmail } from "@/lib/email-eligibility";
@@ -34,6 +35,7 @@ type GateResult =
 async function ensureUser(
   clerkId: string,
   email: string,
+  retried = false,
 ): Promise<{ status: "ok"; user: User } | { status: "email_conflict" }> {
   // No conflict target: ON CONFLICT (clerk_id) still raises 23505 when the
   // email unique index loses a race. The layout and the page both insert on
@@ -64,6 +66,9 @@ async function ensureUser(
   const user = await findUserByClerkId(clerkId);
 
   if (!user) {
+    // The email may belong to a row whose Clerk account was deleted outside Swervly.
+    // Remove that row and try once more; otherwise it is a real conflict.
+    if (!retried && (await reclaimOrphanedEmail(email, clerkId))) return ensureUser(clerkId, email, true);
     reportFailure("user_email_conflict", "email_owned_by_other_clerk");
     return { status: "email_conflict" };
   }

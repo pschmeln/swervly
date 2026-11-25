@@ -8,9 +8,15 @@ import { ROUTES } from "@/lib/constants";
  * link) lives in this menu rather than the main nav, which shows only the core journey.
  * Clerk's own "Manage account" and "Sign out" stay below it.
  */
+/**
+ * Clerk's own "Delete account" removes only the sign-in and leaves the student's Swervly data
+ * behind (Nov 25, 2026). Account deletion goes through Settings, which removes both.
+ */
+export const USER_PROFILE_APPEARANCE = { elements: { profileSection__danger: { display: "none" } } } as const;
+
 export function AccountMenu() {
   return (
-    <UserButton>
+    <UserButton userProfileProps={{ appearance: USER_PROFILE_APPEARANCE }}>
       <UserButton.MenuItems>
         <UserButton.Link label="Settings" labelIcon={<GearIcon />} href={ROUTES.settings} />
       </UserButton.MenuItems>
